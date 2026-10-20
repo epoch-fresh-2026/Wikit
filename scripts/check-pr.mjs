@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 export function parsePolicy(body, changedFiles) {
-  const issueNumbers = [...body.matchAll(/\b(?:Closes|Fixes|Resolves)\s+#([1-9][0-9]*)\b/gi)]
+  const issueNumbers = [...body.matchAll(/\b(?:Closes|Fixes|Resolves|Refs)\s+#([1-9][0-9]*)\b/gi)]
     .map((m) => Number(m[1]));
-  if (!issueNumbers.length) throw new Error('PR must link a same-repository Issue with Closes #123.');
+  if (!issueNumbers.length) throw new Error('PR must link a same-repository Issue with Closes #123 or Refs #123.');
   const impact = body.match(/^Design-Impact:\s*(updated|none)\s*$/m)?.[1];
   if (!impact) throw new Error('Set Design-Impact: updated or none.');
   if (impact === 'updated' && !changedFiles.some((p) =>

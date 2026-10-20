@@ -3,14 +3,17 @@
 ## 本轮与后续实现
 
 Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 迁移和真实
-PostgreSQL 测试；不代表账户、页面、提案、REST/MCP 产品接口或可部署 v0.1 已完成。
+PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；页面、提案、MCP
+产品接口与可部署 v0.1 仍待后续实现。
 前端、容器与 release_ready 保持关闭。
 
 后端使用 Go 1.25.0、pgx v5.10.0、PostgreSQL 18.6（本地与 CI），依赖由
-go.mod/go.sum 锁定。仅 composition root 装配 Core、HTTP、数据库及媒体目录检查。
+go.mod/go.sum 锁定。Argon2id 使用 golang.org/x/crypto v0.53.0，终端使用
+golang.org/x/term v0.44.0（兼容 Go 1.25）；仅 composition root 装配实现。
 
 ```sh
 go run ./cmd/wikit migrate
+go run ./cmd/wikit create-admin
 go run ./cmd/wikit serve
 go vet ./...
 go test -race -count=1 ./...
@@ -22,7 +25,10 @@ serve 必须提供 WIKIT_PUBLIC_URL、WIKIT_DATABASE_URL；媒体目录必须已
 migrate 只要求 WIKIT_DATABASE_URL，迁移事务使用 60 秒超时；不会随 serve 自动执行。
 集成测试要求 WIKIT_DATABASE_URL 指向允许 CREATE DATABASE 的测试账户；
 每例创建独立数据库并在结束时删除，缺少配置直接失败，不跳过。
-仅健康端点可用，未知路由返回 404。搜索服务尚未接入健康状态。
+首次启动前必须完成迁移并交互创建管理员；serve 在没有活跃管理员时拒绝监听。
+create-admin 只要求数据库配置，禁止密码参数或非终端输入。账户与授权端点范围见
+API 文档，其他未知路由返回 404。搜索服务尚未接入健康状态。
+会话 TTL 可配置为 5m–168h（默认 24h），注册通过 WIKIT_REGISTRATION_ENABLED 控制。
 
 本地文档工具需要 Node.js 24 和 npm：
 
@@ -41,6 +47,8 @@ npm run check
 
 Issue 模板包含范围、设计、验收、依赖和文档影响。维护者确认后加
 `design-approved`。实现 PR 关联同仓库已确认 Issue，先改文档再代码。
+完整交付用 `Closes #N`；分阶段交付用 `Refs #N` 并保留 Issue 内未完成验收项，
+两种引用都必须通过设计确认检查，不能用关闭引用误关跨 Issue 的验收。
 小修复允许 `Design-Impact: none`，但必须写原因；评审确认是否合理。
 外部贡献者不需要发布凭据。
 Dependabot PR 同样需要维护者补充已确认的依赖升级 Issue 与设计影响声明。

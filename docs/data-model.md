@@ -5,6 +5,12 @@ ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
 
 ## 实体
 
+Issue #3 的 0002 migration 实现 users、user_tokens（含撤销后的代次记录）、sessions、
+groups/group_members、page_policies/page_grants、audit_events、auth_limits、
+idempotency_records 和 list_cursors。page_policies 持有页面 ACL 与状态，后续 pages
+通过同一 UUID 关联，避免安全模块读取内容模块私有表。业务 Page 尚未公开创建。
+账户 auth_version、组 version、策略 policy_version 防止过期覆盖；安全变更与审计原子提交。
+
 | 实体 | 核心字段与约束 |
 | --- | --- |
 | users | id、username_key unique、password_hash、role、status、auth_version |

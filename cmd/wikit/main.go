@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -9,14 +10,19 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	httpadapter "github.com/epoch-fresh-2026/Wikit/internal/adapters/http"
 	"github.com/epoch-fresh-2026/Wikit/internal/config"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/health"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
+	"github.com/epoch-fresh-2026/Wikit/internal/security"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/blobfs"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/postgres"
+	"golang.org/x/term"
 )
 
 func main() {
@@ -30,7 +36,7 @@ func main() {
 
 func run(ctx context.Context, args []string) error {
 	if len(args) != 1 {
-		return errors.New("usage: wikit serve|migrate")
+		return errors.New("usage: wikit serve|migrate|create-admin")
 	}
 	cfg, err := config.Load(os.Getenv, args[0])
 	if err != nil {
@@ -52,6 +58,34 @@ func run(ctx context.Context, args []string) error {
 		fmt.Fprintln(os.Stdout, "migrations up to date")
 		return nil
 	}
+	// Administrative writes must enforce the same schema compatibility as serve.
+	startup, cancel = context.WithTimeout(ctx, 10*time.Second)
+	err = db.Check(startup)
+	cancel()
+	if err != nil {
+		return err
+	}
+	passwords, err := security.NewPasswords()
+	if err != nil {
+		return err
+	}
+	secrets := security.Secrets{}
+	accounts := identity.New(db, passwords, secrets, identity.Options{Registration: cfg.Registration, SessionTTL: cfg.SessionTTL})
+	if args[0] == "create-admin" {
+		return createAdmin(ctx, accounts, secrets)
+	}
+	if err := db.WithinAccess(ctx, func(tx access.Tx) error {
+		count, err := tx.ActiveAdmins(ctx)
+		if err != nil {
+			return err
+		}
+		if count == 0 {
+			return errors.New("initialize an administrator with wikit create-admin before serving")
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
 	readiness := health.New(db, blobfs.Probe{Root: cfg.MediaRoot})
 	readyCtx, readyCancel := context.WithTimeout(ctx, 2*time.Second)
 	err = readiness.Ready(readyCtx)
@@ -64,7 +98,7 @@ func run(ctx context.Context, args []string) error {
 		return errors.New("HTTP listener failed")
 	}
 	server := &http.Server{
-		Handler: httpadapter.NewHandler(readiness), ReadHeaderTimeout: 5 * time.Second,
+		Handler: (httpadapter.API{Identity: accounts, Access: access.New(db, secrets), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
 	finished := make(chan error, 1)
@@ -87,4 +121,42 @@ func run(ctx context.Context, args []string) error {
 		}
 		return nil
 	}
+}
+
+func createAdmin(ctx context.Context, accounts *identity.Service, secrets identity.Secrets) error {
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return errors.New("create-admin requires an interactive terminal")
+	}
+	fmt.Fprint(os.Stdout, "Username: ")
+	username, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return errors.New("cannot read username")
+	}
+	fmt.Fprint(os.Stdout, "Password: ")
+	password, err := term.ReadPassword(fd)
+	fmt.Fprintln(os.Stdout)
+	if err != nil {
+		return errors.New("cannot read password")
+	}
+	defer clear(password)
+	fmt.Fprint(os.Stdout, "Confirm password: ")
+	confirm, err := term.ReadPassword(fd)
+	fmt.Fprintln(os.Stdout)
+	if err != nil {
+		return errors.New("cannot read password confirmation")
+	}
+	defer clear(confirm)
+	if string(password) != string(confirm) {
+		return errors.New("passwords do not match")
+	}
+	id, err := secrets.ID()
+	if err != nil {
+		return err
+	}
+	if _, err := accounts.CreateAdmin(ctx, strings.TrimSpace(username), string(password), id); err != nil {
+		return err
+	}
+	fmt.Fprintln(os.Stdout, "administrator created; log in to rotate a personal Token")
+	return nil
 }

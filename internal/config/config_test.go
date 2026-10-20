@@ -25,6 +25,10 @@ func TestConfiguration(t *testing.T) {
 		{"fragment", "WIKIT_PUBLIC_URL", "https://wiki.example/#secret", false},
 		{"invalid listen", "WIKIT_LISTEN_ADDR", ":70000", false},
 		{"port zero", "WIKIT_LISTEN_ADDR", ":0", false},
+		{"registration off", "WIKIT_REGISTRATION_ENABLED", "false", true},
+		{"invalid registration", "WIKIT_REGISTRATION_ENABLED", "yes", false},
+		{"invalid session ttl", "WIKIT_SESSION_TTL", "1s", false},
+		{"valid session ttl", "WIKIT_SESSION_TTL", "12h", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			get := func(key string) string {

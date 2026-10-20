@@ -7,8 +7,8 @@ diff reviews, merges, and immutable publication history. Documents and media are
 independent Pages organized with tags. Humans and agents share the same account
 permissions through REST and MCP.
 
-**Status: Go backend foundation with health checks, SQL migrations and PostgreSQL
-integration tests. Wiki features and deployment are not implemented yet; no production image has been released.** See the
+**Status: Go backend with accounts, sessions, personal Tokens and permission governance,
+SQL migrations and PostgreSQL tests. Page/proposal features and deployment are not implemented yet; no production image has been released.** See the
 [implementation roadmap](docs/roadmap.md) and
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
 
