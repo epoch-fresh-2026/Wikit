@@ -188,6 +188,6 @@ func (t *securityTx) Policies(ctx context.Context, ids []string) ([]access.Polic
 }
 func (t *securityTx) Blob(ctx context.Context, id string) (pages.Blob, error) {
 	var b pages.Blob
-	err := t.QueryRow(ctx, "SELECT id::text,state,uploader::text FROM wikit.blobs WHERE id=$1", id).Scan(&b.ID, &b.State, &b.Uploader)
+	err := t.QueryRow(ctx, "SELECT id::text,state,uploader::text,storage_key,size FROM wikit.blobs WHERE id=$1", id).Scan(&b.ID, &b.State, &b.Uploader, &b.Key, &b.Size)
 	return b, storageError(err)
 }

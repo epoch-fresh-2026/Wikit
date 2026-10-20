@@ -9,7 +9,8 @@ permissions through REST and MCP.
 
 **Status: Go backend with accounts, permission governance, immutable history, reviewed
 atomic publication, three-way rebase and revert/restore proposals, backed by PostgreSQL
-tests. Uploads, MCP and deployment remain unimplemented; no production image has been released.** See the
+tests. Media uploads, authorized Range downloads and safe local GC are implemented.
+MCP and deployment remain unimplemented; no production image has been released.** See the
 [implementation roadmap](docs/roadmap.md) and
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
 

@@ -18,6 +18,7 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/media"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 )
@@ -26,6 +27,7 @@ type API struct {
 	Identity   *identity.Service
 	Pages      *pages.Service
 	Proposals  *proposals.Service
+	Media      *media.Service
 	Access     *access.Service
 	Secrets    identity.Secrets
 	PublicURL  string
@@ -105,6 +107,12 @@ func failure(w http.ResponseWriter, err error, requestID string) {
 			status = 409
 		case fault.Invalid:
 			status = 422
+		case fault.UploadTooLarge:
+			status = 413
+		case fault.UnsupportedMedia:
+			status = 415
+		case fault.StorageUnavailable:
+			status = 503
 		case fault.Limited:
 			status = 429
 			w.Header().Set("Retry-After", "60")
@@ -150,7 +158,11 @@ func (a API) credentials(r *http.Request) (identity.Credentials, error) {
 	return c, nil
 }
 func (a API) handle(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	timeout := 10 * time.Second
+	if a.Media != nil && (strings.HasPrefix(r.URL.Path, "/api/v1/uploads/") && r.Method == "PUT" || strings.HasSuffix(r.URL.Path, "/content") && (r.Method == "GET" || r.Method == "HEAD")) {
+		timeout = 15 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 	r = r.WithContext(ctx)
 	id, err := a.Secrets.ID()
@@ -167,6 +179,9 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		ip = r.RemoteAddr
+	}
+	if a.Media != nil && a.mediaRoute(w, r, c, id, ip) {
+		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/")
 	var result any

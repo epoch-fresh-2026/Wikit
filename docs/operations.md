@@ -1,6 +1,6 @@
 # 单机部署、备份与恢复
 
-状态：Issue #2 提供可运行的后端健康与迁移基础；产品部署仍为实现目标，无正式镜像。
+状态：已提供后端基础、账户授权、提案发布和本地媒体持久化；产品部署仍为实现目标，无正式镜像。
 部署阶段须提交真实 Dockerfile、compose.yaml、环境示例与 smoke 测试后才能发布。
 
 ## 目标拓扑
@@ -41,6 +41,15 @@ HTTP（localhost／loopback IP），禁止凭证、查询和 fragment；监听�
 serve 要求至少一名活跃管理员。其余业务配置在对应 Issue 实现，当前不要求 Meilisearch key。
 
 ## 初始化与升级
+
+Issue #6 提供 `wikit blob-gc`；读取数据库、媒体目录和 WIKIT_BLOB_GC_GRACE，默认 168h，
+只清理超过宽限期的未引用 blob、孤立原件和临时文件，输出数量而非物理路径。
+失败返回非零，可重复运行恢复 deleting 墓碑。备份窗口停止上传与 GC。
+serve 读取 WIKIT_MAX_UPLOAD_BYTES（默认 104857600）和同一宽限期配置；
+单次 PUT 有 15 分钟请求时限，数据库写租约为 30 分钟，完成前会重新检查预约与账户。
+上传上限配置范围 1 字节～1 TiB，GC 宽限期至少 1 小时；默认仍为 100 MiB 与 7 天。
+blob 删除意图与完成状态写入审计，actor 为本地系统、request_id 为本次 GC 的随机运行 ID。
+媒体根目录由部署者独占管理，子目录为 objects 和 staging；文件名只使用服务端 UUID。
 
 实现阶段提供独立 migrate、create-admin、search-rebuild、blob-gc 管理命令。
 操作必须输出明确结果，凭证交互输入，不作为命令参数。

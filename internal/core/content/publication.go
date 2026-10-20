@@ -1,6 +1,9 @@
 package content
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // Page is the stable publication identity and its current governance view.
 type Page struct {
@@ -21,4 +24,10 @@ type Published struct {
 	AuthorID         string    `json:"author_id"`
 	ContentURL       *string   `json:"content_url"`
 }
-type Blob struct{ ID, State, Uploader string }
+type Blob struct {
+	ID, State, Uploader, Key string
+	Size                     int64
+}
+type Originals interface {
+	Check(context.Context, Blob) error
+}

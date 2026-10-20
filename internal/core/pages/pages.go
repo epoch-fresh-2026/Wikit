@@ -57,10 +57,11 @@ type Service struct {
 	repo    Repository
 	secrets identity.Secrets
 	text    content.Text
+	files   content.Originals
 }
 
-func New(repo Repository, secrets identity.Secrets, text content.Text) *Service {
-	return &Service{repo, secrets, text}
+func New(repo Repository, secrets identity.Secrets, text content.Text, files content.Originals) *Service {
+	return &Service{repo, secrets, text, files}
 }
 func (s *Service) Create(ctx context.Context, r access.Request, visibility string, snapshot content.Snapshot, ip string) (Created, error) {
 	if visibility != "public" && visibility != "restricted" {
@@ -109,8 +110,11 @@ func (s *Service) Create(ctx context.Context, r access.Request, visibility strin
 			if b.State != "ready" {
 				return fault.State
 			}
+			if err := s.files.Check(ctx, b); err != nil {
+				return err
+			}
 		}
-		if err := content.CheckReferences(ctx, tx, r.Credentials, refs); err != nil {
+		if err := content.CheckReferences(ctx, tx, r.Credentials, refs, s.files); err != nil {
 			return err
 		}
 		id, err := s.secrets.ID()

@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -226,6 +228,11 @@ func (s *suite) blobFixture(t *testing.T, uploader string, ready bool) string {
 	if _, err := s.db.conn.Exec(context.Background(), "INSERT INTO wikit.blobs(id,digest,size,mime,storage_key,state,uploader) VALUES($1,repeat('a',64),10,'image/png',$2,$3,$4)", id, "objects/"+id, state, uploader); err != nil {
 		t.Fatal(err)
 	}
+	if ready {
+		if err := os.WriteFile(filepath.Join(s.mediaRoot, "objects", id), []byte("\x89PNG\r\n\x1a\n00"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	return id
 }
 func TestFixedMediaReferences(t *testing.T) {
@@ -348,7 +355,7 @@ func TestConcurrentCreateAndLargeDocument(t *testing.T) {
 	s := newSuite(t)
 	_, token := s.register(t, "parallel_page_creator")
 	c := identity.Credentials{Bearer: token}
-	svc := pages.New(s.db.store, s.secrets, textadapter.Parser{})
+	svc := pages.New(s.db.store, s.secrets, textadapter.Parser{}, s.files)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	start := make(chan struct{})

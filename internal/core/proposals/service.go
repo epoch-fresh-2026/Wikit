@@ -52,10 +52,11 @@ type Service struct {
 	secrets identity.Secrets
 	text    content.Text
 	lines   Lines
+	files   content.Originals
 }
 
-func New(repo Repository, secrets identity.Secrets, text content.Text, lines Lines) *Service {
-	return &Service{repo, secrets, text, lines}
+func New(repo Repository, secrets identity.Secrets, text content.Text, lines Lines, files content.Originals) *Service {
+	return &Service{repo, secrets, text, lines, files}
 }
 
 type Expected struct {
@@ -202,8 +203,11 @@ func (s *Service) prepare(ctx context.Context, tx Tx, c identity.Credentials, v 
 		if b.State != "ready" {
 			return out, nil, fault.State
 		}
+		if err := s.files.Check(ctx, b); err != nil {
+			return out, nil, err
+		}
 	}
-	err = content.CheckReferences(ctx, tx, c, refs)
+	err = content.CheckReferences(ctx, tx, c, refs, s.files)
 	return out, refs, err
 }
 func (s *Service) initial(ctx context.Context, tx Tx, v loaded, snapshot content.Snapshot, refs []content.MediaRef) (Proposal, error) {

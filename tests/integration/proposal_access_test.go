@@ -201,7 +201,7 @@ func TestACL03RealMergeAndRevocationCommitOrders(t *testing.T) {
 				var governance *access.Service = s.access
 				publisher := s.proposalService()
 				if mergeFirst {
-					publisher = proposals.New(heldPublication{s.db.store, entered, release}, s.secrets, textadapter.Parser{}, textadapter.Differ{})
+					publisher = proposals.New(heldPublication{s.db.store, entered, release}, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files)
 				} else {
 					governance = access.New(heldAccess{s.db.store, entered, release}, s.secrets)
 				}

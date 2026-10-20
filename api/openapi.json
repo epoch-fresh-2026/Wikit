@@ -3,7 +3,7 @@
   "info": {
     "title": "Wikit REST API",
     "version": "0.1.0",
-    "description": "已锁定的 v0.1 设计契约；账户、授权、页面/历史与提案审核合并/回滚 REST 已实现，其余逐项实现。所有传输入口复用 Core。",
+    "description": "已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚及媒体上传/下载 REST 已实现，其余逐项实现。所有传输入口复用 Core。",
     "license": {
       "name": "MIT",
       "identifier": "MIT"
@@ -1903,7 +1903,7 @@
           "Media"
         ],
         "summary": "鉴权后读取固定版本原件",
-        "description": "鉴权后读取固定版本原件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "鉴权后读取固定版本原件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1931,13 +1931,78 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "操作成功",
             "content": {
-              "application/octet-stream": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/ogg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/webm": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -1948,13 +2013,70 @@
           "206": {
             "description": "满足 Range 请求的部分原件",
             "content": {
-              "application/octet-stream": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/ogg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/webm": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
                 }
               }
             }
+          },
+          "304": {
+            "description": "当前权限验证通过后的条件响应"
           },
           "400": {
             "$ref": "#/components/responses/BusinessError"
@@ -2572,7 +2694,7 @@
           "Media"
         ],
         "summary": "鉴权后读取候选媒体原件",
-        "description": "鉴权后读取候选媒体原件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "鉴权后读取候选媒体原件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2600,13 +2722,78 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "操作成功",
             "content": {
-              "application/octet-stream": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/ogg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/webm": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -2617,13 +2804,70 @@
           "206": {
             "description": "满足 Range 请求的部分原件",
             "content": {
-              "application/octet-stream": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/ogg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/webm": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
                 }
               }
             }
+          },
+          "304": {
+            "description": "当前权限验证通过后的条件响应"
           },
           "400": {
             "$ref": "#/components/responses/BusinessError"
@@ -4360,7 +4604,7 @@
           "Media"
         ],
         "summary": "预约鉴权媒体上传",
-        "description": "预约鉴权媒体上传。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "预约鉴权媒体上传。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4456,7 +4700,7 @@
           "Media"
         ],
         "summary": "流式写入媒体原件",
-        "description": "流式写入媒体原件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "流式写入媒体原件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4539,6 +4783,66 @@
                 "type": "string",
                 "format": "binary"
               }
+            },
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/gif": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "audio/mpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "audio/ogg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/mp4": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/webm": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
             }
           }
         }
@@ -4551,7 +4855,7 @@
           "Media"
         ],
         "summary": "上传者读取上传状态",
-        "description": "上传者读取上传状态。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "上传者读取上传状态。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []

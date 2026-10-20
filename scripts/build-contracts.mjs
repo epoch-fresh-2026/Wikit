@@ -6,6 +6,8 @@ const id = { type: 'string', format: 'uuid' };
 const nullableId = { type: ['string', 'null'], format: 'uuid' };
 const integer = { type: 'integer', minimum: 0 };
 const date = { type: 'string', format: 'date-time' };
+const mediaTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'audio/mpeg', 'audio/wav', 'audio/ogg', 'video/mp4', 'video/webm', 'application/pdf'];
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const array = (items) => ({ type: 'array', items });
 const enumOf = (...values) => ({ type: 'string', enum: values });
@@ -128,10 +130,7 @@ const schemas = {
   }),
   UploadInput: object({
     filename: { ...string(255), minLength: 1 }, size: { type: 'integer', minimum: 1 },
-    mime: enumOf(
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'audio/mpeg', 'audio/wav', 'audio/ogg', 'video/mp4', 'video/webm', 'application/pdf',
-    ),
+    mime: enumOf(...mediaTypes),
   }),
   Upload: object({
     id, state: enumOf('pending', 'ready', 'failed'), upload_path: string(),
@@ -187,6 +186,7 @@ const implementedRest = new Set([
   'proposal_queue', 'proposals_list', 'proposal_get', 'proposal_revisions_list', 'tags_list',
   'proposal_create', 'proposal_update', 'proposal_diff', 'proposal_rebase', 'reviews_list',
   'review_create', 'proposal_merge', 'proposal_state', 'page_revert', 'page_restore',
+  'upload_prepare', 'upload_content', 'upload_get', 'revision_content', 'proposal_content',
 ]);
 function op(method, path, name, tag, summary, output, input, options = {}) {
   operations.push({ method, path, name, tag, summary, output, input, ...options });
@@ -215,14 +215,14 @@ op('put', '/pages/{page_id}/policy', 'page_policy_update', 'Pages', '管理者�
 op('post', '/pages/{page_id}/moderation', 'page_moderate', 'Pages', '管理者隐藏或恢复页面', 'Page', 'ModerationInput');
 op('get', '/pages/{page_id}/revisions', 'revisions_list', 'Pages', '列出页面发布历史', 'RevisionList', null, { public: true, list: true });
 op('get', '/pages/{page_id}/revisions/{revision_id}', 'revision_get', 'Pages', '读取明确发布版本', 'Revision', null, { public: true });
-op('get', '/pages/{page_id}/revisions/{revision_id}/content', 'revision_content', 'Media', '鉴权后读取固定版本原件', 'binary', null, { public: true, mcp: false });
+op('get', '/pages/{page_id}/revisions/{revision_id}/content', 'revision_content', 'Media', '鉴权后读取固定版本原件', 'binary', null, { public: true, mcp: false, query: { download: enumOf('1') } });
 op('get', '/proposals', 'proposal_queue', 'Proposals', '列出可读的提案审核队列', 'ProposalList', null, { public: true, list: true, query: { state: enumOf('open', 'closed', 'merged') } });
 op('get', '/pages/{page_id}/proposals', 'proposals_list', 'Proposals', '列出页面提案', 'ProposalList', null, { public: true, list: true });
 op('post', '/pages/{page_id}/proposals', 'proposal_create', 'Proposals', '提交单页面修改提案', 'Proposal', 'CreateProposal', { status: 201 });
 op('get', '/proposals/{proposal_id}', 'proposal_get', 'Proposals', '读取提案及当前候选', 'Proposal', null, { public: true });
 op('get', '/proposals/{proposal_id}/revisions', 'proposal_revisions_list', 'Proposals', '读取不可变候选历史', 'ProposalRevisionList', null, { public: true, list: true });
 op('post', '/proposals/{proposal_id}/revisions', 'proposal_update', 'Proposals', '提交候选更新或已解决冲突', 'Proposal', 'UpdateProposal');
-op('get', '/proposals/{proposal_id}/revisions/{proposal_revision_id}/content', 'proposal_content', 'Media', '鉴权后读取候选媒体原件', 'binary', null, { public: true, mcp: false });
+op('get', '/proposals/{proposal_id}/revisions/{proposal_revision_id}/content', 'proposal_content', 'Media', '鉴权后读取候选媒体原件', 'binary', null, { public: true, mcp: false, query: { download: enumOf('1') } });
 op('get', '/proposals/{proposal_id}/diff', 'proposal_diff', 'Proposals', '对比基础与候选并标记过期', 'Diff', null, { public: true });
 op('post', '/proposals/{proposal_id}/rebase', 'proposal_rebase', 'Proposals', '三方合并至当前发布版本并使审核失效', 'Proposal', 'VersionPair');
 op('get', '/proposals/{proposal_id}/reviews', 'reviews_list', 'Proposals', '列出审核记录', 'ReviewList', null, { public: true, list: true });
@@ -298,11 +298,14 @@ export function buildContracts() {
     const status = o.output ? (o.status ?? 200) : 204;
     const outputSchema = o.output === 'binary' ? { type: 'string', format: 'binary' } : o.output ? ref(o.output) : null;
     const success = { description: o.output ? '操作成功' : '操作成功，无响应体' };
-    if (outputSchema) success.content = { [o.output === 'binary' ? 'application/octet-stream' : 'application/json']: { schema: outputSchema } };
+    if (outputSchema) success.content = Object.fromEntries(
+      (o.output === 'binary' ? mediaTypes : ['application/json']).map((type) => [type, { schema: outputSchema }]),
+    );
     const responses = { [status]: success, 400: error, 401: error, 403: error, 404: error, 409: error, 413: error, 415: error, 422: error, 429: error, 500: error, 503: error };
     if (o.output === 'binary') {
       responses[206] = { ...success, description: '满足 Range 请求的部分原件' };
       responses[416] = { description: 'Range 无法满足' };
+      responses[304] = { description: '当前权限验证通过后的条件响应' };
     }
     const operation = {
       operationId: o.name, tags: [o.tag], summary: o.summary,
@@ -311,11 +314,10 @@ export function buildContracts() {
       parameters, responses,
     };
     if (o.input) operation.requestBody = {
-      required: true, content: {
-        [o.input === 'binary' ? 'application/octet-stream' : 'application/json']: {
-          schema: o.input === 'binary' ? { type: 'string', format: 'binary' } : ref(o.input),
-        },
-      },
+      required: true, content: Object.fromEntries(
+        (o.input === 'binary' ? ['application/octet-stream', ...mediaTypes] : ['application/json'])
+          .map((type) => [type, { schema: o.input === 'binary' ? { type: 'string', format: 'binary' } : ref(o.input) }]),
+      ),
     };
     paths[o.path] ??= {};
     paths[o.path][o.method] = operation;
@@ -345,7 +347,7 @@ export function buildContracts() {
     openapi: '3.1.0',
     info: {
       title: 'Wikit REST API', version: '0.1.0',
-      description: '已锁定的 v0.1 设计契约；账户、授权、页面/历史与提案审核合并/回滚 REST 已实现，其余逐项实现。所有传输入口复用 Core。',
+      description: '已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚及媒体上传/下载 REST 已实现，其余逐项实现。所有传输入口复用 Core。',
       license: { name: 'MIT', identifier: 'MIT' },
     },
     servers: [{ url: 'https://wiki.example.com/api/v1', description: '替换为自托管站点地址' }],
