@@ -26,7 +26,7 @@ func decodeResult[T any](t *testing.T, raw []byte) T {
 	return out
 }
 func (s *suite) proposalService() *proposals.Service {
-	return proposals.New(s.db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{})
+	return proposals.New(s.db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files)
 }
 func expected(p proposals.Proposal, head *string) proposals.Expected {
 	return proposals.Expected{Head: head, Candidate: p.CurrentRevision.ID}

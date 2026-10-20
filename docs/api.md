@@ -52,6 +52,18 @@ rebase 时前者是目标当前 head，候选仍保存旧 base。
 
 ## 媒体与 Agent 上传
 
+Issue #6 实现预约/状态/流式 PUT，以及固定发布版本和明确候选版本的 GET/HEAD 原件读取。
+PUT 允许 application/octet-stream 或预约 MIME；必须发送完整原件，不支持分块续传。
+预约和 PUT 分别按账户/IP 限流，预约完成后配置降低的大小上限同样约束 PUT。
+预约仅本人或管理员可访问，租约并发写返回 invalid_state；超限返回 upload_too_large，
+文件头/声明 MIME 不符返回 unsupported_media。失败不登记 ready，预约到期拒绝新 PUT。
+ready 后重试仍逐字节摘要校验，不覆盖原件；GET 状态始终按当前账户鉴权。
+
+下载在当前 Page read 权限事务中打开文件，再由 HTTP 处理 Range/条件请求；不存在
+按 blob/hash 的公开读取路由。响应 private,no-store、nosniff，并加受限 CSP；
+图片/音视频可以 inline，PDF 及显式 download=1 使用 attachment。没有 OCR、转码或前端播放器实现。
+已开始传输的文件句柄按本次授权继续，之后的请求（包括 Range、HEAD）重新检查当前 ACL。
+
 1. POST `/uploads` 预约文件名、声明大小和 MIME，返回上传 ID、过期时间及同源路径。
 2. PUT `/uploads/{id}/content` 携带同一账户认证，流式传二进制；
    服务端重新校验实际大小、文件头、MIME，不信任声明。

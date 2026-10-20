@@ -5,7 +5,7 @@
 Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 迁移和真实
 PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Issue #4 增加页面
 创建/读取、首提案和历史读取；Issue #5 增加审核、原子合并、三方 rebase 与撤销/恢复。
-上传下载、MCP 与可部署 v0.1 仍待后续实现。
+Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；MCP 与可部署 v0.1 仍待后续实现。
 前端、容器与 release_ready 保持关闭。
 
 后端使用 Go 1.25.0、pgx v5.10.0、PostgreSQL 18.6（本地与 CI），依赖由
@@ -18,6 +18,7 @@ Unicode 原语使用 x/text v0.38.0，CommonMark 解析使用 Goldmark v1.8.6。
 go run ./cmd/wikit migrate
 go run ./cmd/wikit create-admin
 go run ./cmd/wikit serve
+go run ./cmd/wikit blob-gc
 go vet ./...
 go test -race -count=1 ./...
 go test -race -count=1 -tags=integration ./tests/integration/...

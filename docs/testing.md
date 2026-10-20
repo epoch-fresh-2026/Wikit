@@ -3,6 +3,12 @@
 当前 `npm run check` 验证文档、契约和仓库配置，不验证尚未实现的业务。
 以下条目作为实现 Issue 的验收基线。
 
+Issue #6 的真实 REST/Core/PostgreSQL 与本地文件测试覆盖 MEDIA-01～03：
+预约/重试、大小/MIME、文件不可覆盖、Range/HEAD/条件读取、当前 ACL、
+文件和数据库失败、孤立文件清理、关闭提案及完整历史保护、上传租约 fencing，
+以及 GC/首次引用与真实发布竞争。支持的图片、音视频、PDF MIME 均经原件读取验证。
+前端播放器、OCR、转码及 MCP 没有实现，不计为已验证。
+
 Issue #5 的真实 REST/Core/PostgreSQL 测试覆盖 PROP-01～05、ROLL-01，以及真实合并入口的 ACL-03：
 自审、审核轮次与失效、最新有效立场、并发 head 竞争、结构化冲突、重新审核、
 回滚保留历史与 ACL、提交失败回滚 outbox/审计/幂等结果。

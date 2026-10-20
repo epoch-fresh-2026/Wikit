@@ -16,7 +16,7 @@ type ReferenceReader interface {
 
 // CheckReferences checks current target authorization and the exact published
 // media/blob inside the caller's transaction. A URL never grants access.
-func CheckReferences(ctx context.Context, tx ReferenceReader, c identity.Credentials, refs []MediaRef) error {
+func CheckReferences(ctx context.Context, tx ReferenceReader, c identity.Credentials, refs []MediaRef, files Originals) error {
 	for _, ref := range refs {
 		if _, _, err := access.Authorize(ctx, tx, c, ref.PageID, "read", false); err != nil {
 			return err
@@ -41,6 +41,9 @@ func CheckReferences(ctx context.Context, tx ReferenceReader, c identity.Credent
 		}
 		if b.State != "ready" {
 			return fault.State
+		}
+		if err := files.Check(ctx, b); err != nil {
+			return err
 		}
 	}
 	return nil

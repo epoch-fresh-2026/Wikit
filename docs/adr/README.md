@@ -13,3 +13,4 @@
 - [0008 账户与页面授权事务](0008-security-transactions.md)
 - [0009 页面快照与固定媒体引用](0009-page-snapshots.md)
 - [0010 提案发布与逐行三方合并](0010-proposal-publication.md)
+- [0011 媒体文件提交与 GC](0011-media-files-and-gc.md)

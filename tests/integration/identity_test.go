@@ -19,6 +19,7 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/health"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/media"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 	"github.com/epoch-fresh-2026/Wikit/internal/security"
@@ -36,6 +37,9 @@ type suite struct {
 	admin      identity.Account
 	adminToken string
 	server     *httptest.Server
+	media      *media.Service
+	files      *blobfs.Store
+	mediaRoot  string
 }
 
 func newSuite(t *testing.T) *suite {
@@ -66,7 +70,18 @@ func newSuite(t *testing.T) *suite {
 		t.Fatal(err)
 	}
 	s.adminToken = plain
-	api := httpadapter.API{Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}), Proposals: proposals.New(db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}), Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
+	s.mediaRoot = t.TempDir()
+	s.files, err = blobfs.New(s.mediaRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := s.files.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	s.media = media.New(db.store, s.files, s.secrets, 104857600)
+	api := httpadapter.API{Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}, s.files), Proposals: proposals.New(db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files), Media: s.media, Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
 	s.server = httptest.NewServer(api.Handler(httpadapter.NewHandler(health.New(db.store, blobfs.Probe{Root: t.TempDir()}))))
 	t.Cleanup(s.server.Close)
 	return s

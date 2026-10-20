@@ -29,6 +29,10 @@ func TestConfiguration(t *testing.T) {
 		{"invalid registration", "WIKIT_REGISTRATION_ENABLED", "yes", false},
 		{"invalid session ttl", "WIKIT_SESSION_TTL", "1s", false},
 		{"valid session ttl", "WIKIT_SESSION_TTL", "12h", true},
+		{"invalid upload limit", "WIKIT_MAX_UPLOAD_BYTES", "0", false},
+		{"overflow upload limit", "WIKIT_MAX_UPLOAD_BYTES", "9223372036854775807", false},
+		{"invalid GC grace", "WIKIT_BLOB_GC_GRACE", "0s", false},
+		{"valid GC grace", "WIKIT_BLOB_GC_GRACE", "200h", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			get := func(key string) string {
