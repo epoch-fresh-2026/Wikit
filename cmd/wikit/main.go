@@ -58,6 +58,13 @@ func run(ctx context.Context, args []string) error {
 		fmt.Fprintln(os.Stdout, "migrations up to date")
 		return nil
 	}
+	// Administrative writes must enforce the same schema compatibility as serve.
+	startup, cancel = context.WithTimeout(ctx, 10*time.Second)
+	err = db.Check(startup)
+	cancel()
+	if err != nil {
+		return err
+	}
 	passwords, err := security.NewPasswords()
 	if err != nil {
 		return err
