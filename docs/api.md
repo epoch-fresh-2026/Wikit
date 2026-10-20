@@ -6,6 +6,10 @@
 
 ## 统一约定
 
+Issue #8 实现 GET /search：q、tag、limit、cursor；拒绝其他查询参数，避免客户端控制
+候选权限过滤。返回 SearchHitList，不返回总数、facet 或搜索引擎原始摘要。
+当前 head/policy_version 不匹配的候选跳过并安排修复；索引不可用返回 search_unavailable / 503。
+
 - 基础路径 `/api/v1`，JSON UTF-8；ID 使用 UUID，时间 RFC 3339 UTC。
 - UUID 输入接受大小写十六进制，Core 统一为小写后比较主体、组成员和幂等操作范围。
 - Cookie 会话或 Bearer Token 二选一；若两者同时提供且身份不同，返回
