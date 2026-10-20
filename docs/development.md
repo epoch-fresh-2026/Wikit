@@ -47,6 +47,8 @@ npm run check
 
 Issue 模板包含范围、设计、验收、依赖和文档影响。维护者确认后加
 `design-approved`。实现 PR 关联同仓库已确认 Issue，先改文档再代码。
+完整交付用 `Closes #N`；分阶段交付用 `Refs #N` 并保留 Issue 内未完成验收项，
+两种引用都必须通过设计确认检查，不能用关闭引用误关跨 Issue 的验收。
 小修复允许 `Design-Impact: none`，但必须写原因；评审确认是否合理。
 外部贡献者不需要发布凭据。
 Dependabot PR 同样需要维护者补充已确认的依赖升级 Issue 与设计影响声明。

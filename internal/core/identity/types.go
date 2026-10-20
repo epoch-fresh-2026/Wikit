@@ -105,7 +105,7 @@ func Digest(value string) string {
 	return hex.EncodeToString(sum[:])
 }
 func ValidID(id string) bool {
-	return regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).MatchString(id)
+	return regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).MatchString(strings.ToLower(id))
 }
 func ValidPassword(value string) bool {
 	n := utf8.RuneCountInString(value)

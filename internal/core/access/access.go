@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
@@ -117,6 +118,7 @@ func effective(a identity.Actor, p Policy, groups []Group) map[string]bool {
 // Authorize is shared by all consumers, including future history/download and
 // publication use cases. The supplied tx must also own their protected write.
 func Authorize(ctx context.Context, tx Authorization, c identity.Credentials, pageID, capability string, management bool) (identity.Actor, Policy, error) {
+	pageID = strings.ToLower(pageID)
 	a, err := identity.Resolve(ctx, tx, c)
 	if err != nil {
 		return a, Policy{}, err
@@ -193,6 +195,7 @@ func (s *Service) mutate(ctx context.Context, r Request, operation string, check
 	return out, err
 }
 func (s *Service) UpdateAccount(ctx context.Context, r Request, id, role, status string, version int64) ([]byte, error) {
+	id = strings.ToLower(id)
 	r.Credentials.Write = true
 	if !identity.ValidID(id) || !slices.Contains([]string{"member", "reviewer", "admin"}, role) || !slices.Contains([]string{"active", "disabled"}, status) {
 		return nil, fault.Invalid
@@ -224,6 +227,11 @@ func (s *Service) UpdateAccount(ctx context.Context, r Request, id, role, status
 	})
 }
 func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, members []string, version int64) ([]byte, error) {
+	id = strings.ToLower(id)
+	members = append([]string(nil), members...)
+	for i := range members {
+		members[i] = strings.ToLower(members[i])
+	}
 	r.Credentials.Write = true
 	if utf8.RuneCountInString(name) < 1 || utf8.RuneCountInString(name) > 100 || len(members) > 10000 {
 		return nil, fault.Invalid
@@ -341,6 +349,11 @@ func managedGrants(p Policy) map[string]bool {
 	return out
 }
 func (s *Service) UpdatePolicy(ctx context.Context, r Request, id string, proposed Policy, expected int64) ([]byte, error) {
+	id = strings.ToLower(id)
+	proposed.Grants = append([]Grant(nil), proposed.Grants...)
+	for i := range proposed.Grants {
+		proposed.Grants[i].SubjectID = strings.ToLower(proposed.Grants[i].SubjectID)
+	}
 	r.Credentials.Write = true
 	if !identity.ValidID(id) {
 		return nil, fault.Invalid

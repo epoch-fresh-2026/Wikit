@@ -7,6 +7,7 @@
 ## 统一约定
 
 - 基础路径 `/api/v1`，JSON UTF-8；ID 使用 UUID，时间 RFC 3339 UTC。
+- UUID 输入接受大小写十六进制，Core 统一为小写后比较主体、组成员和幂等操作范围。
 - Cookie 会话或 Bearer Token 二选一；若两者同时提供且身份不同，返回
   `invalid_request`。匿名读取仅开放公开对象。
 - 变更会话请求校验 Origin 和 X-CSRF-Token；登录、注册校验 Origin，
