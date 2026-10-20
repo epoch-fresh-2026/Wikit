@@ -45,6 +45,28 @@ type Actor struct {
 	Method     string
 	Generation int64
 }
+
+// Principal is safe authentication metadata for a transport's session binding.
+type Principal struct {
+	ID                      string
+	AuthVersion, Generation int64
+}
+
+func (s *Service) Authenticate(ctx context.Context, c Credentials) (Principal, error) {
+	var out Principal
+	err := s.repo.WithinIdentity(ctx, func(tx Tx) error {
+		a, err := Require(ctx, tx, c)
+		if err == nil {
+			out = Principal{a.ID, a.AuthVersion, a.Generation}
+		}
+		return err
+	})
+	if err != nil {
+		return Principal{}, err
+	}
+	return out, nil
+}
+
 type Audit struct {
 	ID        string    `json:"id"`
 	ActorID   *string   `json:"actor_id"`

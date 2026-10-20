@@ -93,11 +93,9 @@ func response(w http.ResponseWriter, code int, value any) {
 	}
 }
 func failure(w http.ResponseWriter, err error, requestID string) {
-	code := "internal_error"
 	status := 500
 	var business fault.Error
 	if errors.As(err, &business) {
-		code = string(business)
 		switch business {
 		case fault.BadRequest:
 			status = 400
@@ -122,12 +120,7 @@ func failure(w http.ResponseWriter, err error, requestID string) {
 			w.Header().Set("Retry-After", "60")
 		}
 	}
-	detail := map[string]any{"code": code, "message": code, "request_id": requestID}
-	var conflicts *fault.Conflicts
-	if errors.As(err, &conflicts) {
-		detail["conflicts"] = conflicts.Fields
-	}
-	response(w, status, map[string]any{"error": detail})
+	response(w, status, fault.Response(err, requestID))
 }
 func (a API) cookie(w http.ResponseWriter, value string, clear bool) {
 	u, _ := url.Parse(a.PublicURL)
@@ -376,5 +369,5 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 	response(w, status, result)
 }
 func request(r *http.Request, c identity.Credentials, id string, body []byte) access.Request {
-	return access.Request{Credentials: c, ID: id, Key: r.Header.Get("Idempotency-Key"), Hash: identity.Digest(string(body))}
+	return access.Request{Credentials: c, ID: id, Key: r.Header.Get("Idempotency-Key"), Hash: access.JSONHash(body)}
 }

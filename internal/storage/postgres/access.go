@@ -140,7 +140,7 @@ func (t *securityTx) Replay(ctx context.Context, actor, operation, key, hash str
 	if err != nil {
 		return nil, storageError(err)
 	}
-	if previous != hash {
+	if !access.SameRequestHash(previous, hash) {
 		return nil, fault.Idempotency
 	}
 	return result, nil

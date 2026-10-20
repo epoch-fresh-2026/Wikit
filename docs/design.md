@@ -39,6 +39,7 @@ Issue #4 实现页面创建、当前/历史读取、首提案及候选历史读�
 Issue #5 实现审核与原子发布，Issue #6 实现上传、固定版本下载和安全 GC；搜索投影仍属 #8。
 Issue #7 实现 Page Issue、不可变评论、同 Page 提案关联与显式治理视图；权限与状态规则见协作文档和 ADR 0012。
 Issue #8 实现中英文搜索、事务 outbox 和索引恢复；最终响应由 Core 复核当前 ACL 与发布版本，见 ADR 0013。
+Issue #9 实现官方 SDK 的 Streamable HTTP MCP，41 个工具直接复用 Core；session 与当前凭证绑定，见 ADR 0014。
 约束测试可使用数据库 fixture，正常发布用例必须走审核合并。创建不产生发布版本或搜索事件。
 
 标题去首尾空白并做 NFC，保留大小写；标签输出为 NFC + Unicode case fold 后的 key，

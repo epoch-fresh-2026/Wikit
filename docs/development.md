@@ -6,8 +6,14 @@ Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 
 PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Issue #4 增加页面
 创建/读取、首提案和历史读取；Issue #5 增加审核、原子合并、三方 rebase 与撤销/恢复。
 Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue #7 增加页面议题、评论、
-同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。MCP 与可部署 v0.1 仍待后续实现。
+同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。可部署 v0.1 仍待后续实现。
 前端、容器与 release_ready 保持关闭。
+
+Issue #9 增加官方 Go MCP SDK v1.7.0 和 jsonschema-go v0.4.3，协议依赖只在适配器/组合根使用。
+`serve` 同时提供 REST 和 /mcp；MCP 只使用用户 Bearer Token，空闲 session 15 分钟过期。
+集成测试使用真实 SDK StreamableClientTransport，而非手写协议替代客户端；覆盖全部 41 工具、
+REST/MCP 幂等/游标/错误等价，以及账户/组/页面撤权与真实合并的两种提交顺序。
+MCP 不接收二进制工具参数；upload_prepare 返回同源上传路径，再用同一 Token PUT 原件。
 
 Issue #8 增加 Meilisearch 1.55.0 的中英文搜索、可恢复 outbox worker 和 search-rebuild/retry/status。
 本地测试额外要求 WIKIT_MEILI_URL、WIKIT_MEILI_KEY 指向专用 Meilisearch；测试使用独立索引，

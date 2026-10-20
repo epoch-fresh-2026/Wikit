@@ -12,7 +12,8 @@ atomic publication, three-way rebase and revert/restore proposals, backed by Pos
 tests. Media uploads, authorized Range downloads and safe local GC are implemented.
 Page Issues, immutable comments, proposal associations and audited moderation are implemented.
 Chinese/English search, durable indexing tasks and full index rebuilds are implemented with Meilisearch.
-MCP and deployment remain unimplemented; no production image has been released.** See the
+The official Go SDK serves 41 authenticated MCP tools using the same Core.
+Deployment remains unimplemented; no production image has been released.** See the
 [implementation roadmap](docs/roadmap.md) and
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
 

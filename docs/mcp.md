@@ -21,6 +21,7 @@ Cookie 不作为 MCP 认证来源，不提供凭证管理、OAuth discovery、re
 该固定 Host 策略取代 SDK 对 loopback 连接的启发式检查，支持反向代理保留站点 Host。
 SDK 协议处理器使用 JSON 响应；初始化与 session 生命周期仍遵循 Streamable HTTP。
 整个消息上限 6 MiB，工具 body 另沿用对应 REST 的 64 KiB/1 MiB/5 MiB 上限。
+每个请求有 15 秒处理时限，客户端重连和重试仍须使用当前 Token；写入重试沿用幂等 key。
 
 工具机器目录为 [mcp-tools.json](../api/mcp-tools.json)，每个工具有独立、可编译的
 JSON Schema inputSchema/outputSchema、annotations 和对应 REST operationId。
