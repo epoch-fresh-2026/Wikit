@@ -94,6 +94,7 @@ func TestPROP04MediaScalarsAndROLL01OriginalReuse(t *testing.T) {
 	}
 	last := s.publish(t, admin, restored, &head.ID, "media-restored-head")
 	s.req(t, "POST", "pages/"+page.Page.ID+"/proposals", map[string]any{"expected_head_revision_id": last.ID, "snapshot": content.Snapshot{Type: "media", Title: "Steal", Tags: []string{}, Description: ptr(""), BlobID: ptr(s.blobFixture(t, owner.ID, true))}}, editor, "unassociated-blob-key", 404)
+	s.req(t, "POST", "pages/"+page.Page.ID+"/proposals", map[string]any{"expected_head_revision_id": last.ID, "snapshot": content.Snapshot{Type: "media", Title: "Steal pending", Tags: []string{}, Description: ptr(""), BlobID: ptr(s.blobFixture(t, owner.ID, false))}}, editor, "unassociated-pending-key", 404)
 	// Missing/unavailable originals must fail explicitly, without substituting head.
 	execSQL(t, s.db.conn, "UPDATE wikit.blobs SET state='deleting' WHERE id='"+firstBlob+"'")
 	s.req(t, "POST", "pages/"+page.Page.ID+"/restore", map[string]any{"revision_id": base.ID, "expected_head_revision_id": last.ID}, editor, "unavailable-original", 409)

@@ -190,9 +190,6 @@ func (s *Service) prepare(ctx context.Context, tx Tx, c identity.Credentials, v 
 		if err != nil {
 			return out, nil, err
 		}
-		if b.State != "ready" {
-			return out, nil, fault.State
-		}
 		if v.actor.Role != "admin" && b.Uploader != v.actor.ID {
 			used, err := tx.BlobOnPage(ctx, v.page.ID, b.ID)
 			if err != nil {
@@ -201,6 +198,9 @@ func (s *Service) prepare(ctx context.Context, tx Tx, c identity.Credentials, v 
 			if !used {
 				return out, nil, fault.NotFound
 			}
+		}
+		if b.State != "ready" {
+			return out, nil, fault.State
 		}
 	}
 	err = content.CheckReferences(ctx, tx, c, refs)
