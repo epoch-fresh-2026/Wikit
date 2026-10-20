@@ -311,7 +311,7 @@ export function buildContracts() {
     }
     const operation = {
       operationId: o.name, tags: [o.tag], summary: o.summary,
-      description: `${o.summary}。${implementedRest.has(o.name) ? 'REST 已实现；MCP 适配器尚未实现。' : '目标行为尚未实现。'}业务权限与状态机见 docs/api.md 及 docs/permissions.md。`,
+      description: `${o.summary}。${implementedRest.has(o.name) ? (o.mcp === false ? 'REST 已实现；此操作不提供 MCP 工具。' : 'REST 与 MCP 工具已实现。') : '目标行为尚未实现。'}业务权限与状态机见 docs/api.md 及 docs/permissions.md。`,
       security: o.anonymous ? [] : o.sessionOnly ? [{ session: [] }] : o.public ? [{}, { session: [] }, { bearer: [] }] : [{ session: [] }, { bearer: [] }],
       parameters, responses,
     };
@@ -349,7 +349,7 @@ export function buildContracts() {
     openapi: '3.1.0',
     info: {
       title: 'Wikit REST API', version: '0.1.0',
-      description: '已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚及媒体上传/下载 REST 已实现，其余逐项实现。所有传输入口复用 Core。',
+      description: '已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚、讨论、媒体上传/下载及搜索 REST 已实现；目录内 MCP 工具已实现。所有传输入口复用 Core。',
       license: { name: 'MIT', identifier: 'MIT' },
     },
     servers: [{ url: 'https://wiki.example.com/api/v1', description: '替换为自托管站点地址' }],

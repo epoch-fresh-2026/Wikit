@@ -3,7 +3,7 @@
   "info": {
     "title": "Wikit REST API",
     "version": "0.1.0",
-    "description": "已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚及媒体上传/下载 REST 已实现，其余逐项实现。所有传输入口复用 Core。",
+    "description": "已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚、讨论、媒体上传/下载及搜索 REST 已实现；目录内 MCP 工具已实现。所有传输入口复用 Core。",
     "license": {
       "name": "MIT",
       "identifier": "MIT"
@@ -53,7 +53,7 @@
           "Accounts"
         ],
         "summary": "注册账户并显示一次 Token",
-        "description": "注册账户并显示一次 Token。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "注册账户并显示一次 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [],
         "parameters": [],
         "responses": {
@@ -120,7 +120,7 @@
           "Accounts"
         ],
         "summary": "登录并建立安全会话",
-        "description": "登录并建立安全会话。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "登录并建立安全会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [],
         "parameters": [],
         "responses": {
@@ -187,7 +187,7 @@
           "Accounts"
         ],
         "summary": "注销当前会话",
-        "description": "注销当前会话。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "注销当前会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -252,7 +252,7 @@
           "Accounts"
         ],
         "summary": "获取当前账户",
-        "description": "获取当前账户。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "获取当前账户。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -316,7 +316,7 @@
           "Accounts"
         ],
         "summary": "修改密码并撤销会话",
-        "description": "修改密码并撤销会话。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "修改密码并撤销会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -391,7 +391,7 @@
           "Accounts"
         ],
         "summary": "查询账户 Token 状态",
-        "description": "查询账户 Token 状态。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "查询账户 Token 状态。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -450,7 +450,7 @@
           "Accounts"
         ],
         "summary": "轮换唯一 Token",
-        "description": "轮换唯一 Token。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "轮换唯一 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -532,7 +532,7 @@
           "Accounts"
         ],
         "summary": "撤销账户 Token",
-        "description": "撤销账户 Token。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "撤销账户 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -607,7 +607,7 @@
           "Administration"
         ],
         "summary": "管理员列出账户",
-        "description": "管理员列出账户。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员列出账户。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -692,7 +692,7 @@
           "Administration"
         ],
         "summary": "管理员更新角色或状态",
-        "description": "管理员更新角色或状态。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员更新角色或状态。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -797,7 +797,7 @@
           "Administration"
         ],
         "summary": "管理员列出用户组",
-        "description": "管理员列出用户组。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员列出用户组。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -880,7 +880,7 @@
           "Administration"
         ],
         "summary": "管理员创建用户组",
-        "description": "管理员创建用户组。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员创建用户组。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -976,7 +976,7 @@
           "Administration"
         ],
         "summary": "管理员更新组及成员",
-        "description": "管理员更新组及成员。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员更新组及成员。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1081,7 +1081,7 @@
           "Administration"
         ],
         "summary": "管理员查询审计事件",
-        "description": "管理员查询审计事件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员查询审计事件。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1166,7 +1166,7 @@
           "Pages"
         ],
         "summary": "列出当前可读已发布页面",
-        "description": "列出当前可读已发布页面。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出当前可读已发布页面。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1271,7 +1271,7 @@
           "Pages"
         ],
         "summary": "创建页面及首个提案",
-        "description": "创建页面及首个提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "创建页面及首个提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1367,7 +1367,7 @@
           "Pages"
         ],
         "summary": "读取页面当前发布内容",
-        "description": "读取页面当前发布内容。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取页面当前发布内容。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1442,7 +1442,7 @@
           "Pages"
         ],
         "summary": "管理者读取页面权限",
-        "description": "管理者读取页面权限。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者读取页面权限。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1514,7 +1514,7 @@
           "Pages"
         ],
         "summary": "管理者替换页面授权策略",
-        "description": "管理者替换页面授权策略。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者替换页面授权策略。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1619,7 +1619,7 @@
           "Pages"
         ],
         "summary": "管理者隐藏或恢复页面",
-        "description": "管理者隐藏或恢复页面。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者隐藏或恢复页面。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1724,7 +1724,7 @@
           "Pages"
         ],
         "summary": "列出页面发布历史",
-        "description": "列出页面发布历史。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出页面发布历史。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1819,7 +1819,7 @@
           "Pages"
         ],
         "summary": "读取明确发布版本",
-        "description": "读取明确发布版本。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取明确发布版本。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1903,7 +1903,7 @@
           "Media"
         ],
         "summary": "鉴权后读取固定版本原件",
-        "description": "鉴权后读取固定版本原件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "鉴权后读取固定版本原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2124,7 +2124,7 @@
           "Proposals"
         ],
         "summary": "列出可读的提案审核队列",
-        "description": "列出可读的提案审核队列。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出可读的提案审核队列。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2223,7 +2223,7 @@
           "Proposals"
         ],
         "summary": "列出页面提案",
-        "description": "列出页面提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出页面提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2316,7 +2316,7 @@
           "Proposals"
         ],
         "summary": "提交单页面修改提案",
-        "description": "提交单页面修改提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "提交单页面修改提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -2421,7 +2421,7 @@
           "Proposals"
         ],
         "summary": "读取提案及当前候选",
-        "description": "读取提案及当前候选。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取提案及当前候选。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2496,7 +2496,7 @@
           "Proposals"
         ],
         "summary": "读取不可变候选历史",
-        "description": "读取不可变候选历史。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取不可变候选历史。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2589,7 +2589,7 @@
           "Proposals"
         ],
         "summary": "提交候选更新或已解决冲突",
-        "description": "提交候选更新或已解决冲突。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "提交候选更新或已解决冲突。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -2694,7 +2694,7 @@
           "Media"
         ],
         "summary": "鉴权后读取候选媒体原件",
-        "description": "鉴权后读取候选媒体原件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "鉴权后读取候选媒体原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2915,7 +2915,7 @@
           "Proposals"
         ],
         "summary": "对比基础与候选并标记过期",
-        "description": "对比基础与候选并标记过期。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "对比基础与候选并标记过期。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2990,7 +2990,7 @@
           "Proposals"
         ],
         "summary": "三方合并至当前发布版本并使审核失效",
-        "description": "三方合并至当前发布版本并使审核失效。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "三方合并至当前发布版本并使审核失效。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3095,7 +3095,7 @@
           "Proposals"
         ],
         "summary": "列出审核记录",
-        "description": "列出审核记录。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出审核记录。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -3188,7 +3188,7 @@
           "Proposals"
         ],
         "summary": "对明确版本提交审核",
-        "description": "对明确版本提交审核。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "对明确版本提交审核。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3293,7 +3293,7 @@
           "Proposals"
         ],
         "summary": "原子合并经有效审核的提案",
-        "description": "原子合并经有效审核的提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "原子合并经有效审核的提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3398,7 +3398,7 @@
           "Proposals"
         ],
         "summary": "关闭或重开提案",
-        "description": "关闭或重开提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "关闭或重开提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3503,7 +3503,7 @@
           "Pages"
         ],
         "summary": "为撤销一次发布创建提案",
-        "description": "为撤销一次发布创建提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "为撤销一次发布创建提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3608,7 +3608,7 @@
           "Pages"
         ],
         "summary": "为恢复旧快照创建提案",
-        "description": "为恢复旧快照创建提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "为恢复旧快照创建提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3713,7 +3713,7 @@
           "Discussions"
         ],
         "summary": "列出页面议题",
-        "description": "列出页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -3826,7 +3826,7 @@
           "Discussions"
         ],
         "summary": "创建页面议题",
-        "description": "创建页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "创建页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3931,7 +3931,7 @@
           "Discussions"
         ],
         "summary": "读取页面议题",
-        "description": "读取页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -4014,7 +4014,7 @@
           "Discussions"
         ],
         "summary": "关闭或重开页面议题",
-        "description": "关闭或重开页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "关闭或重开页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4119,7 +4119,7 @@
           "Discussions"
         ],
         "summary": "关联同页面提案",
-        "description": "关联同页面提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "关联同页面提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4224,7 +4224,7 @@
           "Discussions"
         ],
         "summary": "管理者隐藏或恢复议题",
-        "description": "管理者隐藏或恢复议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者隐藏或恢复议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4329,7 +4329,7 @@
           "Discussions"
         ],
         "summary": "读取可见评论",
-        "description": "读取可见评论。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取可见评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -4430,7 +4430,7 @@
           "Discussions"
         ],
         "summary": "追加议题评论",
-        "description": "追加议题评论。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "追加议题评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4535,7 +4535,7 @@
           "Discussions"
         ],
         "summary": "管理者隐藏或恢复评论",
-        "description": "管理者隐藏或恢复评论。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者隐藏或恢复评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4640,7 +4640,7 @@
           "Media"
         ],
         "summary": "预约鉴权媒体上传",
-        "description": "预约鉴权媒体上传。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "预约鉴权媒体上传。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4736,7 +4736,7 @@
           "Media"
         ],
         "summary": "流式写入媒体原件",
-        "description": "流式写入媒体原件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "流式写入媒体原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4891,7 +4891,7 @@
           "Media"
         ],
         "summary": "上传者读取上传状态",
-        "description": "上传者读取上传状态。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "上传者读取上传状态。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4965,7 +4965,7 @@
           "Search"
         ],
         "summary": "列出当前可读页面的标签",
-        "description": "列出当前可读页面的标签。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出当前可读页面的标签。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -5051,7 +5051,7 @@
           "Search"
         ],
         "summary": "检索并校验当前权限及版本",
-        "description": "检索并校验当前权限及版本。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "检索并校验当前权限及版本。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {

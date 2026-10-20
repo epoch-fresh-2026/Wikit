@@ -16,6 +16,7 @@ import (
 	"time"
 
 	httpadapter "github.com/epoch-fresh-2026/Wikit/internal/adapters/http"
+	mcpadapter "github.com/epoch-fresh-2026/Wikit/internal/adapters/mcp"
 	"github.com/epoch-fresh-2026/Wikit/internal/config"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/discussions"
@@ -150,6 +151,24 @@ func run(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	pageService := pages.New(db, secrets, textadapter.Parser{}, files)
+	proposalService := proposals.New(db, secrets, textadapter.Parser{}, textadapter.Differ{}, files)
+	discussionService := discussions.New(db, secrets, textadapter.Parser{})
+	mediaService := media.New(db, files, secrets, cfg.MaxUploadBytes)
+	searchService := search.New(db, index, textadapter.Parser{}, secrets)
+	accessService := access.New(db, secrets)
+	mcpEndpoint, err := mcpadapter.New(mcpadapter.Services{Identity: accounts, Access: accessService, Pages: pageService, Proposals: proposalService, Discussions: discussionService, Media: mediaService, Search: searchService, Secrets: secrets, PublicURL: cfg.PublicURL})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := mcpEndpoint.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, "MCP session shutdown failed")
+		}
+	}()
+	router := http.NewServeMux()
+	router.Handle("/mcp", mcpEndpoint)
+	router.Handle("/", (httpadapter.API{Search: searchService, Discussions: discussionService, Identity: accounts, Access: accessService, Pages: pageService, Proposals: proposalService, Media: mediaService, Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)))
 	listener, err := net.Listen("tcp", cfg.ListenAddr)
 	if err != nil {
 		return errors.New("HTTP listener failed")
@@ -158,7 +177,7 @@ func run(ctx context.Context, args []string) error {
 	workerDone := runSearchWorker(workerCtx, searchWorker)
 	defer func() { stopWorker(); <-workerDone }()
 	server := &http.Server{
-		Handler: (httpadapter.API{Search: search.New(db, index, textadapter.Parser{}, secrets), Discussions: discussions.New(db, secrets, textadapter.Parser{}), Identity: accounts, Access: access.New(db, secrets), Pages: pages.New(db, secrets, textadapter.Parser{}, files), Proposals: proposals.New(db, secrets, textadapter.Parser{}, textadapter.Differ{}, files), Media: media.New(db, files, secrets, cfg.MaxUploadBytes), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
+		Handler: router, ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
 	finished := make(chan error, 1)

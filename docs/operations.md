@@ -43,6 +43,12 @@ serve 要求至少一名活跃管理员。Issue #8 起 serve/search-rebuild 要�
 
 ## 初始化与升级
 
+Issue #9 的 /mcp 使用用户现有 Bearer Token，不配置额外共享服务 Token。
+生产反向代理保留 WIKIT_PUBLIC_URL 的 Host，使用 HTTPS；允许无 Origin 的非浏览器客户端，
+带 Origin 时必须匹配站点。每请求重新鉴权，session ID 不替代 Token，空闲 15 分钟过期。
+普通 JSON 请求总量上限 6 MiB，单工具 body 沿用 REST 上限。大文件先预约后走 HTTPS PUT。
+当前没有 OAuth discovery/授权页面；不能依靠 session ID、浏览器 Cookie 或工具参数认证。
+
 Issue #8 内置每秒检查的搜索 worker；单轮有 30 秒时限，异步 task UID 和重试状态持久化。
 `wikit search-rebuild` 构建新索引、追赶增量后切换数据库 active_index；失败时旧指针保留。
 `wikit search-retry` 将失败 outbox 的下一次尝试设为立即；`wikit search-status` 输出
