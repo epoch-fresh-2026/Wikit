@@ -1,6 +1,6 @@
 # 数据与事务设计
 
-本文件是逻辑模型，不是已经部署的 SQL migration。
+下列业务实体仍是逻辑模型，后续 Issue 逐步提供 SQL migration。
 ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
 
 ## 实体
@@ -77,3 +77,13 @@ GC 默认宽限期 7 天。提案的全部历史快照、发布历史、媒体�
 使用编号 SQL migrations；单独迁移命令负责锁与版本，不在多个实例启动时竞跑。
 schema 兼容性列入发行说明。生产不自动运行破坏性 down migration。
 数据库、原件是备份对象；搜索索引及派生文件是可重建数据。
+
+Issue #2 的首个迁移只建立 `wikit` schema，不提前创建业务表。
+内嵌 `internal/storage/postgres/migrations/NNNN_name.sql` 从 0001 连续编号；
+`public.wikit_schema_migrations` 记录编号、文件名、SHA-256 和 UTC 应用时间。
+独立 migrate 命令在一个事务内获取固定 transaction advisory lock，然后校验历史，
+应用全部待执行 SQL 并记录版本；失败回滚整批，取消／超时释放锁。
+已应用迁移不得修改；历史缺口、校验和差异、未知新版本均拒绝执行。
+应用启动与 readiness 均要求历史与本二进制内嵌迁移完全一致，不隐式升级数据库。
+SQL 文件通过 `.gitattributes` 固定 LF，避免跨平台 checkout 改变校验和。
+迁移 SQL 禁止自行控制事务或包含不能在事务内执行的语句；无 down 命令。

@@ -9,3 +9,4 @@
 - [0004 账户 Token 与 Agent 身份](0004-account-token.md)
 - [0005 外部全文检索与权威权限](0005-search-projection.md)
 - [0006 模块化单体与适配器边界](0006-modular-monolith.md)
+- [0007 内嵌 SQL 与事务迁移基础](0007-migration-foundation.md)

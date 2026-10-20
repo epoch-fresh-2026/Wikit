@@ -2,3 +2,6 @@
 *.png binary
 *.jpg binary
 *.pdf binary
+# SQL checksums must be identical on Windows and Linux.
+*.sql text eol=lf
+*.go text eol=lf

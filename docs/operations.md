@@ -1,6 +1,6 @@
 # 单机部署、备份与恢复
 
-状态：本文件为实现目标；仓库目前没有可运行应用或正式镜像。
+状态：Issue #2 提供可运行的后端健康与迁移基础；产品部署仍为实现目标，无正式镜像。
 部署阶段须提交真实 Dockerfile、compose.yaml、环境示例与 smoke 测试后才能发布。
 
 ## 目标拓扑
@@ -30,6 +30,14 @@ Compose 包含 wikit、PostgreSQL、Meilisearch。只向宿主暴露应用端口
 启动时检查关键配置与连接。`/health/live` 表示进程可运行；
 `/health/ready` 检查数据库、迁移兼容性和媒体写入能力。
 搜索不可用标记降级并告警，不阻止数据库读写服务；搜索 API 返回 503。
+
+目前仅实现健康端点：GET `/health/live` 返回进程状态，GET `/health/ready`
+检查数据库及精确迁移历史、媒体目录临时文件写入／同步／删除。
+失败只返回通用 unavailable，不暴露连接信息；检查 context 超时为 2 秒。
+本地文件系统调用不能被 context 中断，故不承诺故障磁盘下的硬性响应时限。
+启动先验证上述依赖，失败则不监听。`WIKIT_PUBLIC_URL` 接受 HTTPS 或仅本机
+HTTP（localhost／loopback IP），禁止凭证、查询和 fragment；监听地址默认 `:8080`。
+其余业务配置在对应 Issue 实现，当前不要求 Meilisearch key。
 
 ## 初始化与升级
 
