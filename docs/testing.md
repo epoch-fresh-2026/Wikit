@@ -3,6 +3,15 @@
 当前 `npm run check` 验证文档、契约和仓库配置，不验证尚未实现的业务。
 以下条目作为实现 Issue 的验收基线。
 
+Issue #5 的真实 REST/Core/PostgreSQL 测试覆盖 PROP-01～05、ROLL-01，以及真实合并入口的 ACL-03：
+自审、审核轮次与失效、最新有效立场、并发 head 竞争、结构化冲突、重新审核、
+回滚保留历史与 ACL、提交失败回滚 outbox/审计/幂等结果。
+账户、组和页面撤权与合并使用可控事务屏障验证两种提交顺序。
+diff/review 读取也验证当前 ACL；讨论、媒体下载和 MCP 验收继续在 #3 保留。
+本地验证：`npm run check`、`go vet ./...`、`go test -race -count=1 ./...`、
+`go test -race -count=1 -tags=integration ./tests/integration/...`；
+Windows amd64、Go 1.25.0、PostgreSQL 18.6。没有运行尚未实现的前端、容器和 MCP 检查。
+
 Issue #4 覆盖创建原子性/幂等、未发布目录隔离、Unicode/NFC/case-fold、Page 类型稳定、
 快照不可变、跨 Page/Proposal 复合外键拒绝、固定媒体版本及非媒体/未发布目标拒绝。
 ACL-02 的当前页、发布历史和候选读取使用真实 REST/Core/PostgreSQL 验证撤权、隐藏及游标。

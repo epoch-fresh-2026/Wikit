@@ -12,6 +12,11 @@ import (
 )
 
 func (a API) pageRoute(r *http.Request, c identity.Credentials, requestID, path, ip string) (any, int, error) {
+	if a.Proposals != nil {
+		if out, status, err, handled := a.proposalRoute(r, c, requestID, path); handled {
+			return out, status, err
+		}
+	}
 	if path == "pages" && r.Method == "POST" {
 		var input struct {
 			Visibility string           `json:"visibility"`

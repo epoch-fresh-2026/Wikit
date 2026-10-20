@@ -28,6 +28,12 @@
 
 ## 版本字段的含义
 
+Issue #5 增加提案创建/更新/状态、明确版本审核、审核历史/diff、rebase、merge 和
+revert/restore 的 REST 入口。所有写入要求 Idempotency-Key；nullable head 字段必须
+显式提供（首次发布为 null）。审核缺失或有当前有效负面立场返回 review_required；
+三方冲突返回 merge_conflict 与 conflicts 的 B/H/P，不写入候选。媒体原件端点仍待 #6，
+MCP 目录仍只是目标契约。合并的 outbox 事件已持久化，投递 worker 待 #8。
+
 Issue #4 实现 POST/GET `/pages`、GET `/pages/{id}`、发布历史列表/明确版本、
 提案队列/详情/候选历史及标签列表。未发布 Page 的详情仅有元数据与 null revision，
 候选内容只在提案视图返回。目录与标签只从可读、未隐藏、已发布 head 生成。

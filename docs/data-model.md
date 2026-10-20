@@ -5,6 +5,11 @@ ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
 
 ## 实体
 
+Issue #5 的 0004 migration 增加不可变 reviews（递增 sequence、明确候选/base/round）与
+outbox_events。审核候选与提案使用复合外键；合并写入发布快照、关联、head、提案状态、
+审计、outbox 与幂等结果，一次提交。沿用授权事务锁，再依次行锁 Page、Proposal。
+此阶段只持久化待投递事件，搜索投递 worker 仍属于 #8。
+
 Issue #4 的 0003 migration 增加 pages、revisions、proposals、proposal_revisions、
 blobs 元数据、tags、两类快照标签关联及两类快照媒体引用。blobs 只有元数据模型与
 ready 检查，上传/原件存储实现仍属于 #6。页面类型创建后不可变；治理属性继续由

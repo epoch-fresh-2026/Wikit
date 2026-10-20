@@ -20,6 +20,7 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/health"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 	"github.com/epoch-fresh-2026/Wikit/internal/security"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/blobfs"
 	textadapter "github.com/epoch-fresh-2026/Wikit/internal/text"
@@ -65,7 +66,7 @@ func newSuite(t *testing.T) *suite {
 		t.Fatal(err)
 	}
 	s.adminToken = plain
-	api := httpadapter.API{Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}), Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
+	api := httpadapter.API{Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}), Proposals: proposals.New(db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}), Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
 	s.server = httptest.NewServer(api.Handler(httpadapter.NewHandler(health.New(db.store, blobfs.Probe{Root: t.TempDir()}))))
 	t.Cleanup(s.server.Close)
 	return s

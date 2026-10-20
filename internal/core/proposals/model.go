@@ -1,4 +1,4 @@
-// Package proposals owns proposal identities and immutable candidate values.
+// Package proposals owns candidate histories, review rounds and publication use cases.
 package proposals
 
 import (

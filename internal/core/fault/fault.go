@@ -15,4 +15,17 @@ const (
 	State           Error = "invalid_state"
 	Limited         Error = "rate_limited"
 	Idempotency     Error = "idempotency_conflict"
+	ReviewRequired  Error = "review_required"
+	MergeConflict   Error = "merge_conflict"
 )
+
+type Conflict struct {
+	Path   string  `json:"path"`
+	Base   *string `json:"base"`
+	Ours   *string `json:"ours"`
+	Theirs *string `json:"theirs"`
+}
+type Conflicts struct{ Fields []Conflict }
+
+func (e *Conflicts) Error() string { return string(MergeConflict) }
+func (e *Conflicts) Unwrap() error { return MergeConflict }

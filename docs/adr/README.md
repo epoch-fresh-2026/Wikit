@@ -12,3 +12,4 @@
 - [0007 内嵌 SQL 与事务迁移基础](0007-migration-foundation.md)
 - [0008 账户与页面授权事务](0008-security-transactions.md)
 - [0009 页面快照与固定媒体引用](0009-page-snapshots.md)
+- [0010 提案发布与逐行三方合并](0010-proposal-publication.md)
