@@ -16,3 +16,4 @@
 - [0011 媒体文件提交与 GC](0011-media-files-and-gc.md)
 - [0012 页面讨论与显式治理视图](0012-discussion-governance.md)
 - [0013 搜索投影与恢复](0013-search-projection-recovery.md)
+- [0014 MCP 传输与 Core 等价性](0014-mcp-core-parity.md)

@@ -6,6 +6,10 @@
 
 ## 统一约定
 
+Issue #9 增加 /mcp 的 41 个目录工具，直接复用既有 Core。REST/MCP 的 JSON body 幂等摘要
+忽略对象字段顺序和无意义空白，保留数字词法；旧原始字节摘要仍兼容原 body 字节的重试。
+稳定错误 DTO 共用，工具业务拒绝通过 isError 与同一 error JSON 返回；协议身份失败在执行前处理。
+
 Issue #8 实现 GET /search：q、tag、limit、cursor；拒绝其他查询参数，避免客户端控制
 候选权限过滤。返回 SearchHitList，不返回总数、facet 或搜索引擎原始摘要。
 当前 head/policy_version 不匹配的候选跳过并安排修复；索引不可用返回 search_unavailable / 503。
