@@ -87,6 +87,7 @@ issues_list、issue_get、comments_list 支持 include_hidden=true 的管理视�
 游标绑定当前身份、源 Page/Issue、状态、管理模式和页大小；先鉴权与过滤再分页。
 幂等重放也检查当前 Page 与讨论可见性，隐藏后的正文不从旧响应缓存返回。
 moderation 要求 reason 与 expected_version；Page 使用 policy_version，Issue/评论使用各自 version。
+议题标题和治理理由的字符上限同时约束 NFC 规范化后的值；超限统一返回 validation_failed。
 
 Issue #3 实现 `/auth/*`、账户/用户组/审计管理及页面 policy 接口；页面内容、历史、
 提案、讨论与下载仍由后续 Issue 提供。ACL 可以对已存在的页面策略操作；本阶段无公开

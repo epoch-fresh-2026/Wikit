@@ -24,6 +24,9 @@ func (s *Service) Moderate(ctx context.Context, r access.Request, id string, hid
 	}
 	r.Credentials.Write = true
 	reason = s.text.NFC(strings.TrimSpace(reason))
+	if utf8.RuneCountInString(reason) > 2000 {
+		return Page{}, fault.Invalid
+	}
 	var out Page
 	err := s.repo.WithinPages(ctx, func(tx Tx) error {
 		if _, err := identity.Require(ctx, tx, r.Credentials); err != nil {

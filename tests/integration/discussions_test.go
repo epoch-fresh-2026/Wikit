@@ -302,6 +302,10 @@ func TestDISC04AtomicFailureAndInputLimits(t *testing.T) {
 	s.req(t, "POST", path+"/comments", map[string]any{"body": strings.Repeat("知", 65537)}, admin, "too-long-comment-key", 422)
 	s.req(t, "POST", path+"/comments", map[string]any{"body": "\x00"}, admin, "nul-comment-key", 422)
 	s.req(t, "GET", path+"?include_hidden=invalid", nil, admin, "", 400)
+	s.req(t, "POST", "pages/"+p.Page.ID+"/issues", map[string]any{"title": strings.Repeat("\u0344", 151), "body": ""}, admin, "expanded-title-key", 422)
+	for _, target := range []string{path, "pages/" + p.Page.ID} {
+		s.req(t, "POST", target+"/moderation", map[string]any{"hidden": true, "reason": strings.Repeat("\u0344", 1001), "expected_version": 1}, admin, "expanded-reason-key", 422)
+	}
 }
 
 func TestDISC07ConcurrentStateAndIdempotencyConflict(t *testing.T) {

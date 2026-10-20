@@ -174,6 +174,9 @@ func (s *Service) Create(ctx context.Context, r access.Request, page, title, bod
 		return Issue{}, fault.Invalid
 	}
 	title = s.text.NFC(strings.TrimSpace(title))
+	if !textValid(title, 300, true) {
+		return Issue{}, fault.Invalid
+	}
 	if err := s.limit(ctx, r, "page", page, "issue.create", ip); err != nil {
 		return Issue{}, err
 	}
@@ -272,6 +275,9 @@ func (s *Service) Moderate(ctx context.Context, r access.Request, scope, id stri
 		return nil, fault.Invalid
 	}
 	reason = s.text.NFC(strings.TrimSpace(reason))
+	if !textValid(reason, 2000, true) {
+		return nil, fault.Invalid
+	}
 	if scope == "issue" {
 		return write(ctx, s, r, scope, id, "issue.moderate", true, func(tx Tx, v loaded) (Issue, error) {
 			if version != v.issue.Version {
