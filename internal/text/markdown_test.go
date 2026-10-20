@@ -5,6 +5,7 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -26,6 +27,18 @@ func TestSnapshotNormalizationAndMarkdown(t *testing.T) {
 		}
 	}
 	link := "/api/v1/pages/00000000-0000-4000-8000-000000000001/revisions/00000000-0000-4000-8000-000000000002/content"
+	for _, variant := range []string{
+		strings.Replace(link, "/v1/", "/v1/./", 1),
+		strings.Replace(link, "/v1/", "/v1//", 1),
+		strings.Replace(link, "/v1/", "/v1/unused/../", 1),
+		strings.Replace(link, "/v1/", "/v1/%2e/", 1),
+		strings.Replace(link, "/v1/", "/v1/%5c", 1),
+	} {
+		in.Markdown = stringPtr("[x](" + variant + ")")
+		if _, _, err := content.Normalize(p, in); err != fault.Invalid {
+			t.Fatalf("noncanonical internal media reference accepted: %s", variant)
+		}
+	}
 	in.Markdown = stringPtr("![x][ref]\n\n[ref]: " + link + "\n\n[unused]: /api/v1/pages/invalid/content")
 	_, refs, err = content.Normalize(p, in)
 	if err != nil || len(refs) != 1 || refs[0].RevisionID != "00000000-0000-4000-8000-000000000002" {

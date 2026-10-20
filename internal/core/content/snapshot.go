@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/url"
+	"path"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -127,9 +128,10 @@ func Normalize(text Text, in Snapshot) (Snapshot, []MediaRef, error) {
 		if u.Scheme != "" && u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "mailto" {
 			return Snapshot{}, nil, fault.Invalid
 		}
-		if strings.HasPrefix(u.Path, "/api/v1/pages/") {
+		cleanPath := path.Clean(strings.ReplaceAll(u.Path, "\\", "/"))
+		if strings.HasPrefix(cleanPath, "/api/v1/pages/") {
 			parts := strings.Split(u.Path, "/")
-			if len(parts) != 8 || parts[5] != "revisions" || parts[7] != "content" || !identity.ValidID(parts[4]) || !identity.ValidID(parts[6]) || u.Host != "" || u.Scheme != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.RawPath != "" {
+			if u.Path != cleanPath || len(parts) != 8 || parts[5] != "revisions" || parts[7] != "content" || !identity.ValidID(parts[4]) || !identity.ValidID(parts[6]) || u.Host != "" || u.Scheme != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.RawPath != "" {
 				return Snapshot{}, nil, fault.Invalid
 			}
 			ref := MediaRef{strings.ToLower(parts[4]), strings.ToLower(parts[6])}

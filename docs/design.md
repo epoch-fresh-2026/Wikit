@@ -42,7 +42,7 @@ Issue #4 实现页面创建、当前/历史读取、首提案及候选历史读�
 标题去首尾空白并做 NFC，保留大小写；标签输出为 NFC + Unicode case fold 后的 key，
 去重并按 key 排序（不保留同 key 的显示变体）。Core 负责这些规则，Unicode 和
 CommonMark AST 解析通过消费方小接口注入。代码块里的 URL 不登记为媒体引用。
-内部媒体引用必须使用相对、固定发布版本 content 路径；拒绝未固定 revision 的引用、
+内部媒体引用必须使用相对、固定发布版本 content 路径；拒绝点段、重复斜杠、反斜杠等可规范化为内部路径的变体，以及未固定 revision 的引用、
 危险协议及 query/fragment 变体。原始 HTML 不作为可执行内容处理。
 
 - Page 的 UUID 是稳定标识。标题可重复、可修改，不作为路由或权限标识。
