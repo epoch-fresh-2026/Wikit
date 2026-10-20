@@ -3,6 +3,11 @@
 当前 `npm run check` 验证文档、契约和仓库配置，不验证尚未实现的业务。
 以下条目作为实现 Issue 的验收基线。
 
+Issue #4 覆盖创建原子性/幂等、未发布目录隔离、Unicode/NFC/case-fold、Page 类型稳定、
+快照不可变、跨 Page/Proposal 复合外键拒绝、固定媒体版本及非媒体/未发布目标拒绝。
+ACL-02 的当前页、发布历史和候选读取使用真实 REST/Core/PostgreSQL 验证撤权、隐藏及游标。
+真实审核合并、diff、下载与 MCP 的跨 Issue 验收继续在 #3 保留。
+
 Issue #3 通过真实 PostgreSQL 和 HTTP 验证 AUTH-01/02、ACL 角色矩阵、策略授予边界、
 组成员撤回、最后管理员保护、CSRF/Origin、单 Token、密码变更、限流、幂等及游标绑定。
 ACL-02/03 本阶段只验证共享授权边界及受控锁屏障下撤权与写入的提交顺序；

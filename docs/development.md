@@ -3,13 +3,14 @@
 ## 本轮与后续实现
 
 Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 迁移和真实
-PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；页面、提案、MCP
-产品接口与可部署 v0.1 仍待后续实现。
+PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Issue #4 增加页面
+创建/读取、首提案和历史读取。审核合并、上传下载、MCP 与可部署 v0.1 仍待后续实现。
 前端、容器与 release_ready 保持关闭。
 
 后端使用 Go 1.25.0、pgx v5.10.0、PostgreSQL 18.6（本地与 CI），依赖由
 go.mod/go.sum 锁定。Argon2id 使用 golang.org/x/crypto v0.53.0，终端使用
 golang.org/x/term v0.44.0（兼容 Go 1.25）；仅 composition root 装配实现。
+Unicode 原语使用 x/text v0.38.0，CommonMark 解析使用 Goldmark v1.8.6。
 
 ```sh
 go run ./cmd/wikit migrate

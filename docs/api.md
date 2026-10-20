@@ -28,6 +28,14 @@
 
 ## 版本字段的含义
 
+Issue #4 实现 POST/GET `/pages`、GET `/pages/{id}`、发布历史列表/明确版本、
+提案队列/详情/候选历史及标签列表。未发布 Page 的详情仅有元数据与 null revision，
+候选内容只在提案视图返回。目录与标签只从可读、未隐藏、已发布 head 生成。
+旧版本及候选始终检查当前源 Page ACL；媒体引用的 URL 不授予目标读取权限。
+页面创建使用 5 MiB 请求字节上限（同时保留字符上限），最多 1000 个不同媒体引用。
+媒体 Page 创建仅接受当前账户上传的 ready blob，管理员可代用；上传入口仍待 #6。
+列表使用当前 ACL 过滤后分页，游标绑定调用账户（匿名为独立身份）、查询与页大小。
+
 `expected_head_revision_id` 是调用时看到的当前发布 head，新页面为 null；
 `expected_proposal_revision_id` 是调用时看到的候选快照 ID。
 rebase 时前者是目标当前 head，候选仍保存旧 base。

@@ -5,6 +5,17 @@ ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
 
 ## 实体
 
+Issue #4 的 0003 migration 增加 pages、revisions、proposals、proposal_revisions、
+blobs 元数据、tags、两类快照标签关联及两类快照媒体引用。blobs 只有元数据模型与
+ready 检查，上传/原件存储实现仍属于 #6。页面类型创建后不可变；治理属性继续由
+page_policies 独占，API 显式组合，内容恢复不修改策略。
+
+复合外键约束 parent/base/head 的 Page 归属和 current candidate 的 Proposal 归属。
+发布来源 Proposal 唯一，父版本唯一（含 null）；写入发布版本时锁页面并校验旧 head，
+head 只可前进到其直接子版本。两个快照表及其标签/媒体关联禁止 UPDATE/DELETE/TRUNCATE。
+快照与关联在同一事务插入；媒体目标必须是已发布 media Revision，media 快照引用 ready blob。
+此阶段通过真实数据库约束测试验证这些性质，不提供绕过审核的发布命令。
+
 Issue #3 的 0002 migration 实现 users、user_tokens（含撤销后的代次记录）、sessions、
 groups/group_members、page_policies/page_grants、audit_events、auth_limits、
 idempotency_records 和 list_cursors。page_policies 持有页面 ACL 与状态，后续 pages

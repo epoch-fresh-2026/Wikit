@@ -18,10 +18,12 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 )
 
 type API struct {
 	Identity   *identity.Service
+	Pages      *pages.Service
 	Access     *access.Service
 	Secrets    identity.Secrets
 	PublicURL  string
@@ -35,12 +37,15 @@ func (a API) Handler(health http.Handler) http.Handler {
 	return mux
 }
 func decode(r *http.Request, dst any, fields ...string) ([]byte, error) {
+	return decodeLimit(r, dst, 65536, fields...)
+}
+func decodeLimit(r *http.Request, dst any, maximum int64, fields ...string) ([]byte, error) {
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || media != "application/json" {
 		return nil, fault.BadRequest
 	}
-	body, err := io.ReadAll(io.LimitReader(r.Body, 65537))
-	if err != nil || len(body) > 65536 || !utf8.Valid(body) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, maximum+1))
+	if err != nil || int64(len(body)) > maximum || !utf8.Valid(body) {
 		return nil, fault.BadRequest
 	}
 	d := json.NewDecoder(bytes.NewReader(body))
@@ -323,7 +328,11 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 			result, err = a.Access.UpdatePolicy(r.Context(), request(r, c, id, body), pageID, access.Policy{Visibility: input.Visibility, Grants: input.Grants}, *input.Version)
 		}
 	default:
-		err = fault.NotFound
+		if a.Pages != nil {
+			result, status, err = a.pageRoute(r, c, id, path, ip)
+		} else {
+			err = fault.NotFound
+		}
 	}
 	if err != nil {
 		failure(w, err, id)
