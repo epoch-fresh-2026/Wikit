@@ -1,0 +1,22 @@
+name: 缺陷
+description: 可复现问题与预期行为
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 版本、环境与复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 实际结果与预期结果
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: 设计影响与验证方式
+    validations:
+      required: true

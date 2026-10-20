@@ -1,0 +1,6595 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Wikit REST API",
+    "version": "0.1.0",
+    "description": "已锁定的 v0.1 设计契约；应用尚未实现。所有传输入口复用 Core。",
+    "license": {
+      "name": "MIT",
+      "identifier": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://wiki.example.com/api/v1",
+      "description": "替换为自托管站点地址"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Accounts",
+      "description": "Accounts 用例"
+    },
+    {
+      "name": "Administration",
+      "description": "Administration 用例"
+    },
+    {
+      "name": "Pages",
+      "description": "Pages 用例"
+    },
+    {
+      "name": "Media",
+      "description": "Media 用例"
+    },
+    {
+      "name": "Proposals",
+      "description": "Proposals 用例"
+    },
+    {
+      "name": "Discussions",
+      "description": "Discussions 用例"
+    },
+    {
+      "name": "Search",
+      "description": "Search 用例"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "operationId": "register",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "注册账户并显示一次 Token",
+        "description": "注册账户并显示一次 Token。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Registration"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "登录并建立安全会话",
+        "description": "登录并建立安全会话。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "注销当前会话",
+        "description": "注销当前会话。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "操作成功，无响应体"
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "account_me",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "获取当前账户",
+        "description": "获取当前账户。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/auth/password": {
+      "post": {
+        "operationId": "password_change",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "修改密码并撤销会话",
+        "description": "修改密码并撤销会话。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "操作成功，无响应体"
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/token": {
+      "get": {
+        "operationId": "token_status",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "查询账户 Token 状态",
+        "description": "查询账户 Token 状态。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "token_rotate",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "轮换唯一 Token",
+        "description": "轮换唯一 Token。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/token/revoke": {
+      "post": {
+        "operationId": "token_revoke",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "撤销账户 Token",
+        "description": "撤销账户 Token。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "操作成功，无响应体"
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/accounts": {
+      "get": {
+        "operationId": "accounts_list",
+        "tags": [
+          "Administration"
+        ],
+        "summary": "管理员列出账户",
+        "description": "管理员列出账户。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountAdminList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/admin/accounts/{account_id}": {
+      "patch": {
+        "operationId": "account_update",
+        "tags": [
+          "Administration"
+        ],
+        "summary": "管理员更新角色或状态",
+        "description": "管理员更新角色或状态。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountAdmin"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountUpdate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/groups": {
+      "get": {
+        "operationId": "groups_list",
+        "tags": [
+          "Administration"
+        ],
+        "summary": "管理员列出用户组",
+        "description": "管理员列出用户组。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "group_create",
+        "tags": [
+          "Administration"
+        ],
+        "summary": "管理员创建用户组",
+        "description": "管理员创建用户组。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/groups/{group_id}": {
+      "put": {
+        "operationId": "group_update",
+        "tags": [
+          "Administration"
+        ],
+        "summary": "管理员更新组及成员",
+        "description": "管理员更新组及成员。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupUpdate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/audit": {
+      "get": {
+        "operationId": "audit_list",
+        "tags": [
+          "Administration"
+        ],
+        "summary": "管理员查询审计事件",
+        "description": "管理员查询审计事件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEventList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/pages": {
+      "get": {
+        "operationId": "pages_list",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "列出当前可读已发布页面",
+        "description": "列出当前可读已发布页面。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "document",
+                "media"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDetailList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "page_create",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "创建页面及首个提案",
+        "description": "创建页面及首个提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePage"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/{page_id}": {
+      "get": {
+        "operationId": "page_get",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "读取页面当前发布内容",
+        "description": "读取页面当前发布内容。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/policy": {
+      "get": {
+        "operationId": "page_policy_get",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "管理者读取页面权限",
+        "description": "管理者读取页面权限。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "put": {
+        "operationId": "page_policy_update",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "管理者替换页面授权策略",
+        "description": "管理者替换页面授权策略。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/moderation": {
+      "post": {
+        "operationId": "page_moderate",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "管理者隐藏或恢复页面",
+        "description": "管理者隐藏或恢复页面。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/revisions": {
+      "get": {
+        "operationId": "revisions_list",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "列出页面发布历史",
+        "description": "列出页面发布历史。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/revisions/{revision_id}": {
+      "get": {
+        "operationId": "revision_get",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "读取明确发布版本",
+        "description": "读取明确发布版本。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Revision"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/revisions/{revision_id}/content": {
+      "get": {
+        "operationId": "revision_content",
+        "tags": [
+          "Media"
+        ],
+        "summary": "鉴权后读取固定版本原件",
+        "description": "鉴权后读取固定版本原件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "满足 Range 请求的部分原件",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "416": {
+            "description": "Range 无法满足"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/proposals": {
+      "get": {
+        "operationId": "proposal_queue",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "列出可读的提案审核队列",
+        "description": "列出可读的提案审核队列。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed",
+                "merged"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/proposals": {
+      "get": {
+        "operationId": "proposals_list",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "列出页面提案",
+        "description": "列出页面提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "proposal_create",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "提交单页面修改提案",
+        "description": "提交单页面修改提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProposal"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}": {
+      "get": {
+        "operationId": "proposal_get",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "读取提案及当前候选",
+        "description": "读取提案及当前候选。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}/revisions": {
+      "get": {
+        "operationId": "proposal_revisions_list",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "读取不可变候选历史",
+        "description": "读取不可变候选历史。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalRevisionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "proposal_update",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "提交候选更新或已解决冲突",
+        "description": "提交候选更新或已解决冲突。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProposal"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}/revisions/{proposal_revision_id}/content": {
+      "get": {
+        "operationId": "proposal_content",
+        "tags": [
+          "Media"
+        ],
+        "summary": "鉴权后读取候选媒体原件",
+        "description": "鉴权后读取候选媒体原件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "proposal_revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "满足 Range 请求的部分原件",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "416": {
+            "description": "Range 无法满足"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}/diff": {
+      "get": {
+        "operationId": "proposal_diff",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "对比基础与候选并标记过期",
+        "description": "对比基础与候选并标记过期。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Diff"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}/rebase": {
+      "post": {
+        "operationId": "proposal_rebase",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "三方合并至当前发布版本并使审核失效",
+        "description": "三方合并至当前发布版本并使审核失效。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionPair"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}/reviews": {
+      "get": {
+        "operationId": "reviews_list",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "列出审核记录",
+        "description": "列出审核记录。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "review_create",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "对明确版本提交审核",
+        "description": "对明确版本提交审核。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Review"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}/merge": {
+      "post": {
+        "operationId": "proposal_merge",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "原子合并经有效审核的提案",
+        "description": "原子合并经有效审核的提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Revision"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionPair"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proposals/{proposal_id}/state": {
+      "post": {
+        "operationId": "proposal_state",
+        "tags": [
+          "Proposals"
+        ],
+        "summary": "关闭或重开提案",
+        "description": "关闭或重开提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalState"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/revert": {
+      "post": {
+        "operationId": "page_revert",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "为撤销一次发布创建提案",
+        "description": "为撤销一次发布创建提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RollbackInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/restore": {
+      "post": {
+        "operationId": "page_restore",
+        "tags": [
+          "Pages"
+        ],
+        "summary": "为恢复旧快照创建提案",
+        "description": "为恢复旧快照创建提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RollbackInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pages/{page_id}/issues": {
+      "get": {
+        "operationId": "issues_list",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "列出页面议题",
+        "description": "列出页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "issue_create",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "创建页面议题",
+        "description": "创建页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}": {
+      "get": {
+        "operationId": "issue_get",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "读取页面议题",
+        "description": "读取页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/state": {
+      "post": {
+        "operationId": "issue_state",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "关闭或重开页面议题",
+        "description": "关闭或重开页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueState"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/proposals": {
+      "post": {
+        "operationId": "issue_link_proposal",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "关联同页面提案",
+        "description": "关联同页面提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueLink"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/moderation": {
+      "post": {
+        "operationId": "issue_moderate",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "管理者隐藏或恢复议题",
+        "description": "管理者隐藏或恢复议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issue"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/comments": {
+      "get": {
+        "operationId": "comments_list",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "读取可见评论",
+        "description": "读取可见评论。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "comment_create",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "追加议题评论",
+        "description": "追加议题评论。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comments/{comment_id}/moderation": {
+      "post": {
+        "operationId": "comment_moderate",
+        "tags": [
+          "Discussions"
+        ],
+        "summary": "管理者隐藏或恢复评论",
+        "description": "管理者隐藏或恢复评论。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads": {
+      "post": {
+        "operationId": "upload_prepare",
+        "tags": [
+          "Media"
+        ],
+        "summary": "预约鉴权媒体上传",
+        "description": "预约鉴权媒体上传。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Upload"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/{upload_id}/content": {
+      "put": {
+        "operationId": "upload_content",
+        "tags": [
+          "Media"
+        ],
+        "summary": "流式写入媒体原件",
+        "description": "流式写入媒体原件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Blob"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/{upload_id}": {
+      "get": {
+        "operationId": "upload_get",
+        "tags": [
+          "Media"
+        ],
+        "summary": "上传者读取上传状态",
+        "description": "上传者读取上传状态。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Upload"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/tags": {
+      "get": {
+        "operationId": "tags_list",
+        "tags": [
+          "Search"
+        ],
+        "summary": "列出当前可读页面的标签",
+        "description": "列出当前可读页面的标签。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "operationId": "search",
+        "tags": [
+          "Search"
+        ],
+        "summary": "检索并校验当前权限及版本",
+        "description": "检索并校验当前权限及版本。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {},
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchHitList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BusinessError": {
+        "description": "业务错误；不可读对象返回 not_found，不泄露内容。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "账户唯一有效 Token"
+      },
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "wikit_session",
+        "description": "服务端安全会话，写操作必须校验 CSRF"
+      }
+    },
+    "schemas": {
+      "Account": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "username",
+          "display_name",
+          "role",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "reviewer",
+              "admin"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ]
+          }
+        }
+      },
+      "AccountAdmin": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account",
+          "auth_version"
+        ],
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "auth_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AccountAdminList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountAdmin"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "AccountUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "status",
+          "expected_auth_version"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "reviewer",
+              "admin"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ]
+          },
+          "expected_auth_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AuditEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "actor_id",
+          "action",
+          "target_id",
+          "request_id",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "target_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "request_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AuditEventList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Blob": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "size",
+          "mime",
+          "sha256"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "mime": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "issue_id",
+          "author_id",
+          "body",
+          "hidden",
+          "version",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issue_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CommentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "body"
+        ],
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 65536,
+            "minLength": 1
+          }
+        }
+      },
+      "CommentList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "CreatePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "visibility",
+          "snapshot"
+        ],
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "restricted"
+            ]
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          }
+        }
+      },
+      "CreateProposal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_head_revision_id",
+          "snapshot"
+        ],
+        "properties": {
+          "expected_head_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          }
+        }
+      },
+      "CreatedPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page",
+          "proposal"
+        ],
+        "properties": {
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/Proposal"
+          }
+        }
+      },
+      "Diff": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "base_revision_id",
+          "head_revision_id",
+          "proposal_revision_id",
+          "stale",
+          "fields"
+        ],
+        "properties": {
+          "base_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "head_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "proposal_revision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "before",
+                "after",
+                "unified_diff"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "before": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "after": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "unified_diff": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "DocumentSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "title",
+          "tags",
+          "markdown"
+        ],
+        "properties": {
+          "type": {
+            "const": "document",
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "maxItems": 30,
+            "uniqueItems": true
+          },
+          "markdown": {
+            "type": "string",
+            "maxLength": 1048576
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message",
+              "request_id"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "invalid_request",
+                  "unauthenticated",
+                  "forbidden",
+                  "not_found",
+                  "stale_revision",
+                  "merge_conflict",
+                  "invalid_state",
+                  "review_required",
+                  "idempotency_conflict",
+                  "validation_failed",
+                  "rate_limited",
+                  "upload_too_large",
+                  "unsupported_media",
+                  "search_unavailable",
+                  "storage_unavailable",
+                  "internal_error"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "request_id": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "conflicts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "path",
+                    "base",
+                    "ours",
+                    "theirs"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    "base": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "ours": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "theirs": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Grant": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject_type",
+          "subject_id",
+          "capabilities"
+        ],
+        "properties": {
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "user",
+              "group"
+            ]
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "propose",
+                "discuss",
+                "review",
+                "manage"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "Group": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "version",
+          "member_ids"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "member_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "GroupCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          }
+        }
+      },
+      "GroupList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "GroupUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "member_ids",
+          "expected_version"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "member_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "page_id",
+          "author_id",
+          "title",
+          "body",
+          "state",
+          "hidden",
+          "version",
+          "proposal_ids",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "proposal_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IssueInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "body"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        }
+      },
+      "IssueLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "expected_version"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "IssueList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "IssueState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "expected_version"
+        ],
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "LoginInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        }
+      },
+      "MediaSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "title",
+          "tags",
+          "description",
+          "blob_id"
+        ],
+        "properties": {
+          "type": {
+            "const": "media",
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "maxItems": 30,
+            "uniqueItems": true
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "blob_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ModerationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hidden",
+          "reason",
+          "expected_version"
+        ],
+        "properties": {
+          "hidden": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "visibility",
+          "status",
+          "head_revision_id",
+          "policy_version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "document",
+              "media"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "restricted"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "published",
+              "hidden"
+            ]
+          },
+          "head_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "policy_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "PageDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page",
+          "revision"
+        ],
+        "properties": {
+          "page": {
+            "$ref": "#/components/schemas/Page"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "PageDetailList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageDetail"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PasswordChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "maxLength": 128,
+            "writeOnly": true
+          },
+          "new_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12,
+            "writeOnly": true
+          }
+        }
+      },
+      "PasswordInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_password"
+        ],
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        }
+      },
+      "Policy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "visibility",
+          "grants",
+          "policy_version"
+        ],
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "restricted"
+            ]
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Grant"
+            }
+          },
+          "policy_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "PolicyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "visibility",
+          "grants",
+          "expected_policy_version"
+        ],
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "restricted"
+            ]
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Grant"
+            }
+          },
+          "expected_policy_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Proposal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "page_id",
+          "author_id",
+          "state",
+          "version",
+          "review_round",
+          "current_revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "merged",
+              "closed"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "review_round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "current_revision": {
+            "$ref": "#/components/schemas/ProposalRevision"
+          }
+        }
+      },
+      "ProposalList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Proposal"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ProposalRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "proposal_id",
+          "base_revision_id",
+          "snapshot",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "base_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProposalRevisionList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalRevision"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ProposalState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "expected_proposal_version"
+        ],
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
+          },
+          "expected_proposal_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "RegisterInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_]+$"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12,
+            "writeOnly": true
+          }
+        }
+      },
+      "Registration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account",
+          "token"
+        ],
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "token": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "actor_id",
+          "proposal_revision_id",
+          "base_revision_id",
+          "round",
+          "decision",
+          "body",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proposal_revision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "base_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "request_changes",
+              "comment"
+            ]
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReviewInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_head_revision_id",
+          "expected_proposal_revision_id",
+          "expected_review_round",
+          "decision",
+          "body"
+        ],
+        "properties": {
+          "expected_head_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "expected_proposal_revision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_review_round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "request_changes",
+              "comment"
+            ]
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        }
+      },
+      "ReviewList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Review"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Revision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "page_id",
+          "parent_id",
+          "source_proposal_id",
+          "snapshot",
+          "created_at",
+          "author_id",
+          "content_url"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parent_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "source_proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "author_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "RevisionList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Revision"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "RollbackInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revision_id",
+          "expected_head_revision_id"
+        ],
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_head_revision_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SearchHit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "revision_id",
+          "type",
+          "title",
+          "tags",
+          "snippet"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "document",
+              "media"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      },
+      "SearchHitList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Session": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account",
+          "csrf_token"
+        ],
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "csrf_token": {
+            "type": "string",
+            "maxLength": 256
+          }
+        }
+      },
+      "Snapshot": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DocumentSnapshot"
+          },
+          {
+            "$ref": "#/components/schemas/MediaSnapshot"
+          }
+        ]
+      },
+      "Tag": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "TagList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Token": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "generation",
+          "created_at"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TokenStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "active",
+          "generation"
+        ],
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "UpdateProposal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_head_revision_id",
+          "expected_proposal_revision_id",
+          "snapshot"
+        ],
+        "properties": {
+          "expected_head_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "expected_proposal_revision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          }
+        }
+      },
+      "Upload": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "state",
+          "upload_path",
+          "expires_at",
+          "blob_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "failed"
+            ]
+          },
+          "upload_path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "blob_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "UploadInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "filename",
+          "size",
+          "mime"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "mime": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/gif",
+              "image/webp",
+              "audio/mpeg",
+              "audio/wav",
+              "audio/ogg",
+              "video/mp4",
+              "video/webm",
+              "application/pdf"
+            ]
+          }
+        }
+      },
+      "VersionPair": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_head_revision_id",
+          "expected_proposal_revision_id"
+        ],
+        "properties": {
+          "expected_head_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "expected_proposal_revision_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  }
+}

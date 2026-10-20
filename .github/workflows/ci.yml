@@ -1,0 +1,155 @@
+name: CI
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Documents and contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      backend: ${{ steps.stages.outputs.backend }}
+      frontend: ${{ steps.stages.outputs.frontend }}
+      integration: ${{ steps.stages.outputs.integration }}
+      container: ${{ steps.stages.outputs.container }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25.x'
+          cache: false
+      - name: Validate GitHub Actions workflows
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes= .github/workflows/ci.yml .github/workflows/release.yml
+      - run: npm run check:pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - id: stages
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const stages = JSON.parse(fs.readFileSync('.github/implementation.json'));
+          for (const [key, value] of Object.entries(stages)) {
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
+          }
+          JS
+  backend:
+    name: Go
+    needs: checks
+    if: needs.checks.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+      - run: test -z "$(gofmt -l $(git ls-files '*.go'))"
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+  frontend:
+    name: WebUI
+    needs: checks
+    if: needs.checks.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --prefix web
+      - run: npm run typecheck --prefix web
+      - run: npm run test:ci --prefix web
+      - run: npm run build --prefix web
+  integration:
+    name: PostgreSQL integration
+    needs: checks
+    if: needs.checks.outputs.integration == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: wikit_test
+          POSTGRES_PASSWORD: local_ci_only
+          POSTGRES_DB: wikit_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U wikit_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      WIKIT_DATABASE_URL: postgres://wikit_test:local_ci_only@localhost:5432/wikit_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+      - run: go test -race -count=1 -tags=integration ./tests/integration/...
+  container:
+    name: Container and Compose
+    needs: [checks, backend, frontend, integration]
+    if: needs.checks.outputs.container == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: docker build --tag wikit:ci .
+      - run: bash scripts/smoke.sh
+        env:
+          WIKIT_IMAGE: wikit:ci
+  gate:
+    name: CI gate
+    if: always()
+    needs: [checks, backend, frontend, integration, container]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every enabled check
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node --input-type=module <<'JS'
+          const needs = JSON.parse(process.env.RESULTS);
+          if (needs.checks.result !== 'success') process.exit(1);
+          for (const stage of ['backend', 'frontend', 'integration', 'container']) {
+            const expected = needs.checks.outputs[stage] === 'true' ? 'success' : 'skipped';
+            if (needs[stage].result !== expected) {
+              console.error(`${stage}: expected ${expected}, received ${needs[stage].result}`);
+              process.exit(1);
+            }
+          }
+          console.log('All enabled checks passed. Disabled stages are not application test passes.');
+          JS

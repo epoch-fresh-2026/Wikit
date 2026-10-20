@@ -1,0 +1,73 @@
+# 开发工作流与 CI/CD
+
+## 本轮与后续实现
+
+本轮交付设计、机器契约、检查工具、GitHub Issue 和远端治理。
+不创建空壳应用冒充功能完成，也不发布没有功能的 v0.1 镜像。
+
+本地文档工具需要 Node.js 24 和 npm：
+
+```sh
+npm ci
+npm run check
+```
+
+后端、前端、集成和容器阶段用 `.github/implementation.json` 显式登记。
+全为 false 表示应用尚未实现。对应路径出现时检查会要求启用阶段；
+阶段一旦启用，后续 PR 不允许回退。新增阶段必须带真实测试，不能靠空测试通过。
+主分支初始只有文档／契约检查；不能把跳过的应用测试宣称为已验证。
+`release_ready` 是额外发布门槛，只有完成全部产品验收并提交发布证据后才能启用。
+
+## 工作流
+
+Issue 模板包含范围、设计、验收、依赖和文档影响。维护者确认后加
+`design-approved`。实现 PR 关联同仓库已确认 Issue，先改文档再代码。
+小修复允许 `Design-Impact: none`，但必须写原因；评审确认是否合理。
+外部贡献者不需要发布凭据。
+Dependabot PR 同样需要维护者补充已确认的依赖升级 Issue 与设计影响声明。
+
+CI 名称 `CI`，最终必需检查为 `CI gate`。基础检查始终执行；
+使用 actionlint v1.7.12 额外校验工作流表达式、任务依赖和 reusable workflow 结构。
+启用后额外执行：
+
+| 阶段 | 必须具备 | 执行检查 |
+| --- | --- | --- |
+| backend | go.mod、Go 测试 | gofmt、go vet、go test -race |
+| frontend | web/package.json 和锁文件 | npm ci、typecheck、test:ci、build |
+| integration | tests/integration 测试包 | PostgreSQL 服务上的真实集成测试 |
+| container | Dockerfile、compose.yaml、部署 smoke 脚本 | 镜像构建、Compose 验证与 smoke |
+
+CI gate 在任一已启用任务失败或取消时失败。变更工作流不能通过删除阶段逃避验证。
+首次启用模块时同时建立 Core 依赖边界测试，落实代码规范。
+
+## 发布
+
+发布工作流仅响应 `v*` tag，但发布前还必须满足：
+
+1. Tag 是 `vMAJOR.MINOR.PATCH` 或带预发布后缀的版本号。
+2. 提交属于受保护 main 的历史。
+3. 所有实现阶段已启用并通过同一套 CI。
+4. 镜像构建和推送成功，记录 digest。
+
+镜像目标 `ghcr.io/epoch-fresh-2026/wikit`，标签为版本号和提交 SHA；
+不依赖浮动 latest。发布过程不连接生产服务器。
+初期仅 Linux amd64；新增架构需增加构建与运行验收。
+
+PR 工作流为只读 `pull_request`，不用 `pull_request_target` 执行贡献者代码。
+发布 job 才有 `packages: write`，使用 GITHUB_TOKEN，不保存长期 PAT。
+第三方 Action 固定完整 SHA，由 Dependabot 提交更新 PR。
+
+## 远端规则
+
+- main 必须经 PR，要求 `CI gate`、最新基线检查、解决评审线程，
+  禁止删除和强制推送。默认无 bypass；管理员必要时通过修改规则恢复并留痕。
+- `v*` tag 仅仓库管理员可创建；修改和删除被独立规则禁止，
+  避免“可发布”同时意味着“可重写已发布版本”。
+- 开启 Issues，关闭合并提交与 rebase，仅保留 squash merge，并自动删除已合并分支。
+- 分支规则的 JSON 配置保存在 `.github/rulesets/`，变更需评审。
+
+当前没有要求第二位 GitHub reviewer，避免单维护者项目无法合并；不降低必需检查。
+日后团队扩大后可在 Issue 中引入 CODEOWNERS 和独立批准要求。
+
+参考：[GitHub 容器发布](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)、
+[PR 安全](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target)。

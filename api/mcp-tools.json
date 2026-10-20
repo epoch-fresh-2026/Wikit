@@ -1,0 +1,6912 @@
+{
+  "schema_version": 1,
+  "transport": "streamable-http",
+  "endpoint": "/mcp",
+  "tools": [
+    {
+      "name": "wikit_accounts_list",
+      "description": "管理员列出账户",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/AccountAdminList"
+          }
+        },
+        "$defs": {
+          "Account": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "username",
+              "display_name",
+              "role",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "username": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "display_name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "member",
+                  "reviewer",
+                  "admin"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "disabled"
+                ]
+              }
+            }
+          },
+          "AccountAdmin": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "account",
+              "auth_version"
+            ],
+            "properties": {
+              "account": {
+                "$ref": "#/$defs/Account"
+              },
+              "auth_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "AccountAdminList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/AccountAdmin"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "accounts_list"
+    },
+    {
+      "name": "wikit_account_update",
+      "description": "管理员更新角色或状态",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/AccountUpdate"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "AccountUpdate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "role",
+              "status",
+              "expected_auth_version"
+            ],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "member",
+                  "reviewer",
+                  "admin"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "disabled"
+                ]
+              },
+              "expected_auth_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/AccountAdmin"
+          }
+        },
+        "$defs": {
+          "Account": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "username",
+              "display_name",
+              "role",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "username": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "display_name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "member",
+                  "reviewer",
+                  "admin"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "disabled"
+                ]
+              }
+            }
+          },
+          "AccountAdmin": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "account",
+              "auth_version"
+            ],
+            "properties": {
+              "account": {
+                "$ref": "#/$defs/Account"
+              },
+              "auth_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "account_update"
+    },
+    {
+      "name": "wikit_groups_list",
+      "description": "管理员列出用户组",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/GroupList"
+          }
+        },
+        "$defs": {
+          "Group": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "version",
+              "member_ids"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "member_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "GroupList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Group"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "groups_list"
+    },
+    {
+      "name": "wikit_group_create",
+      "description": "管理员创建用户组",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/GroupCreate"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "GroupCreate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Group"
+          }
+        },
+        "$defs": {
+          "Group": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "version",
+              "member_ids"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "member_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "group_create"
+    },
+    {
+      "name": "wikit_group_update",
+      "description": "管理员更新组及成员",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "group_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/GroupUpdate"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "GroupUpdate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "member_ids",
+              "expected_version"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "member_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "expected_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Group"
+          }
+        },
+        "$defs": {
+          "Group": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "version",
+              "member_ids"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "member_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "group_update"
+    },
+    {
+      "name": "wikit_audit_list",
+      "description": "管理员查询审计事件",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/AuditEventList"
+          }
+        },
+        "$defs": {
+          "AuditEvent": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "actor_id",
+              "action",
+              "target_id",
+              "request_id",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "actor_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "action": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "target_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "request_id": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "AuditEventList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/AuditEvent"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "audit_list"
+    },
+    {
+      "name": "wikit_pages_list",
+      "description": "列出当前可读已发布页面",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "tag": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "document",
+              "media"
+            ]
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/PageDetailList"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Page": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "visibility",
+              "status",
+              "head_revision_id",
+              "policy_version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "document",
+                  "media"
+                ]
+              },
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "published",
+                  "hidden"
+                ]
+              },
+              "head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "policy_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "PageDetail": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "page",
+              "revision"
+            ],
+            "properties": {
+              "page": {
+                "$ref": "#/$defs/Page"
+              },
+              "revision": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Revision"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "PageDetailList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/PageDetail"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "Revision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "parent_id",
+              "source_proposal_id",
+              "snapshot",
+              "created_at",
+              "author_id",
+              "content_url"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "parent_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "source_proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "content_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "pages_list"
+    },
+    {
+      "name": "wikit_page_create",
+      "description": "创建页面及首个提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/CreatePage"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "CreatePage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "visibility",
+              "snapshot"
+            ],
+            "properties": {
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              }
+            }
+          },
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/CreatedPage"
+          }
+        },
+        "$defs": {
+          "CreatedPage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "page",
+              "proposal"
+            ],
+            "properties": {
+              "page": {
+                "$ref": "#/$defs/Page"
+              },
+              "proposal": {
+                "$ref": "#/$defs/Proposal"
+              }
+            }
+          },
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Page": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "visibility",
+              "status",
+              "head_revision_id",
+              "policy_version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "document",
+                  "media"
+                ]
+              },
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "published",
+                  "hidden"
+                ]
+              },
+              "head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "policy_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "page_create"
+    },
+    {
+      "name": "wikit_page_get",
+      "description": "读取页面当前发布内容",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/PageDetail"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Page": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "visibility",
+              "status",
+              "head_revision_id",
+              "policy_version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "document",
+                  "media"
+                ]
+              },
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "published",
+                  "hidden"
+                ]
+              },
+              "head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "policy_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "PageDetail": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "page",
+              "revision"
+            ],
+            "properties": {
+              "page": {
+                "$ref": "#/$defs/Page"
+              },
+              "revision": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Revision"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "Revision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "parent_id",
+              "source_proposal_id",
+              "snapshot",
+              "created_at",
+              "author_id",
+              "content_url"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "parent_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "source_proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "content_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "page_get"
+    },
+    {
+      "name": "wikit_page_policy_get",
+      "description": "管理者读取页面权限",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Policy"
+          }
+        },
+        "$defs": {
+          "Grant": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "subject_type",
+              "subject_id",
+              "capabilities"
+            ],
+            "properties": {
+              "subject_type": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "group"
+                ]
+              },
+              "subject_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "read",
+                    "propose",
+                    "discuss",
+                    "review",
+                    "manage"
+                  ]
+                },
+                "uniqueItems": true
+              }
+            }
+          },
+          "Policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "visibility",
+              "grants",
+              "policy_version"
+            ],
+            "properties": {
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "grants": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Grant"
+                }
+              },
+              "policy_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "page_policy_get"
+    },
+    {
+      "name": "wikit_page_policy_update",
+      "description": "管理者替换页面授权策略",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/PolicyInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "Grant": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "subject_type",
+              "subject_id",
+              "capabilities"
+            ],
+            "properties": {
+              "subject_type": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "group"
+                ]
+              },
+              "subject_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "read",
+                    "propose",
+                    "discuss",
+                    "review",
+                    "manage"
+                  ]
+                },
+                "uniqueItems": true
+              }
+            }
+          },
+          "PolicyInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "visibility",
+              "grants",
+              "expected_policy_version"
+            ],
+            "properties": {
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "grants": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Grant"
+                }
+              },
+              "expected_policy_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Policy"
+          }
+        },
+        "$defs": {
+          "Grant": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "subject_type",
+              "subject_id",
+              "capabilities"
+            ],
+            "properties": {
+              "subject_type": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "group"
+                ]
+              },
+              "subject_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "read",
+                    "propose",
+                    "discuss",
+                    "review",
+                    "manage"
+                  ]
+                },
+                "uniqueItems": true
+              }
+            }
+          },
+          "Policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "visibility",
+              "grants",
+              "policy_version"
+            ],
+            "properties": {
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "grants": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Grant"
+                }
+              },
+              "policy_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "page_policy_update"
+    },
+    {
+      "name": "wikit_page_moderate",
+      "description": "管理者隐藏或恢复页面",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/ModerationInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "ModerationInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hidden",
+              "reason",
+              "expected_version"
+            ],
+            "properties": {
+              "hidden": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              "expected_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Page"
+          }
+        },
+        "$defs": {
+          "Page": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "visibility",
+              "status",
+              "head_revision_id",
+              "policy_version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "document",
+                  "media"
+                ]
+              },
+              "visibility": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "restricted"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "published",
+                  "hidden"
+                ]
+              },
+              "head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "policy_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "page_moderate"
+    },
+    {
+      "name": "wikit_revisions_list",
+      "description": "列出页面发布历史",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/RevisionList"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Revision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "parent_id",
+              "source_proposal_id",
+              "snapshot",
+              "created_at",
+              "author_id",
+              "content_url"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "parent_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "source_proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "content_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "RevisionList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Revision"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "revisions_list"
+    },
+    {
+      "name": "wikit_revision_get",
+      "description": "读取明确发布版本",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "revision_id"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Revision"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Revision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "parent_id",
+              "source_proposal_id",
+              "snapshot",
+              "created_at",
+              "author_id",
+              "content_url"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "parent_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "source_proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "content_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "revision_get"
+    },
+    {
+      "name": "wikit_proposal_queue",
+      "description": "列出可读的提案审核队列",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed",
+              "merged"
+            ]
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/ProposalList"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Proposal"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_queue"
+    },
+    {
+      "name": "wikit_proposals_list",
+      "description": "列出页面提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/ProposalList"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Proposal"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposals_list"
+    },
+    {
+      "name": "wikit_proposal_create",
+      "description": "提交单页面修改提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/CreateProposal"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "CreateProposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "expected_head_revision_id",
+              "snapshot"
+            ],
+            "properties": {
+              "expected_head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              }
+            }
+          },
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Proposal"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_create"
+    },
+    {
+      "name": "wikit_proposal_get",
+      "description": "读取提案及当前候选",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Proposal"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_get"
+    },
+    {
+      "name": "wikit_proposal_revisions_list",
+      "description": "读取不可变候选历史",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/ProposalRevisionList"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "ProposalRevisionList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/ProposalRevision"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_revisions_list"
+    },
+    {
+      "name": "wikit_proposal_update",
+      "description": "提交候选更新或已解决冲突",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/UpdateProposal"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          },
+          "UpdateProposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "expected_head_revision_id",
+              "expected_proposal_revision_id",
+              "snapshot"
+            ],
+            "properties": {
+              "expected_head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "expected_proposal_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Proposal"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_update"
+    },
+    {
+      "name": "wikit_proposal_diff",
+      "description": "对比基础与候选并标记过期",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Diff"
+          }
+        },
+        "$defs": {
+          "Diff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "base_revision_id",
+              "head_revision_id",
+              "proposal_revision_id",
+              "stale",
+              "fields"
+            ],
+            "properties": {
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "proposal_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "stale": {
+                "type": "boolean"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "path",
+                    "before",
+                    "after",
+                    "unified_diff"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    "before": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "after": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "unified_diff": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_diff"
+    },
+    {
+      "name": "wikit_proposal_rebase",
+      "description": "三方合并至当前发布版本并使审核失效",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/VersionPair"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "VersionPair": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "expected_head_revision_id",
+              "expected_proposal_revision_id"
+            ],
+            "properties": {
+              "expected_head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "expected_proposal_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Proposal"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_rebase"
+    },
+    {
+      "name": "wikit_reviews_list",
+      "description": "列出审核记录",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/ReviewList"
+          }
+        },
+        "$defs": {
+          "Review": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "actor_id",
+              "proposal_revision_id",
+              "base_revision_id",
+              "round",
+              "decision",
+              "body",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "actor_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "approve",
+                  "request_changes",
+                  "comment"
+                ]
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "ReviewList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Review"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "reviews_list"
+    },
+    {
+      "name": "wikit_review_create",
+      "description": "对明确版本提交审核",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/ReviewInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "ReviewInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "expected_head_revision_id",
+              "expected_proposal_revision_id",
+              "expected_review_round",
+              "decision",
+              "body"
+            ],
+            "properties": {
+              "expected_head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "expected_proposal_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expected_review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "approve",
+                  "request_changes",
+                  "comment"
+                ]
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Review"
+          }
+        },
+        "$defs": {
+          "Review": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "actor_id",
+              "proposal_revision_id",
+              "base_revision_id",
+              "round",
+              "decision",
+              "body",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "actor_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "approve",
+                  "request_changes",
+                  "comment"
+                ]
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "review_create"
+    },
+    {
+      "name": "wikit_proposal_merge",
+      "description": "原子合并经有效审核的提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/VersionPair"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "VersionPair": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "expected_head_revision_id",
+              "expected_proposal_revision_id"
+            ],
+            "properties": {
+              "expected_head_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "expected_proposal_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Revision"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Revision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "parent_id",
+              "source_proposal_id",
+              "snapshot",
+              "created_at",
+              "author_id",
+              "content_url"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "parent_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "source_proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "content_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_merge"
+    },
+    {
+      "name": "wikit_proposal_state",
+      "description": "关闭或重开提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/ProposalState"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "ProposalState": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "state",
+              "expected_proposal_version"
+            ],
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "expected_proposal_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Proposal"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "proposal_state"
+    },
+    {
+      "name": "wikit_page_revert",
+      "description": "为撤销一次发布创建提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/RollbackInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "RollbackInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "revision_id",
+              "expected_head_revision_id"
+            ],
+            "properties": {
+              "revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expected_head_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Proposal"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "page_revert"
+    },
+    {
+      "name": "wikit_page_restore",
+      "description": "为恢复旧快照创建提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/RollbackInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "RollbackInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "revision_id",
+              "expected_head_revision_id"
+            ],
+            "properties": {
+              "revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expected_head_revision_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Proposal"
+          }
+        },
+        "$defs": {
+          "DocumentSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "markdown"
+            ],
+            "properties": {
+              "type": {
+                "const": "document",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "markdown": {
+                "type": "string",
+                "maxLength": 1048576
+              }
+            }
+          },
+          "MediaSnapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "title",
+              "tags",
+              "description",
+              "blob_id"
+            ],
+            "properties": {
+              "type": {
+                "const": "media",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "minLength": 1
+                },
+                "maxItems": 30,
+                "uniqueItems": true
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "blob_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "Proposal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "state",
+              "version",
+              "review_round",
+              "current_revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "merged",
+                  "closed"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "review_round": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "current_revision": {
+                "$ref": "#/$defs/ProposalRevision"
+              }
+            }
+          },
+          "ProposalRevision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal_id",
+              "base_revision_id",
+              "snapshot",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "base_revision_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "snapshot": {
+                "$ref": "#/$defs/Snapshot"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DocumentSnapshot"
+              },
+              {
+                "$ref": "#/$defs/MediaSnapshot"
+              }
+            ]
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "page_restore"
+    },
+    {
+      "name": "wikit_issues_list",
+      "description": "列出页面议题",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/IssueList"
+          }
+        },
+        "$defs": {
+          "Issue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "title",
+              "body",
+              "state",
+              "hidden",
+              "version",
+              "proposal_ids",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "proposal_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "IssueList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Issue"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "issues_list"
+    },
+    {
+      "name": "wikit_issue_create",
+      "description": "创建页面议题",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "page_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/IssueInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "IssueInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "title",
+              "body"
+            ],
+            "properties": {
+              "title": {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Issue"
+          }
+        },
+        "$defs": {
+          "Issue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "title",
+              "body",
+              "state",
+              "hidden",
+              "version",
+              "proposal_ids",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "proposal_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "issue_create"
+    },
+    {
+      "name": "wikit_issue_get",
+      "description": "读取页面议题",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_id"
+        ],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Issue"
+          }
+        },
+        "$defs": {
+          "Issue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "title",
+              "body",
+              "state",
+              "hidden",
+              "version",
+              "proposal_ids",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "proposal_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "issue_get"
+    },
+    {
+      "name": "wikit_issue_state",
+      "description": "关闭或重开页面议题",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/IssueState"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "IssueState": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "state",
+              "expected_version"
+            ],
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "expected_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Issue"
+          }
+        },
+        "$defs": {
+          "Issue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "title",
+              "body",
+              "state",
+              "hidden",
+              "version",
+              "proposal_ids",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "proposal_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "issue_state"
+    },
+    {
+      "name": "wikit_issue_link_proposal",
+      "description": "关联同页面提案",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/IssueLink"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "IssueLink": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "proposal_id",
+              "expected_version"
+            ],
+            "properties": {
+              "proposal_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expected_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Issue"
+          }
+        },
+        "$defs": {
+          "Issue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "title",
+              "body",
+              "state",
+              "hidden",
+              "version",
+              "proposal_ids",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "proposal_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "issue_link_proposal"
+    },
+    {
+      "name": "wikit_issue_moderate",
+      "description": "管理者隐藏或恢复议题",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/ModerationInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "ModerationInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hidden",
+              "reason",
+              "expected_version"
+            ],
+            "properties": {
+              "hidden": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              "expected_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Issue"
+          }
+        },
+        "$defs": {
+          "Issue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "page_id",
+              "author_id",
+              "title",
+              "body",
+              "state",
+              "hidden",
+              "version",
+              "proposal_ids",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "proposal_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "issue_moderate"
+    },
+    {
+      "name": "wikit_comments_list",
+      "description": "读取可见评论",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_id"
+        ],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/CommentList"
+          }
+        },
+        "$defs": {
+          "Comment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "issue_id",
+              "author_id",
+              "body",
+              "hidden",
+              "version",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "issue_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "CommentList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Comment"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "comments_list"
+    },
+    {
+      "name": "wikit_comment_create",
+      "description": "追加议题评论",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/CommentInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "CommentInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "body"
+            ],
+            "properties": {
+              "body": {
+                "type": "string",
+                "maxLength": 65536,
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Comment"
+          }
+        },
+        "$defs": {
+          "Comment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "issue_id",
+              "author_id",
+              "body",
+              "hidden",
+              "version",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "issue_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "comment_create"
+    },
+    {
+      "name": "wikit_comment_moderate",
+      "description": "管理者隐藏或恢复评论",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "comment_id",
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "comment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "$ref": "#/$defs/ModerationInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "ModerationInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hidden",
+              "reason",
+              "expected_version"
+            ],
+            "properties": {
+              "hidden": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              "expected_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Comment"
+          }
+        },
+        "$defs": {
+          "Comment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "issue_id",
+              "author_id",
+              "body",
+              "hidden",
+              "version",
+              "created_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "issue_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "author_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "body": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "hidden": {
+                "type": "boolean"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "comment_moderate"
+    },
+    {
+      "name": "wikit_upload_prepare",
+      "description": "预约鉴权媒体上传",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "body",
+          "idempotency_key"
+        ],
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/UploadInput"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "$defs": {
+          "UploadInput": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "filename",
+              "size",
+              "mime"
+            ],
+            "properties": {
+              "filename": {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "mime": {
+                "type": "string",
+                "enum": [
+                  "image/jpeg",
+                  "image/png",
+                  "image/gif",
+                  "image/webp",
+                  "audio/mpeg",
+                  "audio/wav",
+                  "audio/ogg",
+                  "video/mp4",
+                  "video/webm",
+                  "application/pdf"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Upload"
+          }
+        },
+        "$defs": {
+          "Upload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "state",
+              "upload_path",
+              "expires_at",
+              "blob_id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "ready",
+                  "failed"
+                ]
+              },
+              "upload_path": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "blob_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "upload_prepare"
+    },
+    {
+      "name": "wikit_upload_get",
+      "description": "上传者读取上传状态",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "upload_id"
+        ],
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/Upload"
+          }
+        },
+        "$defs": {
+          "Upload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "state",
+              "upload_path",
+              "expires_at",
+              "blob_id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "ready",
+                  "failed"
+                ]
+              },
+              "upload_path": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "blob_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "upload_get"
+    },
+    {
+      "name": "wikit_tags_list",
+      "description": "列出当前可读页面的标签",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/TagList"
+          }
+        },
+        "$defs": {
+          "Tag": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 64
+              }
+            }
+          },
+          "TagList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Tag"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "tags_list"
+    },
+    {
+      "name": "wikit_search",
+      "description": "检索并校验当前权限及版本",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "q"
+        ],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "cursor": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "q": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1
+          },
+          "tag": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/$defs/SearchHitList"
+          }
+        },
+        "$defs": {
+          "SearchHit": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "page_id",
+              "revision_id",
+              "type",
+              "title",
+              "tags",
+              "snippet"
+            ],
+            "properties": {
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "revision_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "document",
+                  "media"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
+              "snippet": {
+                "type": "string",
+                "maxLength": 2000
+              }
+            }
+          },
+          "SearchHitList": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "items",
+              "next_cursor"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/SearchHit"
+                }
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "x-rest-operation": "search"
+    }
+  ]
+}

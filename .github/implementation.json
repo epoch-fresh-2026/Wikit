@@ -1,0 +1,7 @@
+{
+  "backend": false,
+  "frontend": false,
+  "integration": false,
+  "container": false,
+  "release_ready": false
+}

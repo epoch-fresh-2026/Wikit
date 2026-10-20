@@ -1,0 +1,30 @@
+name: 功能与设计
+description: 确认设计、依赖和验收后进入实现
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题与目标
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: 设计与范围
+      description: 涉及的模块、接口、权限和明确不做的内容。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收条件
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 依赖与文档影响
+      description: 关联 Issue；需要先更新的设计文档和契约。
+    validations:
+      required: true
