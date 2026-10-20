@@ -183,6 +183,8 @@ const implementedRest = new Set([
   'register', 'login', 'logout', 'account_me', 'password_change', 'token_status',
   'token_rotate', 'token_revoke', 'accounts_list', 'account_update', 'groups_list',
   'group_create', 'group_update', 'audit_list', 'page_policy_get', 'page_policy_update',
+  'page_create', 'pages_list', 'page_get', 'revisions_list', 'revision_get',
+  'proposal_queue', 'proposals_list', 'proposal_get', 'proposal_revisions_list', 'tags_list',
 ]);
 function op(method, path, name, tag, summary, output, input, options = {}) {
   operations.push({ method, path, name, tag, summary, output, input, ...options });
@@ -341,7 +343,7 @@ export function buildContracts() {
     openapi: '3.1.0',
     info: {
       title: 'Wikit REST API', version: '0.1.0',
-      description: '已锁定的 v0.1 设计契约；账户与授权 REST 已实现，其余逐项实现。所有传输入口复用 Core。',
+      description: '已锁定的 v0.1 设计契约；账户、授权及页面/初始提案与历史读取 REST 已实现，其余逐项实现。所有传输入口复用 Core。',
       license: { name: 'MIT', identifier: 'MIT' },
     },
     servers: [{ url: 'https://wiki.example.com/api/v1', description: '替换为自托管站点地址' }],

@@ -131,14 +131,23 @@ func Authorize(ctx context.Context, tx Authorization, c identity.Credentials, pa
 	if err != nil {
 		return a, p, err
 	}
-	caps := effective(a, p, groups)
-	if !caps["read"] || (p.Status == "hidden" && !management) {
-		return a, p, fault.NotFound
-	}
-	if !caps[capability] {
-		return a, p, fault.Forbidden
+	if err := CheckPolicy(a, p, groups, capability, management); err != nil {
+		return a, p, err
 	}
 	return a, p, nil
+}
+
+// CheckPolicy evaluates a current policy within an already authenticated read
+// transaction; directory consumers can reuse its account/group view.
+func CheckPolicy(a identity.Actor, p Policy, groups []Group, capability string, management bool) error {
+	caps := effective(a, p, groups)
+	if !caps["read"] || (p.Status == "hidden" && !management) {
+		return fault.NotFound
+	}
+	if !caps[capability] {
+		return fault.Forbidden
+	}
+	return nil
 }
 func (s *Service) Check(ctx context.Context, c identity.Credentials, pageID, capability string, management bool) error {
 	return s.repo.WithinAccess(ctx, func(tx Tx) error { _, _, err := Authorize(ctx, tx, c, pageID, capability, management); return err })

@@ -3,7 +3,7 @@
   "info": {
     "title": "Wikit REST API",
     "version": "0.1.0",
-    "description": "已锁定的 v0.1 设计契约；账户与授权 REST 已实现，其余逐项实现。所有传输入口复用 Core。",
+    "description": "已锁定的 v0.1 设计契约；账户、授权及页面/初始提案与历史读取 REST 已实现，其余逐项实现。所有传输入口复用 Core。",
     "license": {
       "name": "MIT",
       "identifier": "MIT"
@@ -1166,7 +1166,7 @@
           "Pages"
         ],
         "summary": "列出当前可读已发布页面",
-        "description": "列出当前可读已发布页面。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出当前可读已发布页面。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1271,7 +1271,7 @@
           "Pages"
         ],
         "summary": "创建页面及首个提案",
-        "description": "创建页面及首个提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "创建页面及首个提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1367,7 +1367,7 @@
           "Pages"
         ],
         "summary": "读取页面当前发布内容",
-        "description": "读取页面当前发布内容。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取页面当前发布内容。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1724,7 +1724,7 @@
           "Pages"
         ],
         "summary": "列出页面发布历史",
-        "description": "列出页面发布历史。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出页面发布历史。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -1819,7 +1819,7 @@
           "Pages"
         ],
         "summary": "读取明确发布版本",
-        "description": "读取明确发布版本。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取明确发布版本。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2002,7 +2002,7 @@
           "Proposals"
         ],
         "summary": "列出可读的提案审核队列",
-        "description": "列出可读的提案审核队列。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出可读的提案审核队列。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2101,7 +2101,7 @@
           "Proposals"
         ],
         "summary": "列出页面提案",
-        "description": "列出页面提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出页面提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2299,7 +2299,7 @@
           "Proposals"
         ],
         "summary": "读取提案及当前候选",
-        "description": "读取提案及当前候选。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取提案及当前候选。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2374,7 +2374,7 @@
           "Proposals"
         ],
         "summary": "读取不可变候选历史",
-        "description": "读取不可变候选历史。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取不可变候选历史。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -4625,7 +4625,7 @@
           "Search"
         ],
         "summary": "列出当前可读页面的标签",
-        "description": "列出当前可读页面的标签。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出当前可读页面的标签。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
