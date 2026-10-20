@@ -20,6 +20,7 @@ const (
 	UploadTooLarge     Error = "upload_too_large"
 	UnsupportedMedia   Error = "unsupported_media"
 	StorageUnavailable Error = "storage_unavailable"
+	SearchUnavailable  Error = "search_unavailable"
 )
 
 type Conflict struct {

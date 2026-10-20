@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -23,6 +24,8 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/media"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/search"
+	"github.com/epoch-fresh-2026/Wikit/internal/search/meili"
 	"github.com/epoch-fresh-2026/Wikit/internal/security"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/blobfs"
 	textadapter "github.com/epoch-fresh-2026/Wikit/internal/text"
@@ -31,6 +34,9 @@ import (
 const password = "correct-horse-password"
 
 type suite struct {
+	index      *meili.Client
+	worker     *search.Worker
+	search     *search.Service
 	db         database
 	accounts   *identity.Service
 	access     *access.Service
@@ -82,7 +88,13 @@ func newSuite(t *testing.T) *suite {
 		}
 	})
 	s.media = media.New(db.store, s.files, s.secrets, 104857600)
-	api := httpadapter.API{Discussions: discussions.New(db.store, s.secrets, textadapter.Parser{}), Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}, s.files), Proposals: proposals.New(db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files), Media: s.media, Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
+	s.index = meili.New(os.Getenv("WIKIT_MEILI_URL"), os.Getenv("WIKIT_MEILI_KEY"))
+	s.worker = search.NewWorker(db.store, s.index, textadapter.Parser{}, s.secrets)
+	s.search = search.New(db.store, s.index, textadapter.Parser{}, s.secrets)
+	if _, err := db.conn.Exec(ctx, `UPDATE wikit.search_state SET active_index=$1`, "wikit_test_"+strings.ReplaceAll(s.id(t), "-", "")); err != nil {
+		t.Fatal(err)
+	}
+	api := httpadapter.API{Search: s.search, Discussions: discussions.New(db.store, s.secrets, textadapter.Parser{}), Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}, s.files), Proposals: proposals.New(db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files), Media: s.media, Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
 	s.server = httptest.NewServer(api.Handler(httpadapter.NewHandler(health.New(db.store, blobfs.Probe{Root: t.TempDir()}))))
 	t.Cleanup(s.server.Close)
 	return s

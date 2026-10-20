@@ -9,6 +9,11 @@ Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue 
 同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。MCP 与可部署 v0.1 仍待后续实现。
 前端、容器与 release_ready 保持关闭。
 
+Issue #8 增加 Meilisearch 1.55.0 的中英文搜索、可恢复 outbox worker 和 search-rebuild/retry/status。
+本地测试额外要求 WIKIT_MEILI_URL、WIKIT_MEILI_KEY 指向专用 Meilisearch；测试使用独立索引，
+不会接触线上索引。CI 在既有 integration 阶段启动真实 Meilisearch，不增加跳过路径。
+可运行 `go run ./cmd/wikit search-rebuild` 重建，`search-status` 查看积压，`search-retry` 立即重试失败事件。
+
 后端使用 Go 1.25.0、pgx v5.10.0、PostgreSQL 18.6（本地与 CI），依赖由
 go.mod/go.sum 锁定。Argon2id 使用 golang.org/x/crypto v0.53.0，终端使用
 golang.org/x/term v0.44.0（兼容 Go 1.25）；仅 composition root 装配实现。

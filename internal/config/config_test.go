@@ -6,12 +6,19 @@ import (
 )
 
 func TestConfiguration(t *testing.T) {
-	base := map[string]string{"WIKIT_DATABASE_URL": "postgres://user:secret@localhost/wikit", "WIKIT_PUBLIC_URL": "http://localhost:8080"}
+	base := map[string]string{"WIKIT_DATABASE_URL": "postgres://user:secret@localhost/wikit", "WIKIT_PUBLIC_URL": "http://localhost:8080", "WIKIT_MEILI_URL": "http://localhost:7700", "WIKIT_MEILI_KEY": "local_search_test_key_2026"}
 	for _, tc := range []struct {
 		name, key, value string
 		valid            bool
 	}{
 		{"defaults", "", "", true},
+		{"missing search URL", "WIKIT_MEILI_URL", "", false},
+		{"search credentials", "WIKIT_MEILI_URL", "http://user:secret@localhost:7700", false},
+		{"search query", "WIKIT_MEILI_URL", "http://localhost:7700/?secret=1", false},
+		{"search path", "WIKIT_MEILI_URL", "http://localhost:7700/indexes", false},
+		{"search invalid port", "WIKIT_MEILI_URL", "http://localhost:99999", false},
+		{"missing search key", "WIKIT_MEILI_KEY", "", false},
+		{"invalid search key", "WIKIT_MEILI_KEY", "local_key_with_line\nbreak", false},
 		{"https", "WIKIT_PUBLIC_URL", "https://wiki.example", true},
 		{"loopback", "WIKIT_PUBLIC_URL", "http://[::1]:8080", true},
 		{"missing database", "WIKIT_DATABASE_URL", "", false},

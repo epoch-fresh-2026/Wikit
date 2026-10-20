@@ -22,9 +22,11 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/media"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/search"
 )
 
 type API struct {
+	Search      *search.Service
 	Discussions *discussions.Service
 	Identity    *identity.Service
 	Pages       *pages.Service
@@ -113,7 +115,7 @@ func failure(w http.ResponseWriter, err error, requestID string) {
 			status = 413
 		case fault.UnsupportedMedia:
 			status = 415
-		case fault.StorageUnavailable:
+		case fault.StorageUnavailable, fault.SearchUnavailable:
 			status = 503
 		case fault.Limited:
 			status = 429
@@ -355,7 +357,9 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 			result, err = a.Access.UpdatePolicy(r.Context(), request(r, c, id, body), pageID, access.Policy{Visibility: input.Visibility, Grants: input.Grants}, *input.Version)
 		}
 	default:
-		if a.Pages != nil {
+		if path == "search" && r.Method == "GET" && a.Search != nil {
+			result, status, err = a.searchRoute(r, c)
+		} else if a.Pages != nil {
 			result, status, err = a.pageRoute(r, c, id, path, ip)
 		} else {
 			err = fault.NotFound

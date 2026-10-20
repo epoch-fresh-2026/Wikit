@@ -5,6 +5,10 @@ ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
 
 ## 实体
 
+Issue #8 的 0007 migration 为 outbox 增加顺序、持久 task UID、目标索引及安全错误代码，
+新增 search_state 保存 active_index。政策变更触发器与业务事务一起追加事件；事件的
+revision_id 可空以表示权限/隐藏/修复。worker 每次读取当前 Page/head/ACL 投影，不使用旧事件正文。
+
 Issue #7 的 0006 migration 增加 page_issues、comments、issue_proposals 与 moderation_events。
 关联用两侧 (对象 ID, page_id) 复合外键强制同 Page，唯一关联不可更改或删除。
 Issue 标题/正文、评论正文及归属创建后不可变，状态/隐藏修改递增对象版本；无删除入口。

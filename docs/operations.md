@@ -17,7 +17,7 @@ Compose 包含 wikit、PostgreSQL、Meilisearch。只向宿主暴露应用端口
 | --- | --- |
 | WIKIT_PUBLIC_URL | 必填，生产 HTTPS，同源 REST/MCP |
 | WIKIT_DATABASE_URL | 必填，秘密，应用专用数据库账户 |
-| WIKIT_MEILI_URL | 内部服务地址 |
+| WIKIT_MEILI_URL | serve/search-rebuild 必填，内部 HTTP(S) origin |
 | WIKIT_MEILI_KEY | 必填，秘密，不进入前端构建 |
 | WIKIT_MEDIA_ROOT | `/var/lib/wikit/media`，持久卷 |
 | WIKIT_MAX_UPLOAD_BYTES | 104857600（100 MiB） |
@@ -38,9 +38,18 @@ Compose 包含 wikit、PostgreSQL、Meilisearch。只向宿主暴露应用端口
 启动先验证上述依赖，失败则不监听。`WIKIT_PUBLIC_URL` 接受 HTTPS 或仅本机
 HTTP（localhost／loopback IP），禁止凭证、查询和 fragment；监听地址默认 `:8080`。
 账户阶段已实现 WIKIT_REGISTRATION_ENABLED 与 WIKIT_SESSION_TTL；
-serve 要求至少一名活跃管理员。其余业务配置在对应 Issue 实现，当前不要求 Meilisearch key。
+serve 要求至少一名活跃管理员。Issue #8 起 serve/search-rebuild 要求 Meilisearch URL 和至少 16 字节的 key，
+禁止 URL 携带凭证、路径、查询或 fragment；不会因为 Meilisearch 暂不可用而拒绝数据库服务启动。
 
 ## 初始化与升级
+
+Issue #8 内置每秒检查的搜索 worker；单轮有 30 秒时限，异步 task UID 和重试状态持久化。
+`wikit search-rebuild` 构建新索引、追赶增量后切换数据库 active_index；失败时旧指针保留。
+`wikit search-retry` 将失败 outbox 的下一次尝试设为立即；`wikit search-status` 输出
+pending、oldest_seconds、failures，不输出正文、ACL 或 key，且状态读取不等待 worker 锁。
+retry/status 只要求数据库配置。重建和投递共用会话锁，正在执行时另一管理写命令返回非零；可稍后重试。
+Meilisearch 固定版本 1.55.0，管理 key 仅供服务端使用；索引卷丢失后必须执行完整 search-rebuild。
+旧/失败重建索引保留，清理前核对 search_state.active_index；不会自动删除线上索引。
 
 Issue #6 提供 `wikit blob-gc`；读取数据库、媒体目录和 WIKIT_BLOB_GC_GRACE，默认 168h，
 只清理超过宽限期的未引用 blob、孤立原件和临时文件，输出数量而非物理路径。
