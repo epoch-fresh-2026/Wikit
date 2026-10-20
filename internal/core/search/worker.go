@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -120,6 +121,7 @@ func (w *Worker) Rebuild(ctx context.Context) (string, error) {
 func (w *Worker) export(ctx context.Context, q Queue, target string, ids []string) error {
 	docs := []Document{}
 	deleted := []string{}
+	batchBytes := 0
 	flush := func() error {
 		if len(docs) > 0 {
 			task, err := w.index.Put(ctx, target, docs)
@@ -130,6 +132,7 @@ func (w *Worker) export(ctx context.Context, q Queue, target string, ids []strin
 				return fault.SearchUnavailable
 			}
 			docs = nil
+			batchBytes = 0
 		}
 		if len(deleted) > 0 {
 			task, err := w.index.Delete(ctx, target, deleted)
@@ -158,7 +161,19 @@ func (w *Worker) export(ctx context.Context, q Queue, target string, ids []strin
 		if doc == nil {
 			deleted = append(deleted, id)
 		} else {
+			raw, err := json.Marshal(doc)
+			if err != nil {
+				return err
+			}
+			// Keep each ordinary batch within 4 MiB including JSON separators.
+			// An individual valid large document still travels in its own request.
+			if len(docs) > 0 && batchBytes+len(raw)+1 > 4<<20 {
+				if err := flush(); err != nil {
+					return err
+				}
+			}
 			docs = append(docs, *doc)
+			batchBytes += len(raw) + 1
 		}
 		if len(docs)+len(deleted) >= 20 {
 			if err := flush(); err != nil {
