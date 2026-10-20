@@ -1619,7 +1619,7 @@
           "Pages"
         ],
         "summary": "管理者隐藏或恢复页面",
-        "description": "管理者隐藏或恢复页面。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者隐藏或恢复页面。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3713,7 +3713,7 @@
           "Discussions"
         ],
         "summary": "列出页面议题",
-        "description": "列出页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "列出页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -3751,6 +3751,26 @@
             "schema": {
               "type": "string",
               "maxLength": 2048
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed"
+              ]
             }
           }
         ],
@@ -3806,7 +3826,7 @@
           "Discussions"
         ],
         "summary": "创建页面议题",
-        "description": "创建页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "创建页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3911,7 +3931,7 @@
           "Discussions"
         ],
         "summary": "读取页面议题",
-        "description": "读取页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -3929,6 +3949,14 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -3986,7 +4014,7 @@
           "Discussions"
         ],
         "summary": "关闭或重开页面议题",
-        "description": "关闭或重开页面议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "关闭或重开页面议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4091,7 +4119,7 @@
           "Discussions"
         ],
         "summary": "关联同页面提案",
-        "description": "关联同页面提案。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "关联同页面提案。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4196,7 +4224,7 @@
           "Discussions"
         ],
         "summary": "管理者隐藏或恢复议题",
-        "description": "管理者隐藏或恢复议题。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者隐藏或恢复议题。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4301,7 +4329,7 @@
           "Discussions"
         ],
         "summary": "读取可见评论",
-        "description": "读取可见评论。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "读取可见评论。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -4339,6 +4367,14 @@
             "schema": {
               "type": "string",
               "maxLength": 2048
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -4394,7 +4430,7 @@
           "Discussions"
         ],
         "summary": "追加议题评论",
-        "description": "追加议题评论。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "追加议题评论。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -4499,7 +4535,7 @@
           "Discussions"
         ],
         "summary": "管理者隐藏或恢复评论",
-        "description": "管理者隐藏或恢复评论。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者隐藏或恢复评论。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []

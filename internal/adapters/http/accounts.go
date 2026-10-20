@@ -16,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/discussions"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/media"
@@ -24,14 +25,15 @@ import (
 )
 
 type API struct {
-	Identity   *identity.Service
-	Pages      *pages.Service
-	Proposals  *proposals.Service
-	Media      *media.Service
-	Access     *access.Service
-	Secrets    identity.Secrets
-	PublicURL  string
-	SessionTTL time.Duration
+	Discussions *discussions.Service
+	Identity    *identity.Service
+	Pages       *pages.Service
+	Proposals   *proposals.Service
+	Media       *media.Service
+	Access      *access.Service
+	Secrets     identity.Secrets
+	PublicURL   string
+	SessionTTL  time.Duration
 }
 
 func (a API) Handler(health http.Handler) http.Handler {

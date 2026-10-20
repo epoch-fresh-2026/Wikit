@@ -80,6 +80,15 @@ MCP 用 upload_prepare 获取路径，用正常 HTTPS PUT 传大文件，不把�
 
 ## 管理接口
 
+Issue #7 增加 Page Issue、评论、状态、同 Page 提案关联及 Page/Issue/评论 moderation。
+讨论正文最多 65,536 字符，标题最多 300 字符；创建/评论请求上限 1 MiB，以支持多字节
+文本及 JSON 转义。创建和评论分别按账户/IP 限流，所有业务写入要求 Idempotency-Key。
+issues_list、issue_get、comments_list 支持 include_hidden=true 的管理视图；普通读取不返回隐藏对象。
+游标绑定当前身份、源 Page/Issue、状态、管理模式和页大小；先鉴权与过滤再分页。
+幂等重放也检查当前 Page 与讨论可见性，隐藏后的正文不从旧响应缓存返回。
+moderation 要求 reason 与 expected_version；Page 使用 policy_version，Issue/评论使用各自 version。
+议题标题和治理理由的字符上限同时约束 NFC 规范化后的值；超限统一返回 validation_failed。
+
 Issue #3 实现 `/auth/*`、账户/用户组/审计管理及页面 policy 接口；页面内容、历史、
 提案、讨论与下载仍由后续 Issue 提供。ACL 可以对已存在的页面策略操作；本阶段无公开
 的空页面创建入口。页面创建用例将在 #4/#5 的事务中同时写入页面与策略。

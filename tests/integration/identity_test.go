@@ -16,6 +16,7 @@ import (
 
 	httpadapter "github.com/epoch-fresh-2026/Wikit/internal/adapters/http"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/discussions"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/health"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
@@ -81,7 +82,7 @@ func newSuite(t *testing.T) *suite {
 		}
 	})
 	s.media = media.New(db.store, s.files, s.secrets, 104857600)
-	api := httpadapter.API{Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}, s.files), Proposals: proposals.New(db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files), Media: s.media, Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
+	api := httpadapter.API{Discussions: discussions.New(db.store, s.secrets, textadapter.Parser{}), Identity: s.accounts, Access: s.access, Pages: pages.New(db.store, s.secrets, textadapter.Parser{}, s.files), Proposals: proposals.New(db.store, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files), Media: s.media, Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
 	s.server = httptest.NewServer(api.Handler(httpadapter.NewHandler(health.New(db.store, blobfs.Probe{Root: t.TempDir()}))))
 	t.Cleanup(s.server.Close)
 	return s

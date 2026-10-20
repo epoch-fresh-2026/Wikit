@@ -5,7 +5,8 @@
 Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 迁移和真实
 PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Issue #4 增加页面
 创建/读取、首提案和历史读取；Issue #5 增加审核、原子合并、三方 rebase 与撤销/恢复。
-Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；MCP 与可部署 v0.1 仍待后续实现。
+Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue #7 增加页面议题、评论、
+同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。MCP 与可部署 v0.1 仍待后续实现。
 前端、容器与 release_ready 保持关闭。
 
 后端使用 Go 1.25.0、pgx v5.10.0、PostgreSQL 18.6（本地与 CI），依赖由

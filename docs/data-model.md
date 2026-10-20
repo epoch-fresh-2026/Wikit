@@ -5,6 +5,12 @@ ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
 
 ## 实体
 
+Issue #7 的 0006 migration 增加 page_issues、comments、issue_proposals 与 moderation_events。
+关联用两侧 (对象 ID, page_id) 复合外键强制同 Page，唯一关联不可更改或删除。
+Issue 标题/正文、评论正文及归属创建后不可变，状态/隐藏修改递增对象版本；无删除入口。
+moderation_events 追加保存理由、目标、操作账户与请求 ID，和状态、普通审计、幂等结果同事务提交。
+Page moderation 仅改变策略 status/version；恢复按当前 head 还原 published/proposed，不改写 ACL 或历史。
+
 Issue #5 的 0004 migration 增加不可变 reviews（递增 sequence、明确候选/base/round）与
 outbox_events。审核候选与提案使用复合外键；合并写入发布快照、关联、head、提案状态、
 审计、outbox 与幂等结果，一次提交。沿用授权事务锁，再依次行锁 Page、Proposal。

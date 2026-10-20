@@ -17,6 +17,7 @@ import (
 	httpadapter "github.com/epoch-fresh-2026/Wikit/internal/adapters/http"
 	"github.com/epoch-fresh-2026/Wikit/internal/config"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/discussions"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/health"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/media"
@@ -125,7 +126,7 @@ func run(ctx context.Context, args []string) error {
 		return errors.New("HTTP listener failed")
 	}
 	server := &http.Server{
-		Handler: (httpadapter.API{Identity: accounts, Access: access.New(db, secrets), Pages: pages.New(db, secrets, textadapter.Parser{}, files), Proposals: proposals.New(db, secrets, textadapter.Parser{}, textadapter.Differ{}, files), Media: media.New(db, files, secrets, cfg.MaxUploadBytes), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
+		Handler: (httpadapter.API{Discussions: discussions.New(db, secrets, textadapter.Parser{}), Identity: accounts, Access: access.New(db, secrets), Pages: pages.New(db, secrets, textadapter.Parser{}, files), Proposals: proposals.New(db, secrets, textadapter.Parser{}, textadapter.Differ{}, files), Media: media.New(db, files, secrets, cfg.MaxUploadBytes), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
 	finished := make(chan error, 1)
