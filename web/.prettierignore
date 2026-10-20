@@ -1,0 +1,4 @@
+node_modules
+dist
+src/lib/api.generated.d.ts
+package-lock.json

@@ -7,7 +7,8 @@ Wikit 是面向公开社区的开源、自托管 Wiki。它借鉴 Git 的提案�
 REST 与 MCP 使用同一套账户权限。
 
 **当前状态：已实现账户/授权治理、不可变历史、审核与原子发布、三方 rebase、撤销/恢复提案和 PostgreSQL 测试；
-媒体上传、鉴权 Range 下载、本地安全 GC、页面议题与治理、中英文搜索及索引恢复已实现；官方 SDK 提供 41 个 MCP 工具，复用同一 Core。部署仍待实现，尚无正式镜像。**
+媒体上传、鉴权 Range 下载、本地安全 GC、页面议题与治理、中英文搜索及索引恢复已实现；官方 SDK 提供 41 个 MCP 工具，复用同一 Core。
+React WebUI 已提供阅读、编辑、审核、讨论和治理流程，frontend CI 已启用。部署仍待实现，尚无正式镜像。**
 后续工作见[开发路线](docs/roadmap.md)与
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues)。
 
@@ -34,6 +35,9 @@ npm run check
 这些命令检查文档、REST/MCP 契约及仓库工作流，不代表应用功能已经通过测试。
 实现阶段逐步启用不可跳过的应用检查。参阅[开发说明](docs/development.md)、
 [部署恢复设计](docs/operations.md)。
+
+WebUI 开发先运行 `npm ci --prefix web`，再运行 `npm run dev --prefix web`。
+后端 origin 配置、状态边界及检查命令见 [WebUI](docs/web.md)。
 
 ## 参与开发
 
