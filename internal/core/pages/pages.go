@@ -44,6 +44,7 @@ type Tx interface {
 	Candidate(context.Context, string, string) (proposals.Revision, error)
 	Blob(context.Context, string) (Blob, error)
 	Audit(context.Context, identity.Actor, string, string, string) error
+	Moderation(context.Context, access.Moderation) error
 	Replay(context.Context, string, string, string, string) ([]byte, error)
 	Remember(context.Context, string, string, string, string, []byte) error
 	Cursor(context.Context, string, string, string, int) (int, error)

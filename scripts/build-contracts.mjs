@@ -187,6 +187,8 @@ const implementedRest = new Set([
   'proposal_create', 'proposal_update', 'proposal_diff', 'proposal_rebase', 'reviews_list',
   'review_create', 'proposal_merge', 'proposal_state', 'page_revert', 'page_restore',
   'upload_prepare', 'upload_content', 'upload_get', 'revision_content', 'proposal_content',
+  'page_moderate', 'issues_list', 'issue_create', 'issue_get', 'issue_state',
+  'issue_link_proposal', 'issue_moderate', 'comments_list', 'comment_create', 'comment_moderate',
 ]);
 function op(method, path, name, tag, summary, output, input, options = {}) {
   operations.push({ method, path, name, tag, summary, output, input, ...options });
@@ -231,13 +233,13 @@ op('post', '/proposals/{proposal_id}/merge', 'proposal_merge', 'Proposals', '原
 op('post', '/proposals/{proposal_id}/state', 'proposal_state', 'Proposals', '关闭或重开提案', 'Proposal', 'ProposalState');
 op('post', '/pages/{page_id}/revert', 'page_revert', 'Pages', '为撤销一次发布创建提案', 'Proposal', 'RollbackInput', { status: 201 });
 op('post', '/pages/{page_id}/restore', 'page_restore', 'Pages', '为恢复旧快照创建提案', 'Proposal', 'RollbackInput', { status: 201 });
-op('get', '/pages/{page_id}/issues', 'issues_list', 'Discussions', '列出页面议题', 'IssueList', null, { public: true, list: true });
+op('get', '/pages/{page_id}/issues', 'issues_list', 'Discussions', '列出页面议题', 'IssueList', null, { public: true, list: true, query: { include_hidden: { type: 'boolean' }, state: enumOf('open', 'closed') } });
 op('post', '/pages/{page_id}/issues', 'issue_create', 'Discussions', '创建页面议题', 'Issue', 'IssueInput', { status: 201 });
-op('get', '/issues/{issue_id}', 'issue_get', 'Discussions', '读取页面议题', 'Issue', null, { public: true });
+op('get', '/issues/{issue_id}', 'issue_get', 'Discussions', '读取页面议题', 'Issue', null, { public: true, query: { include_hidden: { type: 'boolean' } } });
 op('post', '/issues/{issue_id}/state', 'issue_state', 'Discussions', '关闭或重开页面议题', 'Issue', 'IssueState');
 op('post', '/issues/{issue_id}/proposals', 'issue_link_proposal', 'Discussions', '关联同页面提案', 'Issue', 'IssueLink');
 op('post', '/issues/{issue_id}/moderation', 'issue_moderate', 'Discussions', '管理者隐藏或恢复议题', 'Issue', 'ModerationInput');
-op('get', '/issues/{issue_id}/comments', 'comments_list', 'Discussions', '读取可见评论', 'CommentList', null, { public: true, list: true });
+op('get', '/issues/{issue_id}/comments', 'comments_list', 'Discussions', '读取可见评论', 'CommentList', null, { public: true, list: true, query: { include_hidden: { type: 'boolean' } } });
 op('post', '/issues/{issue_id}/comments', 'comment_create', 'Discussions', '追加议题评论', 'Comment', 'CommentInput', { status: 201 });
 op('post', '/comments/{comment_id}/moderation', 'comment_moderate', 'Discussions', '管理者隐藏或恢复评论', 'Comment', 'ModerationInput');
 op('post', '/uploads', 'upload_prepare', 'Media', '预约鉴权媒体上传', 'Upload', 'UploadInput', { status: 201 });

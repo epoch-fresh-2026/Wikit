@@ -5437,6 +5437,16 @@
           "cursor": {
             "type": "string",
             "maxLength": 2048
+          },
+          "include_hidden": {
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
           }
         }
       },
@@ -5692,6 +5702,9 @@
           "issue_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "include_hidden": {
+            "type": "boolean"
           }
         }
       },
@@ -6204,6 +6217,9 @@
           "cursor": {
             "type": "string",
             "maxLength": 2048
+          },
+          "include_hidden": {
+            "type": "boolean"
           }
         }
       },

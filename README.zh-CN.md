@@ -7,7 +7,7 @@ Wikit 是面向公开社区的开源、自托管 Wiki。它借鉴 Git 的提案�
 REST 与 MCP 使用同一套账户权限。
 
 **当前状态：已实现账户/授权治理、不可变历史、审核与原子发布、三方 rebase、撤销/恢复提案和 PostgreSQL 测试；
-媒体上传、鉴权 Range 下载与本地安全 GC 已实现；MCP 与部署仍待实现，尚无正式镜像。**
+媒体上传、鉴权 Range 下载、本地安全 GC，以及页面议题、不可变评论、提案关联和治理审计已实现；MCP 与部署仍待实现，尚无正式镜像。**
 后续工作见[开发路线](docs/roadmap.md)与
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues)。
 

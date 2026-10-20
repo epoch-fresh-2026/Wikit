@@ -26,6 +26,14 @@ type Policy struct {
 	Version    int64   `json:"policy_version"`
 	Grants     []Grant `json:"grants"`
 }
+
+// Moderation is the immutable governance decision saved with its protected mutation.
+type Moderation struct {
+	Actor                                     identity.Actor
+	PageID, TargetID, Kind, Reason, RequestID string
+	Hidden                                    bool
+	Version                                   int64
+}
 type Group struct {
 	ID      string   `json:"id"`
 	Name    string   `json:"name"`
