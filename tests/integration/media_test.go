@@ -136,6 +136,10 @@ func TestMEDIA01UploadPublicationAndFixedDownloads(t *testing.T) {
 	snapshot.BlobID = &newBlob.ID
 	next := s.createProposal(t, c, page.Page.ID, &rev.ID, snapshot, "replacement-media-proposal")
 	s.publish(t, admin, next, &rev.ID, "replacement-media-publish")
+	s.binary(t, "GET", "/api/v1/proposals/"+page.Proposal.ID+"/revisions/"+next.CurrentRevision.ID+"/content", nil, c, nil, 404)
+	doc := s.createPage(t, c, "public", document("Other page", "body"), "download-other-document")
+	s.binary(t, "GET", "/api/v1/pages/"+doc.Page.ID+"/revisions/"+rev.ID+"/content", nil, c, nil, 404)
+	s.binary(t, "GET", "/api/v1/proposals/"+doc.Proposal.ID+"/revisions/"+doc.Proposal.CurrentRevision.ID+"/content", nil, c, nil, 422)
 	raw, _ = s.binary(t, "GET", url, nil, c, nil, 200)
 	if !bytes.Equal(raw, pngBody) {
 		t.Fatal("old content followed head")
