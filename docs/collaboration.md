@@ -35,6 +35,22 @@ merged 的提案返回 `invalid_state`。禁止把传输重试误当新发布。
 
 ## 三方合并
 
+Issue #5 将状态、审核、diff、rebase、merge、revert/restore 作为同一 Core 提案服务的用例。
+所有业务写入先在事务内验证当前 read，再重放幂等结果或检查操作权限；
+审核记录按数据库递增序号确定同账户的最新立场，不依赖同时间戳排序。
+关闭不要求仍有 propose，但必须仍可读且为作者或管理者；重开递增轮次。
+更新候选和 rebase 同时递增 proposal version 与 review round；审核本身不改候选版本。
+已过期 base 不接受新审核，需先 rebase 或提交明确解决后的完整候选。
+
+逐行差异由注入的文本适配器计算，Core 组合两侧不重叠的编辑；相同重叠结果兼容，
+不同重叠结果返回整个 Markdown 字段的结构化冲突。保留换行及末行无换行状态。
+diff 返回 base 与候选的字段值（Markdown 同时提供 unified diff），stale 独立反映 base/head。
+空 base 按同类型空快照参与首次发布竞争的三方比较。
+
+媒体候选允许复用本 Page 的已发布或候选历史 blob（包括关闭提案），新 blob 仍要求
+上传者本人或管理员；复用不授予跨 Page 或未关联 blob 的访问权限。所有发布/回滚引用
+在事务内重查当前目标 ACL、固定媒体版本和 ready blob。
+
 设 B 为候选基础发布快照，H 为当前发布快照，P 为候选快照。
 
 1. B = H 时可正常审核合并。

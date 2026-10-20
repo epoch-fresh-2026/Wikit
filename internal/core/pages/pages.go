@@ -16,24 +16,8 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 )
 
-type Page struct {
-	ID             string  `json:"id"`
-	Type           string  `json:"type"`
-	Visibility     string  `json:"visibility"`
-	Status         string  `json:"status"`
-	HeadRevisionID *string `json:"head_revision_id"`
-	PolicyVersion  int64   `json:"policy_version"`
-}
-type Revision struct {
-	ID               string           `json:"id"`
-	PageID           string           `json:"page_id"`
-	ParentID         *string          `json:"parent_id"`
-	SourceProposalID string           `json:"source_proposal_id"`
-	Snapshot         content.Snapshot `json:"snapshot"`
-	CreatedAt        time.Time        `json:"created_at"`
-	AuthorID         string           `json:"author_id"`
-	ContentURL       *string          `json:"content_url"`
-}
+type Page = content.Page
+type Revision = content.Published
 type Detail struct {
 	Page     Page      `json:"page"`
 	Revision *Revision `json:"revision"`
@@ -42,7 +26,7 @@ type Created struct {
 	Page     Page               `json:"page"`
 	Proposal proposals.Proposal `json:"proposal"`
 }
-type Blob struct{ ID, State, Uploader string }
+type Blob = content.Blob
 type Tx interface {
 	access.Authorization
 	SavePolicy(context.Context, access.Policy) error
@@ -126,20 +110,8 @@ func (s *Service) Create(ctx context.Context, r access.Request, visibility strin
 				return fault.State
 			}
 		}
-		for _, ref := range refs {
-			if _, _, err := access.Authorize(ctx, tx, r.Credentials, ref.PageID, "read", false); err != nil {
-				return err
-			}
-			p, err := tx.Page(ctx, ref.PageID)
-			if err != nil {
-				return err
-			}
-			if p.Type != "media" || p.HeadRevisionID == nil {
-				return fault.Invalid
-			}
-			if _, err := tx.Revision(ctx, ref.PageID, ref.RevisionID); err != nil {
-				return err
-			}
+		if err := content.CheckReferences(ctx, tx, r.Credentials, refs); err != nil {
+			return err
 		}
 		id, err := s.secrets.ID()
 		if err != nil {

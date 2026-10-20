@@ -19,11 +19,13 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 )
 
 type API struct {
 	Identity   *identity.Service
 	Pages      *pages.Service
+	Proposals  *proposals.Service
 	Access     *access.Service
 	Secrets    identity.Secrets
 	PublicURL  string
@@ -40,6 +42,9 @@ func decode(r *http.Request, dst any, fields ...string) ([]byte, error) {
 	return decodeLimit(r, dst, 65536, fields...)
 }
 func decodeLimit(r *http.Request, dst any, maximum int64, fields ...string) ([]byte, error) {
+	return decodeFields(r, dst, maximum, nil, fields...)
+}
+func decodeFields(r *http.Request, dst any, maximum int64, nullable map[string]bool, fields ...string) ([]byte, error) {
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || media != "application/json" {
 		return nil, fault.BadRequest
@@ -62,7 +67,7 @@ func decodeLimit(r *http.Request, dst any, maximum int64, fields ...string) ([]b
 	}
 	for _, field := range fields {
 		value, ok := keys[field]
-		if !ok || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+		if !ok || !nullable[field] && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
 			return nil, fault.BadRequest
 		}
 	}
@@ -96,7 +101,7 @@ func failure(w http.ResponseWriter, err error, requestID string) {
 			status = 403
 		case fault.NotFound:
 			status = 404
-		case fault.Stale, fault.State, fault.Idempotency:
+		case fault.Stale, fault.State, fault.Idempotency, fault.ReviewRequired, fault.MergeConflict:
 			status = 409
 		case fault.Invalid:
 			status = 422
@@ -105,7 +110,12 @@ func failure(w http.ResponseWriter, err error, requestID string) {
 			w.Header().Set("Retry-After", "60")
 		}
 	}
-	response(w, status, map[string]any{"error": map[string]string{"code": code, "message": code, "request_id": requestID}})
+	detail := map[string]any{"code": code, "message": code, "request_id": requestID}
+	var conflicts *fault.Conflicts
+	if errors.As(err, &conflicts) {
+		detail["conflicts"] = conflicts.Fields
+	}
+	response(w, status, map[string]any{"error": detail})
 }
 func (a API) cookie(w http.ResponseWriter, value string, clear bool) {
 	u, _ := url.Parse(a.PublicURL)

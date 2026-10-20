@@ -22,6 +22,9 @@ func (t *securityTx) InsertInitial(ctx context.Context, p proposals.Proposal, re
 	if _, err := t.Exec(ctx, "INSERT INTO wikit.proposals VALUES($1,$2,$3,$4,$5,$6,$7)", p.ID, p.PageID, p.AuthorID, p.State, p.Version, p.ReviewRound, p.CurrentRevision.ID); err != nil {
 		return storageError(err)
 	}
+	return t.InsertCandidate(ctx, p, refs)
+}
+func (t *securityTx) InsertCandidate(ctx context.Context, p proposals.Proposal, refs []content.MediaRef) error {
 	raw, err := json.Marshal(p.CurrentRevision.Snapshot)
 	if err != nil {
 		return err
@@ -29,21 +32,7 @@ func (t *securityTx) InsertInitial(ctx context.Context, p proposals.Proposal, re
 	if _, err := t.Exec(ctx, `INSERT INTO wikit.proposal_revisions(id,proposal_id,page_id,type,base_revision_id,snapshot,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`, p.CurrentRevision.ID, p.ID, p.PageID, p.CurrentRevision.Snapshot.Type, p.CurrentRevision.BaseRevisionID, raw, p.CurrentRevision.CreatedAt); err != nil {
 		return storageError(err)
 	}
-	for _, tag := range p.CurrentRevision.Snapshot.Tags {
-		if _, err := t.Exec(ctx, "INSERT INTO wikit.tags VALUES($1) ON CONFLICT DO NOTHING", tag); err != nil {
-			return storageError(err)
-		}
-		if _, err := t.Exec(ctx, "INSERT INTO wikit.proposal_revision_tags VALUES($1,$2)", p.CurrentRevision.ID, tag); err != nil {
-			return storageError(err)
-		}
-	}
-	for _, ref := range refs {
-		if _, err := t.Exec(ctx, "INSERT INTO wikit.proposal_revision_media_refs(revision_id,target_page_id,target_revision_id) VALUES($1,$2,$3)", p.CurrentRevision.ID, ref.PageID, ref.RevisionID); err != nil {
-			return storageError(err)
-		}
-	}
-	_, err = t.Exec(ctx, "UPDATE wikit.proposal_revisions SET sealed=true WHERE id=$1", p.CurrentRevision.ID)
-	return storageError(err)
+	return t.associations(ctx, "proposal_revision", p.CurrentRevision.ID, p.CurrentRevision.Snapshot, refs)
 }
 
 const pageColumns = "p.id::text,p.type,a.visibility,a.status,p.head_revision_id::text,a.policy_version"

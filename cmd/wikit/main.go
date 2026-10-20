@@ -20,6 +20,7 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/health"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 	"github.com/epoch-fresh-2026/Wikit/internal/security"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/blobfs"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/postgres"
@@ -100,7 +101,7 @@ func run(ctx context.Context, args []string) error {
 		return errors.New("HTTP listener failed")
 	}
 	server := &http.Server{
-		Handler: (httpadapter.API{Identity: accounts, Access: access.New(db, secrets), Pages: pages.New(db, secrets, textadapter.Parser{}), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
+		Handler: (httpadapter.API{Identity: accounts, Access: access.New(db, secrets), Pages: pages.New(db, secrets, textadapter.Parser{}), Proposals: proposals.New(db, secrets, textadapter.Parser{}, textadapter.Differ{}), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
 	finished := make(chan error, 1)
