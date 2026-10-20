@@ -4,6 +4,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -23,6 +24,8 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/media"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/search"
+	"github.com/epoch-fresh-2026/Wikit/internal/search/meili"
 	"github.com/epoch-fresh-2026/Wikit/internal/security"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/blobfs"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/postgres"
@@ -41,7 +44,7 @@ func main() {
 
 func run(ctx context.Context, args []string) error {
 	if len(args) != 1 {
-		return errors.New("usage: wikit serve|migrate|create-admin|blob-gc")
+		return errors.New("usage: wikit serve|migrate|create-admin|blob-gc|search-rebuild|search-retry|search-status")
 	}
 	cfg, err := config.Load(os.Getenv, args[0])
 	if err != nil {
@@ -84,6 +87,32 @@ func run(ctx context.Context, args []string) error {
 		fmt.Fprintf(os.Stdout, "collected blobs=%d orphan_files=%d\n", out.Blobs, out.Orphans)
 		return err
 	}
+	index := meili.New(cfg.MeiliURL, cfg.MeiliKey)
+	searchWorker := search.NewWorker(db, index, textadapter.Parser{}, security.Secrets{})
+	if strings.HasPrefix(args[0], "search-") {
+		switch args[0] {
+		case "search-rebuild":
+			name, err := searchWorker.Rebuild(ctx)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(os.Stdout, "active_index="+name)
+		case "search-retry":
+			if err := searchWorker.Retry(ctx); err != nil {
+				return err
+			}
+			fmt.Fprintln(os.Stdout, "search retries scheduled")
+		case "search-status":
+			stats, err := searchWorker.Status(ctx)
+			if err != nil {
+				return err
+			}
+			if err := json.NewEncoder(os.Stdout).Encode(stats); err != nil {
+				return errors.New("status output failed")
+			}
+		}
+		return nil
+	}
 	passwords, err := security.NewPasswords()
 	if err != nil {
 		return err
@@ -125,8 +154,11 @@ func run(ctx context.Context, args []string) error {
 	if err != nil {
 		return errors.New("HTTP listener failed")
 	}
+	workerCtx, stopWorker := context.WithCancel(ctx)
+	workerDone := runSearchWorker(workerCtx, searchWorker)
+	defer func() { stopWorker(); <-workerDone }()
 	server := &http.Server{
-		Handler: (httpadapter.API{Discussions: discussions.New(db, secrets, textadapter.Parser{}), Identity: accounts, Access: access.New(db, secrets), Pages: pages.New(db, secrets, textadapter.Parser{}, files), Proposals: proposals.New(db, secrets, textadapter.Parser{}, textadapter.Differ{}, files), Media: media.New(db, files, secrets, cfg.MaxUploadBytes), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
+		Handler: (httpadapter.API{Search: search.New(db, index, textadapter.Parser{}, secrets), Discussions: discussions.New(db, secrets, textadapter.Parser{}), Identity: accounts, Access: access.New(db, secrets), Pages: pages.New(db, secrets, textadapter.Parser{}, files), Proposals: proposals.New(db, secrets, textadapter.Parser{}, textadapter.Differ{}, files), Media: media.New(db, files, secrets, cfg.MaxUploadBytes), Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)), ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 60 * time.Second,
 	}
 	finished := make(chan error, 1)

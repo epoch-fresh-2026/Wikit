@@ -5051,7 +5051,7 @@
           "Search"
         ],
         "summary": "检索并校验当前权限及版本",
-        "description": "检索并校验当前权限及版本。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "检索并校验当前权限及版本。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {

@@ -1,0 +1,216 @@
+package search
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"slices"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
+)
+
+type Query struct {
+	Q, Tag, Cursor string
+	Limit          int
+}
+type Hit struct {
+	PageID     string   `json:"page_id"`
+	RevisionID string   `json:"revision_id"`
+	Type       string   `json:"type"`
+	Title      string   `json:"title"`
+	Tags       []string `json:"tags"`
+	Snippet    string   `json:"snippet"`
+}
+type Result struct {
+	Items []Hit   `json:"items"`
+	Next  *string `json:"next_cursor"`
+}
+
+func valid(s string, max int) bool {
+	return utf8.ValidString(s) && !strings.ContainsRune(s, 0) && utf8.RuneCountInString(s) <= max
+}
+func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (Result, error) {
+	if !valid(q.Q, 500) || strings.TrimSpace(q.Q) == "" || !valid(q.Tag, 64) || q.Limit < 1 || q.Limit > 100 {
+		return Result{}, fault.BadRequest
+	}
+	q.Q = s.text.NFC(strings.TrimSpace(q.Q))
+	q.Tag = s.text.Fold(s.text.NFC(strings.TrimSpace(q.Tag)))
+	if !valid(q.Q, 500) || !valid(q.Tag, 64) {
+		return Result{}, fault.BadRequest
+	}
+	var index, binding, actorID string
+	var filter Filter
+	offset := 0
+	c.Write = false
+	err := s.repo.WithinSearch(ctx, func(tx Tx) error {
+		a, err := identity.Resolve(ctx, tx, c)
+		if err != nil {
+			return err
+		}
+		actorID = a.ID
+		groups, err := tx.Groups(ctx)
+		if err != nil {
+			return err
+		}
+		filter = Filter{Actor: a.ID, Admin: a.Role == "admin", Tag: q.Tag, Groups: []string{}}
+		for _, g := range groups {
+			if a.ID != "" && slices.Contains(g.Members, a.ID) {
+				filter.Groups = append(filter.Groups, g.ID)
+			}
+		}
+		index, err = tx.ActiveIndex(ctx)
+		if err != nil {
+			return err
+		}
+		raw, err := json.Marshal([]string{q.Q, q.Tag, index})
+		if err != nil {
+			return err
+		}
+		binding = "search:" + identity.Digest(string(raw))
+		if q.Cursor != "" {
+			offset, err = tx.Cursor(ctx, q.Cursor, a.ID, binding, q.Limit)
+		}
+		return err
+	})
+	if err != nil {
+		return Result{}, err
+	}
+	// No business authorization lock is held during the external search request.
+	candidates := []Candidate{}
+	more := false
+	position := offset
+	for len(candidates) < 1000 {
+		n := min(100, 1000-len(candidates))
+		batch, err := s.index.Search(ctx, index, q.Q, filter, position, n)
+		if err != nil {
+			return Result{}, fault.SearchUnavailable
+		}
+		candidates = append(candidates, batch.Hits...)
+		position += len(batch.Hits)
+		more = batch.More
+		if !batch.More || len(batch.Hits) == 0 {
+			break
+		}
+		// Revalidate in one current transaction below; fetch enough to survive ACL filtering.
+	}
+	out := Result{Items: []Hit{}}
+	err = s.repo.WithinSearch(ctx, func(tx Tx) error {
+		a, err := identity.Resolve(ctx, tx, c)
+		if err != nil {
+			return err
+		}
+		if a.ID != actorID {
+			return fault.BadRequest
+		}
+		current, err := tx.ActiveIndex(ctx)
+		if err != nil {
+			return err
+		}
+		if current != index {
+			return fault.BadRequest
+		}
+		groups, err := tx.Groups(ctx)
+		if err != nil {
+			return err
+		}
+		consumed := 0
+		seen := map[string]bool{}
+		for _, candidate := range candidates {
+			consumed++
+			if !identity.ValidID(candidate.ID) || !identity.ValidID(candidate.Revision) {
+				continue
+			}
+			source, err := tx.SearchSource(ctx, candidate.ID)
+			if errors.Is(err, fault.NotFound) {
+				continue
+			}
+			if err != nil {
+				return err
+			}
+			if source.Page.HeadRevisionID == nil || source.Page.Status != "published" {
+				if err := tx.Repair(ctx, candidate.ID); err != nil {
+					return err
+				}
+				continue
+			}
+			if access.CheckPolicy(a, source.Policy, groups, "read", false) != nil {
+				continue
+			}
+			if *source.Page.HeadRevisionID != candidate.Revision || source.Policy.Version != candidate.PolicyVersion {
+				if err := tx.Repair(ctx, candidate.ID); err != nil {
+					return err
+				}
+				continue
+			}
+			if q.Tag != "" && !slices.Contains(source.Snapshot.Tags, q.Tag) {
+				continue
+			}
+			if seen[candidate.ID] {
+				continue
+			}
+			seen[candidate.ID] = true
+			doc, err := project(source, s.text)
+			if err != nil {
+				return err
+			}
+			if doc == nil {
+				continue
+			}
+			snippet := []rune(doc.Body)
+			if len(snippet) > 2000 {
+				snippet = snippet[:2000]
+			}
+			out.Items = append(out.Items, Hit{doc.ID, doc.Revision, doc.Type, doc.Title, doc.Tags, string(snippet)})
+			if len(out.Items) == q.Limit {
+				break
+			}
+		}
+		if consumed < len(candidates) || more {
+			plain, err := s.secrets.Secret()
+			if err != nil {
+				return err
+			}
+			next, err := tx.NewCursor(ctx, plain, a.ID, binding, offset+consumed, q.Limit)
+			if err != nil {
+				return err
+			}
+			out.Next = &next
+		}
+		return nil
+	})
+	if err != nil {
+		return Result{}, err
+	}
+	return out, nil
+}
+func project(s Source, text Text) (*Document, error) {
+	if s.Page.HeadRevisionID == nil || s.Page.Status != "published" {
+		return nil, nil
+	}
+	markdown := ""
+	if s.Snapshot.Markdown != nil {
+		markdown = *s.Snapshot.Markdown
+	} else if s.Snapshot.Description != nil {
+		markdown = *s.Snapshot.Description
+	}
+	body, err := text.Plain(markdown)
+	if err != nil {
+		return nil, err
+	}
+	d := &Document{ID: s.Page.ID, Revision: *s.Page.HeadRevisionID, PolicyVersion: s.Policy.Version, Type: s.Page.Type, Title: s.Snapshot.Title, Tags: s.Snapshot.Tags, Body: body, Visibility: s.Policy.Visibility, Users: []string{}, Groups: []string{}}
+	for _, grant := range s.Policy.Grants {
+		if !slices.Contains(grant.Capabilities, "read") {
+			continue
+		}
+		if grant.SubjectType == "user" {
+			d.Users = append(d.Users, grant.SubjectID)
+		} else if grant.SubjectType == "group" {
+			d.Groups = append(d.Groups, grant.SubjectID)
+		}
+	}
+	return d, nil
+}

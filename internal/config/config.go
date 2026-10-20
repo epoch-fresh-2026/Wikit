@@ -11,28 +11,49 @@ import (
 )
 
 type Config struct {
-	DatabaseURL    string
-	PublicURL      string
-	ListenAddr     string
-	MediaRoot      string
-	Registration   bool
-	SessionTTL     time.Duration
-	MaxUploadBytes int64
-	GCGrace        time.Duration
+	MeiliURL, MeiliKey string
+	DatabaseURL        string
+	PublicURL          string
+	ListenAddr         string
+	MediaRoot          string
+	Registration       bool
+	SessionTTL         time.Duration
+	MaxUploadBytes     int64
+	GCGrace            time.Duration
 }
 
 func Load(getenv func(string) string, command string) (Config, error) {
 	var c Config
-	if command != "serve" && command != "migrate" && command != "create-admin" && command != "blob-gc" {
-		return c, errors.New("usage: wikit serve|migrate|create-admin|blob-gc")
+	if command != "serve" && command != "migrate" && command != "create-admin" && command != "blob-gc" && command != "search-rebuild" && command != "search-retry" && command != "search-status" {
+		return c, errors.New("usage: wikit serve|migrate|create-admin|blob-gc|search-rebuild|search-retry|search-status")
 	}
 	c.DatabaseURL = getenv("WIKIT_DATABASE_URL")
 	u, err := url.Parse(c.DatabaseURL)
 	if err != nil || u == nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || u.Hostname() == "" || strings.Trim(u.Path, "/") == "" {
 		return Config{}, errors.New("WIKIT_DATABASE_URL must be a PostgreSQL URL with host and database")
 	}
-	if command == "migrate" || command == "create-admin" {
+	if command == "migrate" || command == "create-admin" || command == "search-status" || command == "search-retry" {
 		return c, nil
+	}
+	if command == "serve" || command == "search-rebuild" {
+		c.MeiliURL = getenv("WIKIT_MEILI_URL")
+		c.MeiliKey = getenv("WIKIT_MEILI_KEY")
+		u, err := url.Parse(c.MeiliURL)
+		if err != nil || u == nil || u.Hostname() == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || u.Path != "" && u.Path != "/" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+			return Config{}, errors.New("WIKIT_MEILI_URL must be an internal HTTP(S) origin without credentials or path")
+		}
+		if u.Port() != "" {
+			port, err := strconv.Atoi(u.Port())
+			if err != nil || port < 1 || port > 65535 {
+				return Config{}, errors.New("WIKIT_MEILI_URL has an invalid port")
+			}
+		}
+		if len(c.MeiliKey) < 16 || strings.ContainsAny(c.MeiliKey, "\r\n") {
+			return Config{}, errors.New("WIKIT_MEILI_KEY must contain at least 16 bytes without line breaks")
+		}
+		if command == "search-rebuild" {
+			return c, nil
+		}
 	}
 	c.MediaRoot = getenv("WIKIT_MEDIA_ROOT")
 	if c.MediaRoot == "" {

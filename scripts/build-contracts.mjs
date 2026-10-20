@@ -187,7 +187,7 @@ const implementedRest = new Set([
   'proposal_create', 'proposal_update', 'proposal_diff', 'proposal_rebase', 'reviews_list',
   'review_create', 'proposal_merge', 'proposal_state', 'page_revert', 'page_restore',
   'upload_prepare', 'upload_content', 'upload_get', 'revision_content', 'proposal_content',
-  'page_moderate', 'issues_list', 'issue_create', 'issue_get', 'issue_state',
+  'search', 'page_moderate', 'issues_list', 'issue_create', 'issue_get', 'issue_state',
   'issue_link_proposal', 'issue_moderate', 'comments_list', 'comment_create', 'comment_moderate',
 ]);
 function op(method, path, name, tag, summary, output, input, options = {}) {
