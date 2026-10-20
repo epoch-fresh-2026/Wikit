@@ -1,7 +1,7 @@
 {
-  "backend": false,
+  "backend": true,
   "frontend": false,
-  "integration": false,
+  "integration": true,
   "container": false,
   "release_ready": false
 }

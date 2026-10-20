@@ -2,8 +2,27 @@
 
 ## 本轮与后续实现
 
-本轮交付设计、机器契约、检查工具、GitHub Issue 和远端治理。
-不创建空壳应用冒充功能完成，也不发布没有功能的 v0.1 镜像。
+Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 迁移和真实
+PostgreSQL 测试；不代表账户、页面、提案、REST/MCP 产品接口或可部署 v0.1 已完成。
+前端、容器与 release_ready 保持关闭。
+
+后端使用 Go 1.25.0、pgx v5.10.0、PostgreSQL 18.6（本地与 CI），依赖由
+go.mod/go.sum 锁定。仅 composition root 装配 Core、HTTP、数据库及媒体目录检查。
+
+```sh
+go run ./cmd/wikit migrate
+go run ./cmd/wikit serve
+go vet ./...
+go test -race -count=1 ./...
+go test -race -count=1 -tags=integration ./tests/integration/...
+```
+
+环境配置见 `.env.example`（命令读取进程环境，不自动加载 dotenv）。
+serve 必须提供 WIKIT_PUBLIC_URL、WIKIT_DATABASE_URL；媒体目录必须已存在。
+migrate 只要求 WIKIT_DATABASE_URL，迁移事务使用 60 秒超时；不会随 serve 自动执行。
+集成测试要求 WIKIT_DATABASE_URL 指向允许 CREATE DATABASE 的测试账户；
+每例创建独立数据库并在结束时删除，缺少配置直接失败，不跳过。
+仅健康端点可用，未知路由返回 404。搜索服务尚未接入健康状态。
 
 本地文档工具需要 Node.js 24 和 npm：
 

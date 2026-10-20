@@ -1,4 +1,4 @@
-* text=auto eol=lf
-*.png binary
-*.jpg binary
-*.pdf binary
+* text=auto
+# SQL checksums must be identical on Windows and Linux.
+*.sql text eol=lf
+*.go text eol=lf
