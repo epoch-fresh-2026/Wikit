@@ -3,7 +3,7 @@
   "info": {
     "title": "Wikit REST API",
     "version": "0.1.0",
-    "description": "已锁定的 v0.1 设计契约；应用尚未实现。所有传输入口复用 Core。",
+    "description": "已锁定的 v0.1 设计契约；账户与授权 REST 已实现，其余逐项实现。所有传输入口复用 Core。",
     "license": {
       "name": "MIT",
       "identifier": "MIT"
@@ -53,7 +53,7 @@
           "Accounts"
         ],
         "summary": "注册账户并显示一次 Token",
-        "description": "注册账户并显示一次 Token。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "注册账户并显示一次 Token。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [],
         "parameters": [],
         "responses": {
@@ -120,7 +120,7 @@
           "Accounts"
         ],
         "summary": "登录并建立安全会话",
-        "description": "登录并建立安全会话。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "登录并建立安全会话。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [],
         "parameters": [],
         "responses": {
@@ -187,7 +187,7 @@
           "Accounts"
         ],
         "summary": "注销当前会话",
-        "description": "注销当前会话。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "注销当前会话。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -252,7 +252,7 @@
           "Accounts"
         ],
         "summary": "获取当前账户",
-        "description": "获取当前账户。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "获取当前账户。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -316,7 +316,7 @@
           "Accounts"
         ],
         "summary": "修改密码并撤销会话",
-        "description": "修改密码并撤销会话。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "修改密码并撤销会话。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -391,7 +391,7 @@
           "Accounts"
         ],
         "summary": "查询账户 Token 状态",
-        "description": "查询账户 Token 状态。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "查询账户 Token 状态。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -450,7 +450,7 @@
           "Accounts"
         ],
         "summary": "轮换唯一 Token",
-        "description": "轮换唯一 Token。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "轮换唯一 Token。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -532,7 +532,7 @@
           "Accounts"
         ],
         "summary": "撤销账户 Token",
-        "description": "撤销账户 Token。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "撤销账户 Token。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -607,7 +607,7 @@
           "Administration"
         ],
         "summary": "管理员列出账户",
-        "description": "管理员列出账户。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员列出账户。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -692,7 +692,7 @@
           "Administration"
         ],
         "summary": "管理员更新角色或状态",
-        "description": "管理员更新角色或状态。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员更新角色或状态。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -797,7 +797,7 @@
           "Administration"
         ],
         "summary": "管理员列出用户组",
-        "description": "管理员列出用户组。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员列出用户组。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -880,7 +880,7 @@
           "Administration"
         ],
         "summary": "管理员创建用户组",
-        "description": "管理员创建用户组。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员创建用户组。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -976,7 +976,7 @@
           "Administration"
         ],
         "summary": "管理员更新组及成员",
-        "description": "管理员更新组及成员。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员更新组及成员。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1081,7 +1081,7 @@
           "Administration"
         ],
         "summary": "管理员查询审计事件",
-        "description": "管理员查询审计事件。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理员查询审计事件。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1442,7 +1442,7 @@
           "Pages"
         ],
         "summary": "管理者读取页面权限",
-        "description": "管理者读取页面权限。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者读取页面权限。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -1514,7 +1514,7 @@
           "Pages"
         ],
         "summary": "管理者替换页面授权策略",
-        "description": "管理者替换页面授权策略。目标行为尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "description": "管理者替换页面授权策略。REST 已实现；MCP 适配器尚未实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -6457,7 +6457,8 @@
         "additionalProperties": false,
         "required": [
           "active",
-          "generation"
+          "generation",
+          "created_at"
         ],
         "properties": {
           "active": {
@@ -6466,6 +6467,10 @@
           "generation": {
             "type": "integer",
             "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

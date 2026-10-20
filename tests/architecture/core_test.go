@@ -50,15 +50,23 @@ func TestCoreDependencyBoundary(t *testing.T) {
 	}
 	decoder = json.NewDecoder(strings.NewReader(string(out)))
 	for {
-		var p struct{ ImportPath string }
+		var p struct {
+			ImportPath string
+			Imports    []string
+		}
 		if err := decoder.Decode(&p); err == io.EOF {
 			break
 		} else if err != nil {
 			t.Fatal(err)
 		}
-		for _, forbidden := range []string{"net/http", "database/sql", "os", "io/fs"} {
-			if p.ImportPath == forbidden || strings.HasPrefix(p.ImportPath, forbidden+"/") {
-				t.Errorf("Core imports infrastructure %s", p.ImportPath)
+		if !strings.HasPrefix(p.ImportPath, "github.com/epoch-fresh-2026/Wikit/internal/core/") {
+			continue
+		}
+		for _, imported := range p.Imports {
+			for _, forbidden := range []string{"net/http", "database/sql", "os", "io/fs"} {
+				if imported == forbidden || strings.HasPrefix(imported, forbidden+"/") {
+					t.Errorf("Core imports infrastructure %s", imported)
+				}
 			}
 		}
 	}

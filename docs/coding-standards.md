@@ -80,5 +80,7 @@ web/src/components/ui/    shadcn/ui 基础组件
 
 Issue #2 首次落地 `internal/core/health`，由该消费方定义 `Check(context.Context) error`
 小接口；HTTP 仅将健康用例结果映射为 200/503，具体 PostgreSQL／目录实现由
-`cmd/wikit` 注入。Core 边界测试遍历包的直接与传递依赖，禁止第三方库、协议、
-数据库及文件系统实现进入 Core；后续业务模块按实际用例建立，不创建空模块。
+`cmd/wikit` 注入。Core 边界测试遍历包的直接与传递依赖，禁止第三方库及非 Core
+项目包进入 Core，并禁止直接导入协议、数据库及文件系统 API。
+标准库内部依赖（如 encoding/json 经 fmt 使用 os）不代表 Core 调用文件系统。
+后续业务模块按实际用例建立，不创建空模块。

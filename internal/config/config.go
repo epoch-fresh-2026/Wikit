@@ -7,26 +7,29 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
-	DatabaseURL string
-	PublicURL   string
-	ListenAddr  string
-	MediaRoot   string
+	DatabaseURL  string
+	PublicURL    string
+	ListenAddr   string
+	MediaRoot    string
+	Registration bool
+	SessionTTL   time.Duration
 }
 
 func Load(getenv func(string) string, command string) (Config, error) {
 	var c Config
-	if command != "serve" && command != "migrate" {
-		return c, errors.New("usage: wikit serve|migrate")
+	if command != "serve" && command != "migrate" && command != "create-admin" {
+		return c, errors.New("usage: wikit serve|migrate|create-admin")
 	}
 	c.DatabaseURL = getenv("WIKIT_DATABASE_URL")
 	u, err := url.Parse(c.DatabaseURL)
 	if err != nil || u == nil || (u.Scheme != "postgres" && u.Scheme != "postgresql") || u.Hostname() == "" || strings.Trim(u.Path, "/") == "" {
 		return Config{}, errors.New("WIKIT_DATABASE_URL must be a PostgreSQL URL with host and database")
 	}
-	if command == "migrate" {
+	if command != "serve" {
 		return c, nil
 	}
 	c.PublicURL = getenv("WIKIT_PUBLIC_URL")
@@ -59,6 +62,20 @@ func Load(getenv func(string) string, command string) (Config, error) {
 	c.MediaRoot = getenv("WIKIT_MEDIA_ROOT")
 	if c.MediaRoot == "" {
 		c.MediaRoot = "/var/lib/wikit/media"
+	}
+	c.Registration = true
+	if value := getenv("WIKIT_REGISTRATION_ENABLED"); value != "" {
+		if value != "true" && value != "false" {
+			return Config{}, errors.New("WIKIT_REGISTRATION_ENABLED must be true or false")
+		}
+		c.Registration = value == "true"
+	}
+	c.SessionTTL = 24 * time.Hour
+	if value := getenv("WIKIT_SESSION_TTL"); value != "" {
+		c.SessionTTL, err = time.ParseDuration(value)
+		if err != nil || c.SessionTTL < 5*time.Minute || c.SessionTTL > 168*time.Hour {
+			return Config{}, errors.New("WIKIT_SESSION_TTL must be between 5m and 168h")
+		}
 	}
 	return c, nil
 }
