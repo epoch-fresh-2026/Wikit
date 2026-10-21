@@ -8,9 +8,9 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "generate:api": "openapi-typescript ../api/openapi.json -o src/lib/api.generated.d.ts",
+    "generate:api": "node ../node_modules/openapi-typescript/bin/cli.js ../api/openapi.json -o src/lib/api.generated.d.ts",
     "typecheck": "npm run check:api && tsc --noEmit",
-    "check:api": "openapi-typescript ../api/openapi.json -o src/lib/api.generated.d.ts --check",
+    "check:api": "node ../node_modules/openapi-typescript/bin/cli.js ../api/openapi.json -o src/lib/api.generated.d.ts --check",
     "format": "prettier --write src vite.config.ts",
     "test:ci": "vitest run",
     "build": "vite build"
@@ -37,7 +37,6 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "jsdom": "29.1.1",
-    "openapi-typescript": "7.13.0",
     "prettier": "3.8.3",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
