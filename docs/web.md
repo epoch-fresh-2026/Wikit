@@ -42,3 +42,5 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 frontend CI 随实现启用。组件测试覆盖用户行为、
 契约请求、CSRF、错误/冲突与草稿保留、安全 Markdown、取消读取、身份隔离及键盘操作。
 模拟 API 的组件测试不算真实后端端到端 smoke；实际运行的范围在 Issue/PR 中单独记录。
+
+Issue #33 升级 jsdom 30 后，根目录与 Web 开发环境最低要求 Node 24.15.0（<25）；Docker 构建同步固定该版本。
