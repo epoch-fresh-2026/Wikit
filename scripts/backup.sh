@@ -23,5 +23,10 @@ docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U wikit -d wikit -Atc \
 docker run --rm --network none --user 0 -v "$volume:/media:ro" -v "$dest:/backup" -v "$PWD/scripts/verify-media.sh:/verify-media.sh:ro" postgres:18.6 \
   sh -ec 'cd /media; find . -type f -exec sha256sum {} \; | sort > /backup/media.sha256; sh /verify-media.sh; tar --numeric-owner -cpf /backup/media.tar .'
 docker compose images --format json > "$dest/images.json"
-(cd "$dest"; sha256sum database.dump media.tar media.sha256 reachable.tsv schema.txt images.json > SHA256SUMS)
+image=$(docker inspect -f '{{.Config.Image}}' "$container")
+image_id=$(docker inspect -f '{{.Image}}' "$container")
+printf '%s\n' "$image" > "$dest/application-ref.txt"
+printf '%s\n' "$image_id" > "$dest/application-id.txt"
+docker image inspect -f '{{json .RepoDigests}}' "$image_id" > "$dest/registry-digests.json"
+(cd "$dest"; sha256sum database.dump media.tar media.sha256 reachable.tsv schema.txt images.json application-ref.txt application-id.txt registry-digests.json > SHA256SUMS)
 printf 'Backup complete; application remains stopped: %s\n' "$dest"

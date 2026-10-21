@@ -17,8 +17,9 @@ WIKIT_DATABASE_PASSWORD 属于应用角色，两者均须设置。已有卷不�
 应用可管理自己的 schema，但不能创建数据库、角色或使用超级用户能力。
 
 备份命令要求显式 COMPOSE_PROJECT_NAME，调用 `bash scripts/backup.sh /absolute/new-backup`，
-输出数据库 dump、原件 tar、逐文件校验、可达原件清单、迁移历史与镜像信息；应用保持停止，
-确认备份完整后自行 `docker compose up -d --wait wikit`。恢复目标须先启动依赖并
+输出数据库 dump、原件 tar、逐文件校验、可达原件清单、迁移历史与镜像信息。
+镜像信息包含容器实际使用的引用、image ID 及该 ID 的 registry RepoDigests；本地构建的 RepoDigests 可以为空。
+应用保持停止；确认备份完整后自行 `docker compose up -d --wait wikit`。恢复目标须先启动依赖并
 `docker compose create wikit` 建空原件卷，再 `bash scripts/restore.sh /absolute/backup`。
 脚本拒绝非空目标和运行中的应用；备份源不可来自不可信第三方。恢复后使用匹配镜像
 运行 `search-rebuild`，完成原件校验再开放入口。会话、个人 Token、幂等响应和游标均被撤销。
@@ -105,6 +106,7 @@ blob 删除意图与完成状态写入审计，actor 为本地系统、request_i
 
 如果旧应用兼容新 schema，可切回旧镜像；否则恢复匹配的数据库和媒体备份。
 数据库回退不是简单回滚容器，发行说明必须说明兼容窗口与数据损失边界。
+同 schema 切换镜像保留现有数据；恢复备份会丢失该备份点之后的数据库变更及未备份原件。
 
 ## 一致备份
 
