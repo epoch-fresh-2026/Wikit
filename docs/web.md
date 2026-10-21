@@ -34,7 +34,7 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 
 ## 开发与验证
 
-`npm ci --prefix web` 后运行 `npm run dev --prefix web`。浏览器访问 127.0.0.1:5173；
+先 `npm ci` 安装根目录契约生成器，再 `npm ci --prefix web`，然后运行 `npm run dev --prefix web`。浏览器访问 127.0.0.1:5173；
 后端使用 WIKIT_PUBLIC_URL=http://127.0.0.1:5173、监听 127.0.0.1:8080，Vite 仅代理 /api 和 /health。
 代理保留浏览器 Origin，不通过改写 Origin 绕过 CSRF。生产 dist 的嵌入及 Compose 由 #11 完成。
 

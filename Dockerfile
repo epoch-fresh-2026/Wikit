@@ -1,4 +1,7 @@
 FROM node:24.14.1-alpine3.22 AS frontend
+WORKDIR /src
+COPY package*.json ./
+RUN npm ci
 WORKDIR /src/web
 COPY web/package*.json ./
 RUN npm ci
