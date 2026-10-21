@@ -79,7 +79,7 @@ export function SelectField({
     <div className="field">
       <Label htmlFor={id}>{label}</Label>
       <Select value={value || '__all__'} onValueChange={(v) => onChange(v === '__all__' ? '' : v)}>
-        <SelectTrigger id={id}>
+        <SelectTrigger id={id} className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

@@ -217,6 +217,7 @@ export function AdminScreen() {
           <section className="panel">
             <h2>创建用户组</h2>
             <form
+              className="stack"
               onSubmit={(e) => {
                 e.preventDefault()
                 void action.run(async () => {
@@ -278,6 +279,7 @@ function AccountRow({ item, done }: { item: Schema<'AccountAdmin'>; done: () => 
       <h2>{item.account.username}</h2>
       <p className="id">{item.account.id}</p>
       <form
+        className="stack"
         onSubmit={(e) => {
           e.preventDefault()
           void action.run(async () => {
@@ -333,6 +335,7 @@ function GroupRow({ group, done }: { group: Schema<'Group'>; done: () => void })
       <h2>{group.name}</h2>
       <p className="id">{group.id}</p>
       <form
+        className="stack"
         onSubmit={(e) => {
           e.preventDefault()
           void action.run(async () => {
