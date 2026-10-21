@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
+	"regexp"
 	"sort"
 	"sync"
 	"time"
@@ -62,7 +63,7 @@ func main() {
 		initialize()
 	case "smoke":
 		smoke()
-	case "verify":
+	case "verify", "verify-api":
 		verify(false)
 	case "restored":
 		verify(true)
@@ -255,23 +256,47 @@ func verify(restored bool) {
 		s.MemberToken, _, _ = login("acceptance_member")
 		save(s)
 		fmt.Println("restored credentials revoked; administrators and members can log in again")
+		anonymous := request("GET", "/api/v1/search?q=restricted%20secret%20marker", "", nil, 200)
+		if bytes.Contains(anonymous, []byte(s.Private.Page.ID)) {
+			panic("restricted search leaked after restore")
+		}
+		member := request("GET", "/api/v1/search?q=restricted%20secret%20marker", s.MemberToken, nil, 200)
+		if !bytes.Contains(member, []byte(s.Private.Page.ID)) {
+			panic("authorized search not rebuilt")
+		}
+		fmt.Println("rebuilt search excludes restricted content for anonymous users and returns it to its authorized author")
 	}
 	page := request("GET", "/api/v1/pages/"+s.Document.Page.ID, "", nil, 200)
 	if !bytes.Contains(page, []byte("历史正文")) {
 		panic("published body lost")
 	}
 	request("GET", "/api/v1/pages/"+s.Document.Page.ID+"/revisions/"+s.Revision, "", nil, 200)
-	request("GET", "/api/v1/pages/"+s.Document.Page.ID+"/revisions", "", nil, 200)
+	history := request("GET", "/api/v1/pages/"+s.Document.Page.ID+"/revisions", "", nil, 200)
+	if !bytes.Contains(history, []byte(s.Revision)) {
+		panic("publication history lost")
+	}
+	proposal := request("GET", "/api/v1/proposals/"+s.Document.Proposal.ID, s.MemberToken, nil, 200)
+	if !bytes.Contains(proposal, []byte(`"state":"merged"`)) || !bytes.Contains(proposal, []byte(s.Document.Proposal.CurrentRevision.ID)) {
+		panic("proposal state or candidate history lost")
+	}
 	request("GET", "/api/v1/pages/"+s.Private.Page.ID, "", nil, 404)
 	request("GET", "/api/v1/pages/"+s.Private.Page.ID, s.MemberToken, nil, 200)
 	b := request("GET", "/api/v1/pages/"+s.Media.Page.ID+"/revisions/"+s.MediaRevision+"/content", "", nil, 200)
 	if !bytes.Equal(b, png) {
 		panic("media original mismatch")
 	}
-	for _, p := range []string{"/", "/pages/" + s.Document.Page.ID, "/login"} {
-		b := request("GET", p, "", nil, 200)
-		if !bytes.Contains(b, []byte("/assets/")) {
-			panic("frontend missing")
+	if os.Args[1] != "verify-api" {
+		for _, p := range []string{"/", "/pages/" + s.Document.Page.ID, "/login"} {
+			b := request("GET", p, "", nil, 200)
+			if !bytes.Contains(b, []byte("/assets/")) {
+				panic("frontend missing")
+			}
+			for _, match := range regexp.MustCompile(`(?:src|href)="(/assets/[^"]+)"`).FindAllSubmatch(b, -1) {
+				asset := request("GET", string(match[1]), "", nil, 200)
+				if len(asset) < 100 || bytes.HasPrefix(asset, []byte("<!doctype html>")) {
+					panic("frontend asset missing")
+				}
+			}
 		}
 	}
 	b = request("GET", "/api/v1/unknown", "", nil, 404)
@@ -340,9 +365,12 @@ UPDATE wikit.pages p SET head_revision_id=f.r FROM fixture f WHERE p.id=f.p;`)
 type metric struct {
 	Phase                         string `json:"phase"`
 	Requests, Concurrency, Errors int
-	P50, P95, P99                 float64
+	P50                           float64 `json:"p50_ms"`
+	P95                           float64 `json:"p95_ms"`
+	P99                           float64 `json:"p99_ms"`
 	RPS                           float64
 	Seconds                       float64
+	ErrorRate                     float64 `json:"error_rate"`
 }
 
 func benchmark() {
@@ -412,7 +440,7 @@ func benchmark() {
 		wg.Wait()
 		sort.Float64s(latencies)
 		seconds := time.Since(start).Seconds()
-		m := metric{Phase: phase, Requests: len(latencies), Concurrency: 100, Errors: failures, P50: latencies[len(latencies)*50/100], P95: latencies[len(latencies)*95/100], P99: latencies[len(latencies)*99/100], RPS: float64(len(latencies)) / seconds, Seconds: seconds}
+		m := metric{Phase: phase, Requests: len(latencies), Concurrency: 100, Errors: failures, P50: latencies[len(latencies)*50/100], P95: latencies[len(latencies)*95/100], P99: latencies[len(latencies)*99/100], RPS: float64(len(latencies)) / seconds, Seconds: seconds, ErrorRate: float64(failures) / float64(len(latencies))}
 		b, err := json.Marshal(m)
 		must(err)
 		fmt.Println(string(b))
