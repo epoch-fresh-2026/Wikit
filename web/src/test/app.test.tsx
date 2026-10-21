@@ -513,3 +513,99 @@ it('keeps focus while typing a multi-character tag filter into the URL-backed di
     expect(fetcher.mock.calls.some(([url]) => url.includes('tag=knowledge'))).toBe(true),
   )
 })
+
+it('paginates group member choices without submitting the group form', async () => {
+  const second = { ...account, id: proposalID, username: 'bob', display_name: 'Bob' }
+  const { user, fetcher } = mount('/admin/groups', (path, init) => {
+    if (path.startsWith('/api/v1/admin/groups?'))
+      return json(
+        list([
+          { id: proposalID, name: '成员分页', version: 1, member_ids: [], create_page: false },
+        ]),
+      )
+    if (path.startsWith('/api/v1/admin/accounts?'))
+      return path.includes('cursor=next-members')
+        ? json(list([{ account: second, auth_version: 1 }]))
+        : json({ items: [{ account, auth_version: 1 }], next_cursor: 'next-members' })
+    if (init.method === 'PUT') return failure('forbidden', 403)
+  })
+  await user.click(await screen.findByRole('checkbox', { name: /Alice/ }))
+  await user.click(screen.getByRole('button', { name: /下一页/ }))
+  await screen.findByRole('checkbox', { name: /Bob/ })
+  await user.click(screen.getByRole('button', { name: /上一页/ }))
+  expect(await screen.findByRole('checkbox', { name: /Alice/ })).toBeChecked()
+  expect(fetcher.mock.calls.some(([, init]) => init.method === 'PUT')).toBe(false)
+  await user.click(screen.getByRole('button', { name: '保存用户组' }))
+  await waitFor(() =>
+    expect(fetcher.mock.calls.filter(([, init]) => init.method === 'PUT')).toHaveLength(1),
+  )
+})
+
+it('labels rebase conflict sides according to the Core contract', async () => {
+  const { user } = mount(`/pages/${pageID}/proposals/${proposalID}`, (path, init) => {
+    if (path.endsWith('/diff'))
+      return json({
+        base_revision_id: candidateID,
+        head_revision_id: revisionID,
+        proposal_revision_id: candidateID,
+        stale: true,
+        fields: [],
+      })
+    if (path.endsWith('/rebase') && init.method === 'POST')
+      return failure('merge_conflict', 409, {
+        conflicts: [{ path: '/markdown', base: 'BASE', ours: 'PUBLISHED', theirs: 'CANDIDATE' }],
+      })
+  })
+  await user.click(await screen.findByRole('button', { name: '更新基础版本' }))
+  const current = await screen.findByText('当前发布', { exact: true })
+  expect(within(current).getByText('PUBLISHED')).toBeInTheDocument()
+  expect(
+    within(screen.getByText('待合入内容', { exact: true })).getByText('CANDIDATE'),
+  ).toBeInTheDocument()
+})
+
+it('requires reading and acknowledging the current head before saving a stale candidate', async () => {
+  const head = {
+    ...revision,
+    id: proposalID,
+    snapshot: { ...revision.snapshot, type: 'document', markdown: '当前发布的新内容' },
+  }
+  const { user, fetcher } = mount(`/pages/${pageID}/proposals/${proposalID}/edit`, (path, init) => {
+    if (path === `/api/v1/pages/${pageID}`)
+      return json({
+        ...detail,
+        page: { ...detail.page, head_revision_id: head.id },
+        revision: head,
+      })
+    if (path.endsWith('/revisions') && init.method === 'POST') return failure('stale_revision', 409)
+  })
+  const editor = await screen.findByLabelText('Markdown 正文')
+  expect(await screen.findByRole('region', { name: '基础版本' })).toHaveTextContent(
+    '安全的页面正文',
+  )
+  expect(screen.getByRole('region', { name: '当前发布版本' })).toHaveTextContent('当前发布的新内容')
+  expect(screen.getByRole('button', { name: '保存修订' })).toBeDisabled()
+  fireEvent.submit(editor.closest('form')!)
+  expect(fetcher.mock.calls.some(([, init]) => init.method === 'POST')).toBe(false)
+  await user.clear(editor)
+  await user.type(editor, '已保留两边修改')
+  await user.click(screen.getByRole('checkbox', { name: '已结合当前发布内容解决冲突' }))
+  await user.click(screen.getByRole('button', { name: '保存修订' }))
+  await screen.findByText(/版本已变化/)
+  expect(editor).toHaveValue('已保留两边修改')
+  const [, init] = fetcher.mock.calls.find(([, init]) => init.method === 'POST')!
+  expect(JSON.parse(String(init.body))).toMatchObject({
+    expected_head_revision_id: head.id,
+    expected_proposal_revision_id: candidateID,
+    snapshot: { markdown: '已保留两边修改' },
+  })
+})
+
+it('requires displaying the diff before merging from a preview deep link', async () => {
+  const { user } = mount(`/pages/${pageID}/proposals/${proposalID}?view=preview`)
+  expect(await screen.findByRole('button', { name: '合并' })).toBeDisabled()
+  await user.click(screen.getByRole('tab', { name: '变更对比' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: '合并' })).toBeEnabled())
+  await user.click(screen.getByRole('tab', { name: '候选历史' }))
+  expect(screen.getByRole('button', { name: '合并' })).toBeDisabled()
+})

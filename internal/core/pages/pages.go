@@ -397,6 +397,12 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 			return fault.BadRequest
 		}
 		end := min(offset+q.Limit, len(ids))
+		if q.Kind == "pages" {
+			// Directory capabilities need the complete policy, including public ACLs.
+			if err := loadPolicies(ids[offset:end]); err != nil {
+				return err
+			}
+		}
 		out.Items = []json.RawMessage{}
 		for _, id := range ids[offset:end] {
 			var v any

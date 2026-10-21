@@ -9,10 +9,12 @@ import {
   Loading,
   SectionTitle,
   SelectField,
+  TagLinks,
 } from '@/components/shared'
 import { PageNavigation } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SnapshotEditor } from '@/features/editing/editor'
 import { SnapshotView } from '@/features/reading/markdown'
@@ -78,12 +80,21 @@ function ProposalDetail({
 }) {
   const page = useResource<Schema<'PageDetail'>>(`pages/${p.page_id}`),
     diff = useResource<Schema<'Diff'>>(`proposals/${p.id}/diff`)
+  const stale =
+    !!page.data && p.current_revision.base_revision_id !== page.data.page.head_revision_id
+  const baseRevision = useResource<Schema<'Revision'>>(
+    edit && stale && p.current_revision.base_revision_id
+      ? `pages/${p.page_id}/revisions/${p.current_revision.base_revision_id}`
+      : null,
+  )
+  const [resolved, setResolved] = useState(false)
   const auth = useAuth(),
     action = useAction(),
     navigate = useNavigate(),
     [params, setParams] = useSearchParams()
   const base = `/pages/${p.page_id}/proposals/${p.id}`,
-    caps = page.data?.capabilities ?? []
+    caps = page.data?.capabilities ?? [],
+    view = params.get('view') ?? 'diff'
   const canEdit =
     (p.author_id === auth.account?.id || caps.includes('manage')) &&
     caps.includes('propose') &&
@@ -112,16 +123,65 @@ function ProposalDetail({
         <Loading error={page.error} />
       ) : edit ? (
         canEdit ? (
-          <SnapshotEditor
-            initial={p.current_revision.snapshot}
-            action={action}
-            label="保存修订"
-            submit={async (snapshot, published) => {
-              await action.write(`proposals/${p.id}/revisions`, { ...pair, snapshot })
-              published()
-              navigate(base)
-            }}
-          />
+          <>
+            {stale && (
+              <section className="panel stack">
+                <h2>处理过期提案</h2>
+                <p>
+                  页面已有新版本。请对照基础与当前发布内容编辑候选，保留需要的修改；保存后提案将以当前发布版本为基础。
+                </p>
+                <div className="compare">
+                  <section aria-label="基础版本">
+                    <h3>基础版本</h3>
+                    {baseRevision.data ? (
+                      <>
+                        <h4>{baseRevision.data.snapshot.title}</h4>
+                        <TagLinks tags={baseRevision.data.snapshot.tags} />
+                        <SnapshotView
+                          snapshot={baseRevision.data.snapshot}
+                          contentURL={baseRevision.data.content_url}
+                        />
+                      </>
+                    ) : (
+                      <Loading error={baseRevision.error} />
+                    )}
+                  </section>
+                  <section aria-label="当前发布版本">
+                    <h3>当前发布版本</h3>
+                    {page.data.revision && (
+                      <>
+                        <h4>{page.data.revision.snapshot.title}</h4>
+                        <TagLinks tags={page.data.revision.snapshot.tags} />
+                        <SnapshotView
+                          snapshot={page.data.revision.snapshot}
+                          contentURL={page.data.revision.content_url}
+                        />
+                      </>
+                    )}
+                  </section>
+                </div>
+                <label className="check-label">
+                  <Checkbox
+                    checked={resolved}
+                    disabled={!baseRevision.data || !page.data.revision}
+                    onCheckedChange={(v) => setResolved(v === true)}
+                  />
+                  已结合当前发布内容解决冲突
+                </label>
+              </section>
+            )}
+            <SnapshotEditor
+              initial={p.current_revision.snapshot}
+              action={action}
+              label="保存修订"
+              submitDisabled={stale && (!resolved || !baseRevision.data || !page.data.revision)}
+              submit={async (snapshot, published) => {
+                await action.write(`proposals/${p.id}/revisions`, { ...pair, snapshot })
+                published()
+                navigate(base)
+              }}
+            />
+          </>
         ) : (
           <p role="alert">没有编辑此提案的权限。</p>
         )
@@ -136,12 +196,14 @@ function ProposalDetail({
             {caps.includes('merge') && p.state === 'open' && (
               <Button
                 disabled={
+                  view !== 'diff' ||
                   action.busy ||
                   !diff.data ||
                   diff.data.stale ||
                   diff.data.proposal_revision_id !== p.current_revision.id ||
                   diff.data.head_revision_id !== pair.expected_head_revision_id
                 }
+                title={view !== 'diff' ? '请先查看变更对比' : undefined}
                 onClick={() => void mutate('merge', pair)}
               >
                 合并
@@ -177,7 +239,7 @@ function ProposalDetail({
               )}
             </div>
           )}
-          <Tabs value={params.get('view') ?? 'diff'} onValueChange={(view) => setParams({ view })}>
+          <Tabs value={view} onValueChange={(view) => setParams({ view })}>
             <TabsList>
               <TabsTrigger value="diff">变更对比</TabsTrigger>
               <TabsTrigger value="preview">候选预览</TabsTrigger>

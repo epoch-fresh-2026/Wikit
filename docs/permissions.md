@@ -72,6 +72,7 @@ discuss/merge 授权及 visibility，不能借组授权扩张自己的管理权�
 新账户默认没有；组成员变化、个人/组撤权及账户禁用在后续授权事务即时生效。
 创建直接发布首版，作者保留 read/propose/discuss，不自动获得 merge/manage。
 身份响应提供 can_create_page，管理契约通过 create_page 配置个人/组授权。
+页面目录与单页响应的 capabilities 使用相同的当前策略、用户和组计算；公开页也包含显式 ACL，并保留首页例外。
 首页 Page 1 始终公开且已发布；普通用户可提案，但所有非管理员的 merge/manage 均被移除，
 即使显式 ACL 授权也不能越过首页限制。Core 与数据库共同拒绝隐藏、删除、身份替换和改为受限。
 

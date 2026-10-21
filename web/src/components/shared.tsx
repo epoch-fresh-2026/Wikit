@@ -114,10 +114,10 @@ export function ErrorNotice({ error }: { error?: ApiError }) {
               基础<pre>{c.base ?? '（无）'}</pre>
             </div>
             <div>
-              本提案<pre>{c.ours ?? '（无）'}</pre>
+              当前发布<pre>{c.ours ?? '（无）'}</pre>
             </div>
             <div>
-              当前发布<pre>{c.theirs ?? '（无）'}</pre>
+              待合入内容<pre>{c.theirs ?? '（无）'}</pre>
             </div>
           </div>
         </section>
@@ -196,6 +196,7 @@ export function Collection<T>({
         <Loading error={resource.error} />
         {resource.error && (
           <Button
+            type="button"
             variant="outline"
             onClick={() => {
               setCursors([''])
@@ -224,6 +225,7 @@ export function Collection<T>({
       {(next_cursor || cursors.length > 1) && (
         <nav className="pagination" aria-label="分页">
           <Button
+            type="button"
             variant="outline"
             disabled={cursors.length === 1}
             onClick={() => setCursors((c) => c.slice(0, -1))}
@@ -232,6 +234,7 @@ export function Collection<T>({
           </Button>
           <span>第 {cursors.length} 页</span>
           <Button
+            type="button"
             variant="outline"
             disabled={!next_cursor}
             onClick={() => next_cursor && setCursors((c) => [...c, next_cursor])}

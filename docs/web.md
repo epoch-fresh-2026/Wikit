@@ -29,8 +29,10 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 
 `/admin` 默认进入账户管理。新建成功进入已发布页面；修改已有页面进入提案详情。
 提案默认展示差异，候选预览和候选历史通过 Tabs 切换，编辑使用独立路由。
-有有效 merge 能力且已读取匹配当前 head/候选的 diff 时可合并，无批准表单、审核记录或轮次。
+有有效 merge 能力且正在展示匹配当前 head/候选的 diff 时可合并，无批准表单、审核记录或轮次。
 候选或 head 变化后必须重新读取；不会自动发布新的内容。恢复和撤销仍生成提案。
+过期提案的独立编辑页必须读取并展示基础和当前发布版本，编辑者确认已结合当前发布内容解决后才能保存；提交仍绑定所展示的 head 和候选。
+冲突字段 ours 是当前发布，theirs 是待合入内容。用户组成员分页、重试等辅助按钮不提交外层表单。
 页面工具按 Core 返回的 capabilities 展示操作；会话账户返回有效 can_create_page。
 
 官方 shadcn CLI 固定为 4.22.1，Radix/new-york/neutral 配置，组件源码和依赖锁提交仓库。

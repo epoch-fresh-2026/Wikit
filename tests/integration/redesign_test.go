@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -187,6 +188,62 @@ func TestCreatePermissionRevocationCommitOrders(t *testing.T) {
 			}
 			if n != want {
 				t.Fatal("partial publication", n, want)
+			}
+		})
+	}
+}
+
+func TestDirectoryCapabilitiesMatchPageDetails(t *testing.T) {
+	s := newSuite(t)
+	ctx := context.Background()
+	admin := identity.Credentials{Bearer: s.adminToken}
+	member, token := s.register(t, "directory_member")
+	memberCredentials := identity.Credentials{Bearer: token}
+	_, moderator := s.reviewer(t, "directory_moderator")
+	create := func(visibility, title string) pages.Created {
+		raw, _ := s.req(t, "POST", "pages", map[string]any{"visibility": visibility, "snapshot": document(title, "body")}, admin, "directory-"+title, 201)
+		return decodeResult[pages.Created](t, raw)
+	}
+	public := create("public", "public")
+	restricted := create("restricted", "restricted")
+	groupRaw, err := s.access.SaveGroup(ctx, requestKey(admin, "directory-group"), "", "Readers", []string{member.ID}, 0, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	group := decodeResult[access.Group](t, groupRaw)
+	for _, entry := range []struct {
+		page  pages.Created
+		grant access.Grant
+	}{
+		{public, access.Grant{SubjectType: "user", SubjectID: member.ID, Capabilities: []string{"read", "merge", "manage"}}},
+		{restricted, access.Grant{SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read", "propose", "merge"}}},
+	} {
+		_, err := s.access.UpdatePolicy(ctx, requestKey(admin, "directory-policy-"+entry.page.Page.ID), entry.page.Page.ID, access.Policy{Visibility: entry.page.Page.Visibility, Grants: []access.Grant{entry.grant}}, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for name, credentials := range map[string]identity.Credentials{"anonymous": {}, "member": memberCredentials, "moderator": moderator, "admin": admin} {
+		t.Run(name, func(t *testing.T) {
+			raw, _ := s.req(t, "GET", "pages?limit=100", nil, credentials, "", 200)
+			directory := decodeResult[pages.List](t, raw)
+			expectedCount := 2
+			if name == "admin" || name == "member" {
+				expectedCount = 3
+			}
+			if len(directory.Items) != expectedCount {
+				t.Fatalf("visible pages=%d, want %d", len(directory.Items), expectedCount)
+			}
+			for _, item := range directory.Items {
+				row := decodeResult[pages.Detail](t, item)
+				raw, _ := s.req(t, "GET", "pages/"+row.Page.ID, nil, credentials, "", 200)
+				detail := decodeResult[pages.Detail](t, raw)
+				if !slices.Equal(row.Capabilities, detail.Capabilities) {
+					t.Fatalf("page %s directory=%v detail=%v", row.Page.ID, row.Capabilities, detail.Capabilities)
+				}
+				if row.Page.ID == "1" && name != "admin" && (slices.Contains(row.Capabilities, "merge") || slices.Contains(row.Capabilities, "manage")) {
+					t.Fatal("home capability leaked")
+				}
 			}
 		})
 	}

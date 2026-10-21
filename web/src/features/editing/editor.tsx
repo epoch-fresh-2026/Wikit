@@ -20,12 +20,14 @@ export function SnapshotEditor({
   action,
   label = '提交提案',
   allowType = false,
+  submitDisabled = false,
 }: {
   initial?: Schema<'Snapshot'>
   submit: (snapshot: Schema<'Snapshot'>, published: () => void) => Promise<void>
   action: ReturnType<typeof useAction>
   label?: string
   allowType?: boolean
+  submitDisabled?: boolean
 }) {
   const [type, setType] = useState(initial.type),
     [title, setTitle] = useState(initial.title),
@@ -51,7 +53,7 @@ export function SnapshotEditor({
         className="stack"
         onSubmit={(e) => {
           e.preventDefault()
-          if (upload.busy) return
+          if (upload.busy || submitDisabled) return
           void action.run(async () => {
             const base = {
               title,
@@ -127,7 +129,9 @@ export function SnapshotEditor({
             <Markdown text={text} />
           </section>
         </div>
-        <Button disabled={action.busy || upload.busy || (type === 'media' && !blob)}>
+        <Button
+          disabled={submitDisabled || action.busy || upload.busy || (type === 'media' && !blob)}
+        >
           {label}
         </Button>
         <ActionFeedback action={action} />
