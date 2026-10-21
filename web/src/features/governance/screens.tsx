@@ -369,8 +369,10 @@ function GroupRow({ group, done }: { group: Schema<'Group'>; done: () => void })
                     )
                   }
                 />
-                {account.display_name || account.username}{' '}
-                <span className="muted">{account.username}</span>
+                <span className="min-w-0">
+                  {account.display_name || account.username}{' '}
+                  <span className="muted">{account.username}</span>
+                </span>
               </label>
             )}
           </Collection>

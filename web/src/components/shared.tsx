@@ -9,7 +9,7 @@ import { Textarea } from './ui/textarea'
 import { Label } from './ui/label'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select'
 import { Badge } from './ui/badge'
-import { Alert } from './ui/alert'
+import { Alert, AlertDescription, AlertTitle } from './ui/alert'
 import { Skeleton } from './ui/skeleton'
 import { useEffect } from 'react'
 
@@ -97,31 +97,32 @@ export function ErrorNotice({ error }: { error?: ApiError }) {
   if (!error) return null
   return (
     <Alert variant="destructive" className="error">
-      <p>
-        <AlertCircle size={18} aria-hidden /> {error.message}
-      </p>
-      {error.requestID && <small>请求编号：{error.requestID}</small>}
-      {(error.code === 'csrf_missing' || error.code === 'unauthenticated') && (
-        <p>
+      <AlertCircle aria-hidden />
+      <AlertTitle className="min-w-0 line-clamp-none [overflow-wrap:anywhere]">
+        {error.message}
+      </AlertTitle>
+      <AlertDescription className="min-w-0 [overflow-wrap:anywhere]">
+        {error.requestID && <small>请求编号：{error.requestID}</small>}
+        {(error.code === 'csrf_missing' || error.code === 'unauthenticated') && (
           <Link to="/login">重新登录</Link>
-        </p>
-      )}
-      {error.conflicts?.map((c, i) => (
-        <section className="conflict" key={i}>
-          <strong>{c.path}</strong>
-          <div className="compare">
-            <div>
-              基础<pre>{c.base ?? '（无）'}</pre>
+        )}
+        {error.conflicts?.map((c, i) => (
+          <section className="conflict w-full min-w-0" key={i}>
+            <strong>{c.path}</strong>
+            <div className="compare">
+              <div>
+                基础<pre>{c.base ?? '（无）'}</pre>
+              </div>
+              <div>
+                当前发布<pre>{c.ours ?? '（无）'}</pre>
+              </div>
+              <div>
+                待合入内容<pre>{c.theirs ?? '（无）'}</pre>
+              </div>
             </div>
-            <div>
-              当前发布<pre>{c.ours ?? '（无）'}</pre>
-            </div>
-            <div>
-              待合入内容<pre>{c.theirs ?? '（无）'}</pre>
-            </div>
-          </div>
-        </section>
-      ))}
+          </section>
+        ))}
+      </AlertDescription>
     </Alert>
   )
 }
@@ -139,10 +140,10 @@ export function Loading({ error }: { error?: ApiError }) {
   return error ? (
     <ErrorNotice error={error} />
   ) : (
-    <p role="status" className="muted">
+    <div role="status" className="muted">
       <Skeleton className="h-5 w-40" />
       <span className="sr-only">正在读取…</span>
-    </p>
+    </div>
   )
 }
 export function SectionTitle({ title, children }: { title: string; children?: ReactNode }) {
@@ -163,7 +164,9 @@ export function TagLinks({ tags }: { tags: string[] }) {
     <div className="tags">
       {tags.map((tag) => (
         <Link key={tag} to={`/pages?tag=${encodeURIComponent(tag)}`}>
-          <Badge variant="secondary">{tag}</Badge>
+          <Badge variant="secondary" className="tag-chip">
+            {tag}
+          </Badge>
         </Link>
       ))}
     </div>

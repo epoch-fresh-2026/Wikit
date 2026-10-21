@@ -135,7 +135,7 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
         跳到主要内容
       </a>
       <Navigation admin={admin} />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <header className="site-header">
           <SidebarTrigger aria-label="切换导航" />
           {admin ? (
@@ -160,13 +160,19 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
               </Button>
             </form>
           )}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="site-account">
             {auth.account && !api.csrf && <Link to="/login">重新登录</Link>}
             {auth.account ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost">
-                    {auth.account.display_name || auth.account.username}
+                  <Button
+                    variant="ghost"
+                    className="account-menu"
+                    title={auth.account.display_name || auth.account.username}
+                  >
+                    <span className="truncate">
+                      {auth.account.display_name || auth.account.username}
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -240,8 +246,8 @@ export function PageNavigation({
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
+          <BreadcrumbItem className="min-w-0 max-w-full">
+            <BreadcrumbLink asChild className="min-w-0 [overflow-wrap:anywhere]">
               <Link to={`/pages/${id}`}>{pageTitle || `页面 ${id}`}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>

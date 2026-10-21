@@ -609,3 +609,20 @@ it('requires displaying the diff before merging from a preview deep link', async
   await user.click(screen.getByRole('tab', { name: '候选历史' }))
   expect(screen.getByRole('button', { name: '合并' })).toBeDisabled()
 })
+
+it('moves focus to the selected article heading after closing the mobile contents sheet', async () => {
+  const { user } = mount('/pages/2')
+  const heading = await screen.findByRole('heading', { name: '内容', level: 2 })
+  const scroll = vi.spyOn(heading, 'scrollIntoView')
+  const trigger = screen.getByRole('button', { name: '文章目录' })
+  await user.click(trigger)
+  await user.click(within(screen.getByRole('dialog')).getByRole('link', { name: '内容' }))
+  await waitFor(() => expect(heading).toHaveFocus())
+  expect(scroll).toHaveBeenCalledWith({ block: 'start' })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+  await user.click(trigger)
+  await user.keyboard('{Escape}')
+  await waitFor(() => expect(trigger).toHaveFocus())
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
