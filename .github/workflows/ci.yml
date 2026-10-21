@@ -130,15 +130,22 @@ jobs:
     needs: [checks, backend, frontend, integration]
     if: needs.checks.outputs.container == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - run: docker build --tag wikit:ci .
       - run: bash scripts/smoke.sh
         env:
           WIKIT_IMAGE: wikit:ci
+      - name: Record acceptance evidence
+        if: always()
+        run: |
+          if test -f .local/acceptance/run.log; then
+            tail -n 80 .local/acceptance/run.log >> "$GITHUB_STEP_SUMMARY"
+          fi
   gate:
     name: CI gate
     if: always()

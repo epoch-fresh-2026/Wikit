@@ -167,7 +167,9 @@ func (w *Worker) export(ctx context.Context, q Queue, target string, ids []strin
 			}
 			// Keep each ordinary batch within 4 MiB including JSON separators.
 			// An individual valid large document still travels in its own request.
-			if len(docs) > 0 && batchBytes+len(raw)+1 > 4<<20 {
+			// batchBytes includes one separator per existing item; +2 accounts
+			// for the new array's brackets and remaining separator.
+			if len(docs) > 0 && batchBytes+len(raw)+2 > 4<<20 {
 				if err := flush(); err != nil {
 					return err
 				}
@@ -175,7 +177,7 @@ func (w *Worker) export(ctx context.Context, q Queue, target string, ids []strin
 			docs = append(docs, *doc)
 			batchBytes += len(raw) + 1
 		}
-		if len(docs)+len(deleted) >= 20 {
+		if len(docs)+len(deleted) >= 1000 {
 			if err := flush(); err != nil {
 				return err
 			}

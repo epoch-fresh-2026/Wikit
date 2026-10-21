@@ -1,7 +1,37 @@
 # 单机部署、备份与恢复
 
-状态：已提供后端基础、账户授权、提案发布和本地媒体持久化；产品部署仍为实现目标，无正式镜像。
-部署阶段须提交真实 Dockerfile、compose.yaml、环境示例与 smoke 测试后才能发布。
+状态：Issue #11 的容器、Compose、恢复和规模验收已在真实 CI 中通过，见
+[发布验收记录](release-readiness.md)。正式 tag、GHCR digest、CI 证据及拉取权限边界均在该记录登记。
+
+## 容器交付约定
+
+`docker build -t wikit:local .` 构建内嵌前端的非 root 镜像；普通 Go 开发构建只提供
+API，未内嵌前端的根路径返回 503。复制 `.env.compose.example` 为 `.env` 后替换秘密，
+`docker compose up -d postgres meilisearch`，`docker compose run --rm wikit migrate`，
+`docker compose run --rm wikit create-admin`（交互终端），最后 `docker compose up -d wikit`。
+容器 healthcheck 命令探测固定内部 8080 端口的 `/health/ready`，不要求镜像携带 shell/curl。
+Compose 不自动迁移或创建默认账户。命名卷沿用镜像内 UID 65532 的原件目录所有权；
+使用宿主 bind mount 时须预先授权同一 UID，禁止给应用 root 权限修复目录。
+数据库初始化脚本只在新卷创建非超级用户 wikit；POSTGRES_PASSWORD 属于数据库管理员，
+WIKIT_DATABASE_PASSWORD 属于应用角色，两者均须设置。已有卷不会自动修改角色或密码。
+应用可管理自己的 schema，但不能创建数据库、角色或使用超级用户能力。
+
+备份命令要求显式 COMPOSE_PROJECT_NAME，调用 `bash scripts/backup.sh /absolute/new-backup`，
+输出数据库 dump、原件 tar、逐文件校验、可达原件清单、迁移历史与镜像信息。
+镜像信息包含容器实际使用的引用、image ID 及该 ID 的 registry RepoDigests；本地构建的 RepoDigests 可以为空。
+应用保持停止；确认备份完整后自行 `docker compose up -d --wait wikit`。恢复目标须先启动依赖并
+`docker compose create wikit` 建空原件卷，再 `bash scripts/restore.sh /absolute/backup`。
+脚本拒绝非空目标和运行中的应用；备份源不可来自不可信第三方。恢复后使用匹配镜像
+运行 `search-rebuild`，完成原件校验再开放入口。会话、个人 Token、幂等响应和游标均被撤销。
+未完成 outbox 的远端 task UID 同时清空，避免恢复到新检索服务后误认旧任务编号。
+
+隔离验收由 `scripts/smoke.sh` 使用独立 Compose project 和新卷执行；工具账户与夹具
+只存在于独立 acceptance 构建 target。脚本记录镜像 ID、主机资源和演练输出，失败即退出。
+恢复演练覆盖数据库、原件 checksum/可达性、旧凭证失效、管理员重新登录、索引重建、
+固定历史及下载，并在相同 schema 的两个镜像之间升级/回退。首次发布没有既有正式镜像，
+因此旧版本使用 PR #25 合并提交的真实 Go 后端源码另建镜像，回退时验证 API/历史/原件，
+重新升级后再验证内嵌前端；不会把修改一个镜像标签当作版本回退。当前 schema 0001–0007
+只支持精确历史一致，不宣称向旧迁移版本降级；不兼容升级必须恢复匹配备份。
 
 ## 目标拓扑
 
@@ -76,6 +106,7 @@ blob 删除意图与完成状态写入审计，actor 为本地系统、request_i
 
 如果旧应用兼容新 schema，可切回旧镜像；否则恢复匹配的数据库和媒体备份。
 数据库回退不是简单回滚容器，发行说明必须说明兼容窗口与数据损失边界。
+同 schema 切换镜像保留现有数据；恢复备份会丢失该备份点之后的数据库变更及未备份原件。
 
 ## 一致备份
 
@@ -91,6 +122,22 @@ blob 删除意图与完成状态写入审计，actor 为本地系统、request_i
 运行匹配版本应用 → 重建搜索 → 执行权限、历史、下载、提案 smoke。
 会话／Token 备份恢复可能恢复旧凭证状态；恢复流程默认整体撤销会话和用户 Token，
 用户重新登录后生成 Token。管理员凭证可用性须在恢复演练中验证。
+
+## 基准边界
+
+全量重建在同一 4 MiB JSON 编码预算内每批至多 1000 项（原先 20 项）；
+大文档仍单独提交，避免十万页产生约 5000 次串行远端任务等待。增量 worker 的
+事务、单页顺序和重试语义不变，不能因批量调整而绕过字节上限。
+
+CI 基准在恢复后的隔离库添加 100000 个文档 Page：80% 公开、10% 受限、10% 隐藏，
+每篇约 1 KiB 中英正文、一个发布及一个候选快照。
+另保留通过真实 REST 审核/合并产生的 20 次发布历史和固定媒体引用，随备份恢复及旧版本读取验证。
+全量重建后由 100 个并发 HTTP 客户端各执行 20 次检索，连续记录 first-pass 与 warm
+两轮（各 2000 请求），延迟为客户端
+完整响应及解析耗时，单位 ms。first-pass 表示重启应用后的首轮，不清空宿主磁盘/OS
+缓存，不能称为严格冷缓存测试。逐个结果 ID 对照数据库公开且已发布集合；另验证恢复后
+受限内容的匿名排除与授权用户可检索。规模库中再实际发布一页，以 100 ms 轮询测量
+合并响应后首次检索可见的延迟（30 秒内必须可见）。结果只代表记录的 CI 主机与该合成负载，不外推真实站点 SLO。
 
 ## 监控
 

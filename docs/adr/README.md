@@ -18,3 +18,4 @@
 - [0013 搜索投影与恢复](0013-search-projection-recovery.md)
 - [0014 MCP 传输与 Core 等价性](0014-mcp-core-parity.md)
 - [0015 WebUI 状态与请求边界](0015-web-state.md)
+- [0016 内嵌前端、恢复与发布证据](0016-container-recovery.md)

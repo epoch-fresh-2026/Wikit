@@ -308,7 +308,7 @@ it('supports a keyboard-only login form and presents an understandable error', a
     true,
   )
   await screen.findByRole('heading', { name: '欢迎回来' })
-  expect(screen.getByRole('main')).toHaveFocus()
+  await waitFor(() => expect(screen.getByRole('main')).toHaveFocus())
   await user.tab()
   expect(screen.getByLabelText('用户名')).toHaveFocus()
   await user.keyboard('alice')

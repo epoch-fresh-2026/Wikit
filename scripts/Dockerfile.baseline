@@ -1,0 +1,9 @@
+# CI-only compatibility baseline from the previously merged backend source.
+FROM golang:1.25.0-alpine3.22 AS baseline
+WORKDIR /src
+COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -o /previous ./cmd/wikit
+FROM wikit:ci
+COPY --from=baseline /previous /previous
+ENTRYPOINT ["/previous"]
+CMD ["serve"]

@@ -14,7 +14,8 @@ Page Issues, immutable comments, proposal associations and audited moderation ar
 Chinese/English search, durable indexing tasks and full index rebuilds are implemented with Meilisearch.
 The official Go SDK serves 41 authenticated MCP tools using the same Core.
 The React WebUI provides reading, editing, review, discussion and governance flows with frontend CI.
-Deployment remains unimplemented; no production image has been released.** See the
+The v0.1.0 GHCR image has passed full release CI and acceptance after pulling its immutable digest;
+production deployment remains manual.** See the [release evidence and registry access requirements](docs/release-readiness.md),
 [implementation roadmap](docs/roadmap.md) and
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
 

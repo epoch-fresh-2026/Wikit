@@ -6,8 +6,9 @@ Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 
 PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Issue #4 增加页面
 创建/读取、首提案和历史读取；Issue #5 增加审核、原子合并、三方 rebase 与撤销/恢复。
 Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue #7 增加页面议题、评论、
-同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。可部署 v0.1 仍待后续实现。
-Issue #10 启用 frontend CI；容器与 release_ready 保持关闭。
+同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。
+Issue #10 启用 frontend CI；Issue #11 的容器、恢复及基准验收已通过，启用 container
+和 release_ready。实际受控 tag/GHCR 产物与完整发布 CI 见 [发布验收记录](release-readiness.md)。
 
 WebUI 位于 web/，使用 React 19.3.1、TypeScript 5.9.3、Vite 8.3.4、Tailwind 4.3.3 与 shadcn/ui。
 源码组件由 shadcn CLI 4.22.1 导入，使用本地 cn 工具；运行依赖由 package-lock.json 锁定。

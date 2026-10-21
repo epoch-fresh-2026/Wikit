@@ -8,7 +8,9 @@ REST 与 MCP 使用同一套账户权限。
 
 **当前状态：已实现账户/授权治理、不可变历史、审核与原子发布、三方 rebase、撤销/恢复提案和 PostgreSQL 测试；
 媒体上传、鉴权 Range 下载、本地安全 GC、页面议题与治理、中英文搜索及索引恢复已实现；官方 SDK 提供 41 个 MCP 工具，复用同一 Core。
-React WebUI 已提供阅读、编辑、审核、讨论和治理流程，frontend CI 已启用。部署仍待实现，尚无正式镜像。**
+React WebUI 已提供阅读、编辑、审核、讨论和治理流程，frontend CI 已启用。
+v0.1.0 GHCR 镜像已通过完整发布 CI 及按不可变 digest 拉取后的实际验收，生产部署仍由维护者手动执行。**
+版本、digest、运行证据与拉取权限见[发布验收记录](docs/release-readiness.md)。
 后续工作见[开发路线](docs/roadmap.md)与
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues)。
 
