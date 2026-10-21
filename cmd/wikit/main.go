@@ -51,7 +51,9 @@ func run(ctx context.Context, args []string) error {
 		if err != nil {
 			return errors.New("not ready")
 		}
-		defer response.Body.Close()
+		if err := response.Body.Close(); err != nil {
+			return errors.New("not ready")
+		}
 		if response.StatusCode != http.StatusOK {
 			return errors.New("not ready")
 		}

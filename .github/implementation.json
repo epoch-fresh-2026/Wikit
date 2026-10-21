@@ -3,5 +3,5 @@
   "frontend": true,
   "integration": true,
   "container": true,
-  "release_ready": false
+  "release_ready": true
 }

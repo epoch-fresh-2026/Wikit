@@ -1,7 +1,7 @@
 # 单机部署、备份与恢复
 
-状态：Issue #11 开始交付容器构建、Compose、恢复和基准工具；真实执行结果见后续验收记录。
-正式镜像发布须满足全部 release_ready 条件，工具存在不代表演练或发布已经完成。
+状态：Issue #11 的容器、Compose、恢复和规模验收已在真实 CI 中通过，见
+[发布候选记录](release-readiness.md)。正式 tag/GHCR 发行待 PR 审查合并后执行。
 
 ## 容器交付约定
 
@@ -9,6 +9,7 @@
 API，未内嵌前端的根路径返回 503。复制 `.env.compose.example` 为 `.env` 后替换秘密，
 `docker compose up -d postgres meilisearch`，`docker compose run --rm wikit migrate`，
 `docker compose run --rm wikit create-admin`（交互终端），最后 `docker compose up -d wikit`。
+容器 healthcheck 命令探测固定内部 8080 端口的 `/health/ready`，不要求镜像携带 shell/curl。
 Compose 不自动迁移或创建默认账户。命名卷沿用镜像内 UID 65532 的原件目录所有权；
 使用宿主 bind mount 时须预先授权同一 UID，禁止给应用 root 权限修复目录。
 数据库初始化脚本只在新卷创建非超级用户 wikit；POSTGRES_PASSWORD 属于数据库管理员，

@@ -25,7 +25,7 @@ driver() {
     --entrypoint /acceptance wikit "$1"
 }
 printf 'Commit: %s\n' "$(git rev-parse HEAD)"
-uname -a; lscpu; free -h; docker version
+uname -a; lscpu; free -h; docker version; docker compose version
 docker image inspect "$WIKIT_IMAGE" --format 'Image={{.Id}} User={{.Config.User}}'
 test "$(docker image inspect "$WIKIT_IMAGE" --format '{{.Config.User}}')" = '65532:65532'
 docker build --target acceptance -t wikit:acceptance .

@@ -31,7 +31,7 @@ import (
 type state struct {
 	AdminToken, MemberToken, Session, CSRF string
 	Document, Private, Media               pages.Created
-	Revision, MediaRevision                string
+	Revision, Head, MediaRevision          string
 }
 
 var ctx = context.Background()
@@ -112,7 +112,7 @@ func request(method, path, token string, body any, status int) []byte {
 	}
 	resp, err := client.Do(r)
 	must(err)
-	defer resp.Body.Close()
+	defer func() { must(resp.Body.Close()) }()
 	b, err := io.ReadAll(resp.Body)
 	must(err)
 	if resp.StatusCode != status {
@@ -228,6 +228,7 @@ func smoke() {
 		merged := mergeCandidate(s.AdminToken, candidate, &head)
 		head = merged.ID
 	}
+	s.Head = head
 	fmt.Println("20 immutable publication revisions with fixed media references created through REST review/merge")
 	save(s)
 	verify(false)
@@ -242,7 +243,7 @@ func requestOriginRegister() []byte {
 	r.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(r)
 	must(err)
-	defer resp.Body.Close()
+	defer func() { must(resp.Body.Close()) }()
 	b, err := io.ReadAll(resp.Body)
 	must(err)
 	if resp.StatusCode != 201 {
@@ -282,8 +283,16 @@ func verify(restored bool) {
 	if !bytes.Contains(page, []byte("历史正文")) {
 		panic("published body lost")
 	}
+	detail := decode[pages.Detail](page)
+	if detail.Page.HeadRevisionID == nil || *detail.Page.HeadRevisionID != s.Head {
+		panic("current head lost")
+	}
 	request("GET", "/api/v1/pages/"+s.Document.Page.ID+"/revisions/"+s.Revision, "", nil, 200)
 	history := request("GET", "/api/v1/pages/"+s.Document.Page.ID+"/revisions", "", nil, 200)
+	historyList := decode[struct{ Items []content.Published }](history)
+	if len(historyList.Items) != 20 {
+		panic("twenty-revision history was not preserved")
+	}
 	if !bytes.Contains(history, []byte(s.Revision)) {
 		panic("publication history lost")
 	}

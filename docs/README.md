@@ -17,6 +17,7 @@
 | [代码规范](coding-standards.md) | 高内聚、低耦合、模块化、可扩展 |
 | [开发工作流](development.md) | Issue、文档、PR、CI/CD |
 | [验收计划](testing.md) | 必测场景与验收证据 |
+| [发布候选验收](release-readiness.md) | 容器、恢复、规模测试及受控发布状态 |
 | [开发路线](roadmap.md) | 阶段依赖与 GitHub Issue |
 | [ADR](adr/README.md) | 关键决策与取舍 |
 
