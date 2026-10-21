@@ -3,11 +3,9 @@ package proposals
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"slices"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
@@ -15,16 +13,6 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 )
 
-type Review struct {
-	ID                 string    `json:"id"`
-	ActorID            string    `json:"actor_id"`
-	ProposalRevisionID string    `json:"proposal_revision_id"`
-	BaseRevisionID     *string   `json:"base_revision_id"`
-	Round              int64     `json:"round"`
-	Decision           string    `json:"decision"`
-	Body               string    `json:"body"`
-	CreatedAt          time.Time `json:"created_at"`
-}
 type Tx interface {
 	content.ReferenceReader
 	LockPage(context.Context, string) error
@@ -33,8 +21,6 @@ type Tx interface {
 	InsertInitial(context.Context, Proposal, []content.MediaRef) error
 	InsertCandidate(context.Context, Proposal, []content.MediaRef) error
 	SaveProposal(context.Context, Proposal) error
-	Reviews(context.Context, string) ([]Review, error)
-	InsertReview(context.Context, string, Review) error
 	BlobOnPage(context.Context, string, string) (bool, error)
 	Publish(context.Context, content.Published, []content.MediaRef) error
 	Outbox(context.Context, content.Published) error
@@ -95,7 +81,7 @@ type loaded struct {
 func write[T any](ctx context.Context, s *Service, r access.Request, id, op string, pageScope bool, fn func(Tx, loaded) (T, error)) (T, error) {
 	var out T
 	id = strings.ToLower(id)
-	if !identity.ValidID(id) {
+	if (pageScope && !access.ValidPageID(id)) || (!pageScope && !identity.ValidID(id)) {
 		return out, fault.NotFound
 	}
 	if len(r.Key) < 8 || len(r.Key) > 128 || r.Hash == "" || r.ID == "" {
@@ -250,7 +236,6 @@ func (s *Service) candidate(ctx context.Context, tx Tx, v loaded, snapshot conte
 	}
 	p.CurrentRevision = Revision{ID: id, ProposalID: p.ID, BaseRevisionID: v.page.HeadRevisionID, Snapshot: snapshot, CreatedAt: time.Now().UTC()}
 	p.Version++
-	p.ReviewRound++
 	if err := tx.InsertCandidate(ctx, p, refs); err != nil {
 		return p, err
 	}
@@ -296,89 +281,21 @@ func (s *Service) State(ctx context.Context, r access.Request, id, state string,
 			if err := permission(ctx, tx, v, "propose"); err != nil {
 				return p, err
 			}
-			p.ReviewRound++
 		}
 		p.State = state
 		p.Version++
 		return p, tx.SaveProposal(ctx, p)
 	})
 }
-func (s *Service) Review(ctx context.Context, r access.Request, id string, e Expected, round int64, decision, body string) (Review, error) {
-	return write(ctx, s, r, id, "proposal.review", false, func(tx Tx, v loaded) (Review, error) {
-		if err := open(v.proposal); err != nil {
-			return Review{}, err
-		}
-		if err := permission(ctx, tx, v, "review"); err != nil {
-			return Review{}, err
-		}
-		if err := e.check(v.proposal, v.page, true); err != nil {
-			return Review{}, err
-		}
-		if round != v.proposal.ReviewRound {
-			return Review{}, fault.Stale
-		}
-		if !slices.Contains([]string{"approve", "request_changes", "comment"}, decision) || !utf8.ValidString(body) || strings.ContainsRune(body, 0) || utf8.RuneCountInString(body) > 65536 {
-			return Review{}, fault.Invalid
-		}
-		id, err := s.secrets.ID()
-		if err != nil {
-			return Review{}, err
-		}
-		out := Review{ID: id, ActorID: v.actor.ID, ProposalRevisionID: v.proposal.CurrentRevision.ID, BaseRevisionID: v.proposal.CurrentRevision.BaseRevisionID, Round: round, Decision: decision, Body: body, CreatedAt: time.Now().UTC()}
-		return out, tx.InsertReview(ctx, v.proposal.ID, out)
-	})
-}
-func validApproval(ctx context.Context, tx Tx, v loaded) error {
-	reviews, err := tx.Reviews(ctx, v.proposal.ID)
-	if err != nil {
-		return err
-	}
-	groups, err := tx.Groups(ctx)
-	if err != nil {
-		return err
-	}
-	stances := map[string]string{}
-	for _, r := range reviews {
-		if r.Round == v.proposal.ReviewRound && r.ProposalRevisionID == v.proposal.CurrentRevision.ID && same(r.BaseRevisionID, v.page.HeadRevisionID) && r.Decision != "comment" {
-			stances[r.ActorID] = r.Decision
-		}
-	}
-	approved := false
-	for id, decision := range stances {
-		user, err := tx.User(ctx, id)
-		if errors.Is(err, fault.NotFound) {
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		if user.Status != "active" || access.CheckPolicy(identity.Actor{Record: user}, v.policy, groups, "review", false) != nil {
-			continue
-		}
-		if decision == "request_changes" {
-			return fault.ReviewRequired
-		}
-		if decision == "approve" {
-			approved = true
-		}
-	}
-	if !approved {
-		return fault.ReviewRequired
-	}
-	return nil
-}
 func (s *Service) Merge(ctx context.Context, r access.Request, id string, e Expected) (content.Published, error) {
 	return write(ctx, s, r, id, "proposal.merge", false, func(tx Tx, v loaded) (content.Published, error) {
+		if err := permission(ctx, tx, v, "merge"); err != nil {
+			return content.Published{}, err
+		}
 		if err := open(v.proposal); err != nil {
 			return content.Published{}, err
 		}
-		if err := permission(ctx, tx, v, "review"); err != nil {
-			return content.Published{}, err
-		}
 		if err := e.check(v.proposal, v.page, true); err != nil {
-			return content.Published{}, err
-		}
-		if err := validApproval(ctx, tx, v); err != nil {
 			return content.Published{}, err
 		}
 		snapshot, refs, err := s.prepare(ctx, tx, r.Credentials, v, v.proposal.CurrentRevision.Snapshot)
@@ -389,7 +306,7 @@ func (s *Service) Merge(ctx context.Context, r access.Request, id string, e Expe
 		if err != nil {
 			return content.Published{}, err
 		}
-		out := content.Published{ID: id, PageID: v.page.ID, ParentID: v.page.HeadRevisionID, SourceProposalID: v.proposal.ID, Snapshot: snapshot, CreatedAt: time.Now().UTC(), AuthorID: v.proposal.AuthorID}
+		out := content.Published{PublisherID: &v.actor.ID, ID: id, PageID: v.page.ID, ParentID: v.page.HeadRevisionID, SourceProposalID: &v.proposal.ID, SourceKind: "merge", Snapshot: snapshot, CreatedAt: time.Now().UTC(), AuthorID: &v.proposal.AuthorID}
 		if snapshot.Type == "media" {
 			url := "/api/v1/pages/" + out.PageID + "/revisions/" + id + "/content"
 			out.ContentURL = &url

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { createMemoryRouter, RouterProvider } from 'react-router'
 import { App } from '@/app'
 import { AuthProvider } from '@/features/account/auth'
 import { api, type Schema } from '@/lib/api'
@@ -29,7 +29,7 @@ function mount(route = '/', handler?: Handler, anonymous = false) {
       return anonymous ? failure('unauthenticated', 401) : json(account)
     if (path.includes('/auth/token'))
       return json({ active: true, generation: 1, created_at: revision.created_at })
-    if (path === `/api/v1/pages/${pageID}`) return json(detail)
+    if (path === '/api/v1/pages/1' || path === `/api/v1/pages/${pageID}`) return json(detail)
     if (path === `/api/v1/proposals/${proposalID}`) return json(proposal)
     if (path.endsWith('/diff'))
       return json({
@@ -39,7 +39,6 @@ function mount(route = '/', handler?: Handler, anonymous = false) {
         stale: false,
         fields: [],
       })
-    if (path.includes('/reviews?')) return json(list([]))
     if (path === `/api/v1/pages/${pageID}/revisions/${revisionID}`) return json(revision)
     if (path.startsWith(`/api/v1/pages/${pageID}/revisions?`)) return json(list([revision]))
     if (path.startsWith(`/api/v1/proposals/${proposalID}/revisions?`))
@@ -55,11 +54,21 @@ function mount(route = '/', handler?: Handler, anonymous = false) {
   })
   vi.stubGlobal('fetch', fetcher)
   render(
-    <MemoryRouter initialEntries={[route]}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </MemoryRouter>,
+    <RouterProvider
+      router={createMemoryRouter(
+        [
+          {
+            path: '*',
+            element: (
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            ),
+          },
+        ],
+        { initialEntries: [route] },
+      )}
+    />,
   )
   return { fetcher, user: userEvent.setup() }
 }
@@ -91,11 +100,11 @@ it('browses pages and tags and submits a keyboard search without rendering snipp
       : undefined,
   )
   await screen.findByRole('heading', { name: '协作知识' })
-  const search = screen.getByRole('searchbox', { name: '搜索知识' })
+  const search = screen.getByRole('textbox', { name: '搜索页面' })
   await user.click(search)
   await user.type(search, '中文 Go')
   await user.keyboard('{Enter}')
-  await screen.findByRole('heading', { name: '搜索结果' })
+  await screen.findByRole('heading', { name: '搜索结果', level: 1 })
   expect(fetcher.mock.calls.some(([url]) => String(url).includes('q=%E4%B8%AD%E6%96%87+Go'))).toBe(
     true,
   )
@@ -111,11 +120,11 @@ it('logs in with Cookie/CSRF and does not persist a password or Bearer token', a
         : undefined,
     true,
   )
-  await screen.findByRole('heading', { name: '欢迎回来' })
+  await screen.findByRole('heading', { name: '登录' })
   await user.type(screen.getByLabelText('用户名'), 'alice')
   await user.type(screen.getByLabelText('密码'), 'never-persist-password')
   await user.click(within(screen.getByRole('main')).getByRole('button', { name: '登录' }))
-  await screen.findByRole('heading', { name: '把知识，写在一起。' })
+  await screen.findByRole('heading', { name: '协作知识' })
   expect(api.csrf).toBe('fresh-csrf')
   expect(Object.keys(sessionStorage)).toEqual(['wikit.csrf'])
   expect(localStorage.length).toBe(0)
@@ -131,33 +140,33 @@ it('shows a registration Token only once and removes it on navigation', async ()
         : undefined,
     true,
   )
-  await screen.findByRole('heading', { name: '一起共建知识' })
+  await screen.findByRole('heading', { name: '注册' })
   await user.type(screen.getByLabelText('用户名'), 'alice')
   await user.type(screen.getByLabelText('密码'), 'test-password-2026')
   await user.click(screen.getByRole('button', { name: '创建账户' }))
   expect(await screen.findByDisplayValue('one-time-registration-token')).toBeInTheDocument()
   expect(JSON.stringify(sessionStorage)).not.toContain('one-time-registration-token')
   await user.click(screen.getByRole('button', { name: '已保存，前往登录' }))
-  await screen.findByRole('heading', { name: '欢迎回来' })
+  await screen.findByRole('heading', { name: '登录' })
   expect(screen.queryByDisplayValue('one-time-registration-token')).not.toBeInTheDocument()
 })
 it('creates a Markdown page with a preview, then navigates to its proposal', async () => {
   const { user, fetcher } = mount('/pages/new', (path, init) =>
     path === '/api/v1/pages' && init.method === 'POST'
-      ? json({ page: detail.page, proposal }, 201)
+      ? json({ page: detail.page, revision }, 201)
       : undefined,
   )
-  await screen.findByRole('heading', { name: '创建知识页面' })
+  await screen.findByRole('heading', { name: '创建页面' })
   await user.type(screen.getByLabelText('标题'), '新知识')
-  await user.type(screen.getByLabelText('标签'), 'Go, 知识')
+  await user.type(screen.getByLabelText('标签'), 'Go{Enter}知识{Enter}')
   await user.type(screen.getByLabelText('Markdown 正文'), '# 预览标题\n新的正文')
   expect(
     within(screen.getByRole('region', { name: 'Markdown 预览' })).getByRole('heading', {
       name: '预览标题',
     }),
   ).toBeInTheDocument()
-  await user.click(screen.getByRole('button', { name: '提交提案' }))
-  await screen.findByRole('heading', { name: '当前候选' })
+  await user.click(screen.getByRole('button', { name: '创建并发布' }))
+  await screen.findByRole('heading', { name: '协作知识' })
   const [, init] = fetcher.mock.calls.find(
     ([path, init]) => path === '/api/v1/pages' && init.method === 'POST',
   )!
@@ -173,7 +182,7 @@ it('creates a Markdown page with a preview, then navigates to its proposal', asy
   expect(new Headers(init.headers).get('X-CSRF-Token')).toBe('browser-csrf')
 })
 it('keeps candidate drafts on stale writes and shows real conflict fields for rebase', async () => {
-  const { user, fetcher } = mount(`/proposals/${proposalID}`, (path, init) =>
+  const { user, fetcher } = mount(`/pages/${pageID}/proposals/${proposalID}/edit`, (path, init) =>
     init.method === 'POST' && path.endsWith('/revisions')
       ? failure('stale_revision', 409)
       : init.method === 'POST' && path.endsWith('/rebase')
@@ -187,7 +196,7 @@ it('keeps candidate drafts on stale writes and shows real conflict fields for re
   const editor = await screen.findByLabelText('Markdown 正文')
   await user.clear(editor)
   await user.type(editor, '保留我的未提交内容')
-  await user.click(screen.getByRole('button', { name: '提交候选修订' }))
+  await user.click(screen.getByRole('button', { name: '保存修订' }))
   await screen.findByText(/版本已变化/)
   expect(editor).toHaveValue('保留我的未提交内容')
   const [, init] = fetcher.mock.calls.find(
@@ -197,39 +206,28 @@ it('keeps candidate drafts on stale writes and shows real conflict fields for re
     expected_head_revision_id: revisionID,
     expected_proposal_revision_id: candidateID,
   })
-  await user.click(screen.getByRole('button', { name: '基于当前发布重新合并' }))
-  await screen.findByText('ours line')
-  expect(screen.getByText('theirs line')).toBeInTheDocument()
   expect(editor).toHaveValue('保留我的未提交内容')
   expect(screen.queryByText('private server diagnostics must not be shown')).not.toBeInTheDocument()
 })
-it('binds review and merge to explicit candidate, head and round conditions', async () => {
-  const { user, fetcher } = mount(`/proposals/${proposalID}`, (path, init) =>
-    init.method === 'POST' && path.endsWith('/reviews')
-      ? failure('review_required', 409)
-      : init.method === 'POST' && path.endsWith('/merge')
-        ? json(revision, 201)
-        : undefined,
+it('merges directly with the displayed candidate and head and no review request', async () => {
+  const { user, fetcher } = mount(`/pages/${pageID}/proposals/${proposalID}`, (path, init) =>
+    init.method === 'POST' && path.endsWith('/merge') ? json(revision) : undefined,
   )
-  await screen.findByRole('heading', { name: '审核与发布' })
-  await waitFor(() => expect(screen.getByRole('button', { name: '提交审核' })).toBeEnabled())
-  await user.click(screen.getByRole('button', { name: '提交审核' }))
-  await screen.findByText(/尚未满足有效审核条件/)
+  await waitFor(() => expect(screen.getByRole('button', { name: '合并' })).toBeEnabled())
+  expect(screen.queryByRole('button', { name: '提交审核' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: '合并' }))
+  await screen.findByRole('heading', { name: '协作知识' })
   const [, init] = fetcher.mock.calls.find(
-    ([path, init]) => path.endsWith('/reviews') && init.method === 'POST',
+    ([path, init]) => path.endsWith('/merge') && init.method === 'POST',
   )!
   expect(JSON.parse(init.body as string)).toEqual({
     expected_head_revision_id: revisionID,
     expected_proposal_revision_id: candidateID,
-    expected_review_round: 2,
-    decision: 'approve',
-    body: '',
   })
-  await user.click(screen.getByRole('button', { name: '合并并发布' }))
-  await screen.findByText(/固定发布版本/)
+  expect(fetcher.mock.calls.some(([path]) => path.includes('/reviews'))).toBe(false)
 })
 it('clears content and editor subtrees immediately when a request loses authentication', async () => {
-  const { user } = mount(`/proposals/${proposalID}`, (path, init) =>
+  const { user } = mount(`/pages/${pageID}/proposals/${proposalID}/edit`, (path, init) =>
     init.method === 'POST' && path.endsWith('/revisions')
       ? failure('unauthenticated', 401)
       : undefined,
@@ -237,7 +235,7 @@ it('clears content and editor subtrees immediately when a request loses authenti
   const editor = await screen.findByLabelText('Markdown 正文')
   await user.clear(editor)
   await user.type(editor, 'confidential draft')
-  await user.click(screen.getByRole('button', { name: '提交候选修订' }))
+  await user.click(screen.getByRole('button', { name: '保存修订' }))
   await waitFor(() => expect(editor).not.toBeInTheDocument())
   expect(screen.queryByDisplayValue('confidential draft')).not.toBeInTheDocument()
   expect(api.csrf).toBe('')
@@ -256,15 +254,15 @@ it('allows structured policy editing with current policy version and no client a
       : undefined,
   )
   await screen.findByRole('heading', { name: '访问策略' })
-  await user.click(screen.getByRole('checkbox', { name: '审核' }))
+  await user.click(screen.getByRole('checkbox', { name: '合并' }))
   await user.click(screen.getByRole('button', { name: '保存页面权限' }))
   await screen.findByText('当前账户没有执行此操作的权限。')
   const [, init] = fetcher.mock.calls.find(([, init]) => init.method === 'PUT')!
   expect(JSON.parse(init.body as string)).toMatchObject({
     expected_policy_version: 7,
-    grants: [{ subject_type: 'user', subject_id: account.id, capabilities: ['read', 'review'] }],
+    grants: [{ subject_type: 'user', subject_id: account.id, capabilities: ['read', 'merge'] }],
   })
-  expect(screen.getByRole('checkbox', { name: '审核' })).toBeChecked()
+  expect(screen.getByRole('checkbox', { name: '合并' })).toBeChecked()
 })
 it('renders immutable history and offers restore using the current head', async () => {
   const { user, fetcher } = mount(`/pages/${pageID}/revisions/${revisionID}`, (path, init) =>
@@ -273,7 +271,7 @@ it('renders immutable history and offers restore using the current head', async 
   await screen.findByText(/固定发布版本/)
   await waitFor(() => expect(screen.getByRole('button', { name: '创建回滚提案' })).toBeEnabled())
   await user.click(screen.getByRole('button', { name: '创建回滚提案' }))
-  await screen.findByRole('heading', { name: '当前候选' })
+  await screen.findByRole('heading', { name: '协作知识' })
   const [, init] = fetcher.mock.calls.find(([path]) => path.endsWith('/restore'))!
   expect(JSON.parse(init.body as string)).toEqual({
     revision_id: revisionID,
@@ -283,7 +281,7 @@ it('renders immutable history and offers restore using the current head', async 
 
 it('does not loop on repeated 401 responses after losing an authenticated identity', async () => {
   let revoked = false
-  const { user, fetcher } = mount(`/proposals/${proposalID}`, (path, init) => {
+  const { user, fetcher } = mount(`/pages/${pageID}/proposals/${proposalID}/edit`, (path, init) => {
     if (init.method === 'POST' && path.endsWith('/revisions')) {
       revoked = true
       return failure('unauthenticated', 401)
@@ -291,7 +289,7 @@ it('does not loop on repeated 401 responses after losing an authenticated identi
     if (revoked) return failure('unauthenticated', 401)
   })
   await screen.findByLabelText('Markdown 正文')
-  await user.click(screen.getByRole('button', { name: '提交候选修订' }))
+  await user.click(screen.getByRole('button', { name: '保存修订' }))
   await screen.findByRole('alert')
   const count = fetcher.mock.calls.length
   await new Promise((resolve) => setTimeout(resolve, 20))
@@ -307,7 +305,7 @@ it('supports a keyboard-only login form and presents an understandable error', a
         : undefined,
     true,
   )
-  await screen.findByRole('heading', { name: '欢迎回来' })
+  await screen.findByRole('heading', { name: '登录' })
   await waitFor(() => expect(screen.getByRole('main')).toHaveFocus())
   await user.tab()
   expect(screen.getByLabelText('用户名')).toHaveFocus()
@@ -323,7 +321,7 @@ it('offers reauthentication when a fresh tab has a valid Cookie but no CSRF nonc
   const { user } = mount('/account')
   await screen.findByRole('heading', { name: '个人 Token' })
   await user.click(screen.getByRole('link', { name: '重新登录' }))
-  await screen.findByRole('heading', { name: '欢迎回来' })
+  await screen.findByRole('heading', { name: '登录' })
 })
 it('rotates and clears a one-time Token without putting it in storage', async () => {
   const { user, fetcher } = mount('/account', (path, init) =>
@@ -351,6 +349,7 @@ it('edits account role and group members using server-provided version condition
     name: '维护组',
     version: 8,
     member_ids: [account.id],
+    create_page: false,
   }
   const { user, fetcher } = mount('/admin', (path, init) => {
     if (path.startsWith('/api/v1/admin/accounts?'))
@@ -360,24 +359,27 @@ it('edits account role and group members using server-provided version condition
     if (init.method === 'PUT') return failure('forbidden', 403)
   })
   await screen.findByRole('heading', { name: 'alice' })
-  await user.selectOptions(screen.getByLabelText('alice 角色'), 'reviewer')
+  await user.click(screen.getByLabelText('alice 角色'))
+  await user.click(screen.getByRole('option', { name: '版主' }))
   await user.click(screen.getByRole('button', { name: '保存账户变更' }))
   await screen.findByText(/版本已变化/)
   const [, changed] = fetcher.mock.calls.find(([, init]) => init.method === 'PATCH')!
   expect(JSON.parse(changed.body as string)).toEqual({
-    role: 'reviewer',
+    role: 'moderator',
+    create_page: false,
     status: 'active',
     expected_auth_version: 12,
   })
-  await user.selectOptions(screen.getByLabelText('管理范围'), 'groups')
-  const members = await screen.findByLabelText('维护组 成员账户 ID')
-  await user.clear(members)
+  await user.click(screen.getByRole('link', { name: '用户组' }))
+  await screen.findByRole('heading', { name: '维护组' })
+  await user.click(screen.getByRole('checkbox', { name: /alice/ }))
   await user.click(screen.getByRole('button', { name: '保存用户组' }))
   await screen.findByText('当前账户没有执行此操作的权限。')
   const [, grouped] = fetcher.mock.calls.find(([, init]) => init.method === 'PUT')!
   expect(JSON.parse(grouped.body as string)).toEqual({
     name: '维护组',
     member_ids: [],
+    create_page: false,
     expected_version: 8,
   })
 })
@@ -420,7 +422,7 @@ it('creates a page issue, comments without editing old text, and links with an e
   expect(JSON.parse(init.body as string)).toEqual({ proposal_id: proposalID, expected_version: 4 })
 })
 it('creates a media page only after reserving and uploading original bytes', async () => {
-  const uploadPath = `/api/v1/uploads/${pageID}/content`
+  const uploadPath = `/api/v1/uploads/${proposalID}/content`
   const { user, fetcher } = mount('/pages/new', (path, init) => {
     if (path === '/api/v1/uploads' && init.method === 'POST')
       return json(
@@ -437,16 +439,17 @@ it('creates a media page only after reserving and uploading original bytes', asy
       return json({ id: revisionID, size: 3, mime: 'image/png', sha256: 'a'.repeat(64) })
     if (path === '/api/v1/pages' && init.method === 'POST') return failure('validation_failed', 422)
   })
-  await screen.findByRole('heading', { name: '创建知识页面' })
-  await user.selectOptions(screen.getByLabelText('页面类型'), 'media')
+  await screen.findByRole('heading', { name: '创建页面' })
+  await user.click(screen.getByLabelText('页面类型'))
+  await user.click(screen.getByRole('option', { name: '媒体' }))
   await user.type(screen.getByLabelText('标题'), '图片知识')
-  expect(screen.getByRole('button', { name: '提交提案' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: '创建并发布' })).toBeDisabled()
   await user.upload(
     screen.getByLabelText('上传媒体原件'),
     new File(['png'], 'a.png', { type: 'image/png' }),
   )
-  await screen.findByText('原件上传完成。提交提案后仍需审核才能发布。')
-  await user.click(screen.getByRole('button', { name: '提交提案' }))
+  await screen.findByText('原件上传完成。')
+  await user.click(screen.getByRole('button', { name: '创建并发布' }))
   await screen.findByText(/内容未通过校验/)
   const [, init] = fetcher.mock.calls.find(
     ([path, init]) => path === '/api/v1/pages' && init.method === 'POST',
@@ -457,4 +460,45 @@ it('creates a media page only after reserving and uploading original bytes', asy
     blob_id: revisionID,
     description: '',
   })
+})
+
+it('keeps IME confirmation inside the tag input and includes pending unsplit tags on submit', async () => {
+  let posted: Schema<'Snapshot'> | undefined
+  const { user } = mount('/pages/new', (path, init) => {
+    if (path === '/api/v1/pages' && init.method === 'POST') {
+      posted = JSON.parse(String(init.body)).snapshot
+      return json({ page: detail.page, revision })
+    }
+  })
+  await user.type(await screen.findByRole('textbox', { name: '标题' }), '标签测试')
+  const input = screen.getByRole('textbox', { name: '标签' })
+  fireEvent.compositionStart(input)
+  fireEvent.change(input, { target: { value: '中文标签' } })
+  fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', isComposing: true })
+  expect(screen.queryByRole('button', { name: '移除标签 中文标签' })).not.toBeInTheDocument()
+  expect(posted).toBeUndefined()
+  fireEvent.compositionEnd(input)
+  await user.click(input)
+  await user.keyboard('{Enter}')
+  await user.click(screen.getByRole('button', { name: '移除标签 中文标签' }))
+  await user.type(input, 'a,b c')
+  await user.click(screen.getByRole('button', { name: '创建并发布' }))
+  await waitFor(() => expect(posted?.tags).toEqual(['a,b c']))
+})
+it('requires confirmation before leaving an unsaved editor', async () => {
+  const { user } = mount('/pages/new')
+  await user.type(await screen.findByRole('textbox', { name: '标题' }), '未提交')
+  await user.click(screen.getByRole('link', { name: '全部页面' }))
+  await screen.findByRole('alertdialog')
+  await user.click(screen.getByRole('button', { name: '继续编辑' }))
+  expect(screen.getByRole('textbox', { name: '标题' })).toHaveValue('未提交')
+  await user.click(screen.getByRole('link', { name: '全部页面' }))
+  await user.click(await screen.findByRole('button', { name: '放弃修改' }))
+  await screen.findByRole('heading', { name: '全部页面' })
+})
+it('does not expose a proposal through another page route', async () => {
+  mount(`/pages/99/proposals/${proposalID}`)
+  await screen.findByText('未找到此提案。')
+  expect(screen.queryByRole('button', { name: '合并' })).not.toBeInTheDocument()
+  expect(screen.queryByText(proposal.current_revision.snapshot.title)).not.toBeInTheDocument()
 })

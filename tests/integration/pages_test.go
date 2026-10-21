@@ -28,19 +28,34 @@ func ptr(s string) *string { return &s }
 func document(title, markdown string) content.Snapshot {
 	return content.Snapshot{Type: "document", Title: title, Tags: []string{" Go ", "go", "知识"}, Markdown: ptr(markdown)}
 }
-func (s *suite) createPage(t *testing.T, c identity.Credentials, visibility string, snapshot content.Snapshot, key string) pages.Created {
+
+type pageFixture struct {
+	Page     pages.Page         `json:"page"`
+	Revision pages.Revision     `json:"revision"`
+	Proposal proposals.Proposal `json:"proposal"`
+}
+
+// createPageWithProposal explicitly seeds an already-published Page and an editing proposal.
+func (s *suite) createPageWithProposal(t *testing.T, c identity.Credentials, visibility string, snapshot content.Snapshot, key string) pageFixture {
 	t.Helper()
-	data, _ := s.req(t, "POST", "pages", map[string]any{"visibility": visibility, "snapshot": snapshot}, c, key, 201)
-	var out pages.Created
-	if err := json.Unmarshal(data, &out); err != nil {
+	actor, err := s.accounts.Current(context.Background(), c)
+	if err != nil {
 		t.Fatal(err)
 	}
+	if !actor.CanCreatePage {
+		if _, err := s.db.conn.Exec(context.Background(), "UPDATE wikit.users SET create_page=true WHERE id=$1", actor.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	raw, _ := s.req(t, "POST", "pages", map[string]any{"visibility": visibility, "snapshot": snapshot}, c, key, 201)
+	out := decodeResult[pageFixture](t, raw)
+	out.Proposal = s.createProposal(t, c, out.Page.ID, out.Page.HeadRevisionID, snapshot, key+"-proposal")
 	return out
 }
 
 // publishFixture creates immutable publication data for read/constraint tests.
 // It is intentionally not a runtime publishing use case; review/merge is #5.
-func (s *suite) publishFixture(t *testing.T, created pages.Created, snapshot content.Snapshot) string {
+func (s *suite) publishFixture(t *testing.T, created pageFixture, snapshot content.Snapshot) string {
 	t.Helper()
 	ctx := context.Background()
 	id := s.id(t)
@@ -68,7 +83,7 @@ func (s *suite) publishFixture(t *testing.T, created pages.Created, snapshot con
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO wikit.revisions(id,page_id,type,parent_id,source_proposal_id,snapshot,author_id,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,now())`, id, created.Page.ID, created.Page.Type, parent, created.Proposal.ID, raw, created.Proposal.AuthorID); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO wikit.revisions(id,page_id,type,parent_id,source_proposal_id,snapshot,author_id,created_at,source_kind,publisher_id) VALUES($1,$2,$3,$4,$5,$6,$7,now(),'merge',$7)`, id, created.Page.ID, created.Page.Type, parent, created.Proposal.ID, raw, created.Proposal.AuthorID); err != nil {
 		t.Fatal(err)
 	}
 	for _, tag := range normalized.Tags {
@@ -101,12 +116,12 @@ func (s *suite) publishFixture(t *testing.T, created pages.Created, snapshot con
 	}
 	return id
 }
-func (s *suite) nextProposalFixture(t *testing.T, previous pages.Created, snapshot content.Snapshot) pages.Created {
+func (s *suite) nextProposalFixture(t *testing.T, previous pageFixture, snapshot content.Snapshot) pageFixture {
 	t.Helper()
 	id := s.id(t)
 	candidate := s.id(t)
 	p := proposals.Initial(id, previous.Page.ID, previous.Proposal.AuthorID, candidate, snapshot, time.Now().UTC())
-	if err := s.db.store.WithinPages(context.Background(), func(tx pages.Tx) error {
+	if err := s.db.store.WithinProposals(context.Background(), func(tx proposals.Tx) error {
 		page, err := tx.Page(context.Background(), previous.Page.ID)
 		if err != nil {
 			return err
@@ -116,62 +131,56 @@ func (s *suite) nextProposalFixture(t *testing.T, previous pages.Created, snapsh
 	}); err != nil {
 		t.Fatal(err)
 	}
-	return pages.Created{Page: previous.Page, Proposal: p}
+	return pageFixture{Page: previous.Page, Proposal: p}
 }
 func TestPageCreationIsolationAndIdempotency(t *testing.T) {
 	s := newSuite(t)
 	creator, token := s.register(t, "page_creator")
 	c := identity.Credentials{Bearer: token}
-	snapshot := document("  Cafe\u0301  ", "candidate-only-secret")
-	created := s.createPage(t, c, "public", snapshot, "create-page-key")
-	if created.Page.HeadRevisionID != nil || created.Page.Status != "proposed" || created.Proposal.CurrentRevision.Snapshot.Title != "Café" || len(created.Proposal.CurrentRevision.Snapshot.Tags) != 2 || created.Proposal.CurrentRevision.BaseRevisionID != nil {
-		t.Fatal("incorrect creation result")
-	}
-	data, _ := s.req(t, "GET", "pages", nil, identity.Credentials{}, "", 200)
-	if strings.Contains(string(data), created.Page.ID) || strings.Contains(string(data), "candidate-only-secret") {
-		t.Fatal("unpublished directory leak")
-	}
-	data, _ = s.req(t, "GET", "tags", nil, identity.Credentials{}, "", 200)
-	if strings.Contains(string(data), "go") {
-		t.Fatal("unpublished tags leak")
-	}
-	data, _ = s.req(t, "GET", "pages/"+created.Page.ID, nil, c, "", 200)
-	if strings.Contains(string(data), "candidate-only-secret") || !strings.Contains(string(data), `"revision":null`) {
-		t.Fatal("candidate in page view")
-	}
-	s.req(t, "GET", "proposals/"+created.Proposal.ID, nil, identity.Credentials{}, "", 200)
-	replayed := s.createPage(t, c, "public", snapshot, "create-page-key")
-	if replayed.Page.ID != created.Page.ID {
-		t.Fatal("duplicate page")
-	}
-	s.req(t, "POST", "pages", map[string]any{"visibility": "restricted", "snapshot": snapshot}, c, "create-page-key", 409)
-	policy, err := s.access.GetPolicy(context.Background(), identity.Credentials{Bearer: s.adminToken}, created.Page.ID)
-	if err != nil {
+	admin := identity.Credentials{Bearer: s.adminToken}
+	body := map[string]any{"visibility": "public", "snapshot": document("  Cafe\u0301  ", "published-body")}
+	s.req(t, "POST", "pages", body, c, "create-page-key", 403)
+	if _, err := s.access.UpdateAccount(context.Background(), requestKey(admin, "grant-creation"), creator.ID, "member", "active", 1, true); err != nil {
 		t.Fatal(err)
 	}
-	if len(policy.Grants) != 1 || policy.Grants[0].SubjectID != creator.ID || strings.Contains(strings.Join(policy.Grants[0].Capabilities, ","), "manage") {
-		t.Fatal("creator became manager")
+	raw, _ := s.req(t, "POST", "pages", body, c, "create-page-key", 201)
+	created := decodeResult[pages.Created](t, raw)
+	if created.Page.ID != "2" || created.Page.HeadRevisionID == nil || created.Revision.ID != *created.Page.HeadRevisionID || created.Revision.SourceKind != "create" || created.Revision.SourceProposalID != nil || created.Revision.Snapshot.Title != "Café" {
+		t.Fatal("incorrect direct publication")
 	}
-	if err := s.access.Check(context.Background(), c, created.Page.ID, "review", false); err == nil {
-		t.Fatal("creator gained review")
+	raw, _ = s.req(t, "POST", "pages", body, c, "create-page-key", 201)
+	if decodeResult[pages.Created](t, raw).Revision.ID != created.Revision.ID {
+		t.Fatal("duplicate publication")
 	}
-	private := s.createPage(t, c, "restricted", document("Private", "restricted candidate"), "create-private-key")
-	s.req(t, "GET", "proposals/"+private.Proposal.ID, nil, identity.Credentials{}, "", 404)
-	s.req(t, "GET", "proposals/"+private.Proposal.ID+"/revisions", nil, c, "", 200)
-	_, err = s.access.UpdatePolicy(context.Background(), requestKey(identity.Credentials{Bearer: s.adminToken}, "hide-created"), created.Page.ID, access.Policy{Visibility: "restricted", Grants: []access.Grant{{SubjectType: "user", SubjectID: creator.ID, Capabilities: []string{"read"}}}}, 1)
-	if err != nil {
-		t.Fatal(err)
+	raw, _ = s.req(t, "GET", "pages/"+created.Page.ID, nil, identity.Credentials{}, "", 200)
+	if !strings.Contains(string(raw), "published-body") {
+		t.Fatal("first version not readable")
 	}
-	s.req(t, "GET", "proposals/"+created.Proposal.ID, nil, identity.Credentials{}, "", 404)
+	var count int
+	if err := s.db.conn.QueryRow(context.Background(), "SELECT count(*) FROM wikit.proposals").Scan(&count); err != nil || count != 0 {
+		t.Fatal("creation generated proposal", err)
+	}
+	for _, cap := range []string{"merge", "manage"} {
+		if err := s.access.Check(context.Background(), c, created.Page.ID, cap, false); err == nil {
+			t.Fatal("creator gained", cap)
+		}
+	}
+	s.req(t, "POST", "pages", map[string]any{"visibility": "restricted", "snapshot": document("Private", "secret")}, c, "private-create-key", 201)
+	s.req(t, "GET", "pages/3", nil, identity.Credentials{}, "", 404)
 }
 func TestCreatePageFailureRollsBackEveryRecord(t *testing.T) {
 	s := newSuite(t)
 	_, token := s.register(t, "atomic_creator")
+	execSQL(t, s.db.conn, "UPDATE wikit.users SET create_page=true")
 	execSQL(t, s.db.conn, `CREATE FUNCTION wikit.test_fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='page.create' THEN RAISE EXCEPTION 'injected failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER fail_audit BEFORE INSERT ON wikit.audit_events FOR EACH ROW EXECUTE FUNCTION wikit.test_fail_audit()`)
 	s.req(t, "POST", "pages", map[string]any{"visibility": "public", "snapshot": document("Atomic", "body")}, identity.Credentials{Bearer: token}, "atomic-failure", 500)
 	for _, table := range []string{"pages", "page_policies", "proposals", "proposal_revisions", "tags", "idempotency_records"} {
 		var n int
-		if err := s.db.conn.QueryRow(context.Background(), "SELECT count(*) FROM wikit."+table).Scan(&n); err != nil || n != 0 {
+		want := 0
+		if table == "pages" || table == "page_policies" {
+			want = 1
+		}
+		if err := s.db.conn.QueryRow(context.Background(), "SELECT count(*) FROM wikit."+table).Scan(&n); err != nil || n != want {
 			t.Fatalf("partial %s records: %d (%v)", table, n, err)
 		}
 	}
@@ -183,9 +192,9 @@ func TestCurrentACLControlsHistoryAndPagination(t *testing.T) {
 	c := identity.Credentials{Bearer: token}
 	r := identity.Credentials{Bearer: readerToken}
 	admin := identity.Credentials{Bearer: s.adminToken}
-	one := s.createPage(t, c, "public", document("One", "first publication"), "history-page-one")
+	one := s.createPageWithProposal(t, c, "public", document("One", "first publication"), "history-page-one")
 	rev := s.publishFixture(t, one, document("One", "first publication"))
-	two := s.createPage(t, c, "public", document("Two", "other publication"), "history-page-two")
+	two := s.createPageWithProposal(t, c, "public", document("Two", "other publication"), "history-page-two")
 	s.publishFixture(t, two, document("Two", "other publication"))
 	data, _ := s.req(t, "GET", "pages?limit=1&tag=GO", nil, identity.Credentials{}, "", 200)
 	var list pages.List
@@ -238,14 +247,15 @@ func (s *suite) blobFixture(t *testing.T, uploader string, ready bool) string {
 func TestFixedMediaReferences(t *testing.T) {
 	s := newSuite(t)
 	owner, token := s.register(t, "media_owner")
-	_, otherToken := s.register(t, "other_media_user")
+	other, otherToken := s.register(t, "other_media_user")
+	grantCreate(t, s, other.ID)
 	c := identity.Credentials{Bearer: token}
 	blob := s.blobFixture(t, owner.ID, true)
 	media := content.Snapshot{Type: "media", Title: "Media", Tags: []string{}, Description: ptr("description"), BlobID: &blob}
-	m := s.createPage(t, c, "public", media, "create-media-one")
+	m := s.createPageWithProposal(t, c, "public", media, "create-media-one")
 	old := s.publishFixture(t, m, media)
 	link := "/api/v1/pages/" + m.Page.ID + "/revisions/" + old + "/content"
-	doc := s.createPage(t, c, "public", document("Reference", "![media]("+link+")"), "fixed-reference")
+	doc := s.createPageWithProposal(t, c, "public", document("Reference", "![media]("+link+")"), "fixed-reference")
 	newBlob := s.blobFixture(t, owner.ID, true)
 	newMedia := media
 	newMedia.BlobID = &newBlob
@@ -273,11 +283,11 @@ func TestFixedMediaReferences(t *testing.T) {
 	rejectSQL(t, s, `INSERT INTO wikit.proposal_revisions(id,proposal_id,page_id,type,snapshot,created_at,sealed) VALUES($1,$2,$3,'media',$4,now(),true)`, s.id(t), m.Proposal.ID, m.Page.ID, raw)
 	s.req(t, "POST", "pages", map[string]any{"visibility": "public", "snapshot": media}, c, "pending-blob-create", 409)
 	s.req(t, "POST", "pages", map[string]any{"visibility": "public", "snapshot": document("Invalid", "![x](/api/v1/pages/"+m.Page.ID+"/content)")}, c, "unfixed-reference", 422)
-	unpublished := s.createPage(t, c, "public", document("Unpublished", "body"), "unpublished-target")
+	unpublished := s.createPageWithProposal(t, c, "public", document("Unpublished", "body"), "unpublished-target")
 	s.req(t, "POST", "pages", map[string]any{"visibility": "public", "snapshot": document("Invalid", "![x](/api/v1/pages/"+unpublished.Page.ID+"/revisions/"+unpublished.Proposal.CurrentRevision.ID+"/content)")}, c, "candidate-reference", 422)
 }
 
-func rejectMediaAssociation(t *testing.T, s *suite, source pages.Created, target, revision string) {
+func rejectMediaAssociation(t *testing.T, s *suite, source pageFixture, target, revision string) {
 	t.Helper()
 	ctx := context.Background()
 	tx, err := s.db.conn.Begin(ctx)
@@ -330,9 +340,9 @@ func TestSnapshotImmutabilityAndCompositeRelationships(t *testing.T) {
 	s := newSuite(t)
 	_, token := s.register(t, "constraint_owner")
 	c := identity.Credentials{Bearer: token}
-	one := s.createPage(t, c, "public", document("One", "one"), "constraint-one")
+	one := s.createPageWithProposal(t, c, "public", document("One", "one"), "constraint-one")
 	rid := s.publishFixture(t, one, document("One", "one"))
-	two := s.createPage(t, c, "public", document("Two", "two"), "constraint-two")
+	two := s.createPageWithProposal(t, c, "public", document("Two", "two"), "constraint-two")
 	rejectSQL(t, s, "UPDATE wikit.revisions SET snapshot=jsonb_set(snapshot,'{title}','\"changed\"') WHERE id=$1", rid)
 	rejectSQL(t, s, "DELETE FROM wikit.revisions WHERE id=$1", rid)
 	rejectSQL(t, s, "UPDATE wikit.proposal_revisions SET snapshot='{}' WHERE id=$1", one.Proposal.CurrentRevision.ID)
@@ -353,7 +363,8 @@ func TestSnapshotImmutabilityAndCompositeRelationships(t *testing.T) {
 
 func TestConcurrentCreateAndLargeDocument(t *testing.T) {
 	s := newSuite(t)
-	_, token := s.register(t, "parallel_page_creator")
+	u, token := s.register(t, "parallel_page_creator")
+	grantCreate(t, s, u.ID)
 	c := identity.Credentials{Bearer: token}
 	svc := pages.New(s.db.store, s.secrets, textadapter.Parser{}, s.files)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -389,10 +400,17 @@ func TestConcurrentCreateAndLargeDocument(t *testing.T) {
 		id = result.Page.ID
 	}
 	var count int
-	if err := s.db.conn.QueryRow(ctx, "SELECT count(*) FROM wikit.pages").Scan(&count); err != nil || count != 1 {
+	if err := s.db.conn.QueryRow(ctx, "SELECT count(*) FROM wikit.pages").Scan(&count); err != nil || count != 2 {
 		t.Fatal("non-atomic concurrent creation", count, err)
 	}
-	s.createPage(t, c, "public", document("Large", strings.Repeat("字", 70000)), "large-document-key")
+	s.createPageWithProposal(t, c, "public", document("Large", strings.Repeat("字", 70000)), "large-document-key")
 	s.req(t, "POST", "pages", map[string]any{"visibility": "public", "snapshot": document("NUL", "bad\x00text")}, c, "nul-document-key", 422)
 	s.req(t, "GET", "pages?tag=%00", nil, c, "", 400)
+}
+
+func grantCreate(t *testing.T, s *suite, id string) {
+	t.Helper()
+	if _, err := s.access.UpdateAccount(context.Background(), requestKey(identity.Credentials{Bearer: s.adminToken}, "grant-create-"+id), id, "member", "active", 1, true); err != nil {
+		t.Fatal(err)
+	}
 }

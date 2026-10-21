@@ -35,7 +35,7 @@ func TestPROP04LineMergeCasesAndTagSets(t *testing.T) {
 			key := fmt.Sprintf("line-case-%d", i)
 			baseSnapshot := document("Lines", tc.base)
 			baseSnapshot.Tags = []string{"keep", "remove"}
-			page := s.createPage(t, admin, "public", baseSnapshot, key+"-page")
+			page := s.createPageWithProposal(t, admin, "public", baseSnapshot, key+"-page")
 			base := s.publish(t, admin, page.Proposal, nil, key+"-base")
 			ours, theirs := document("Lines", tc.ours), document("Lines", tc.theirs)
 			ours.Tags = []string{"keep", "ours"}
@@ -68,7 +68,7 @@ func TestPROP04MediaScalarsAndROLL01OriginalReuse(t *testing.T) {
 	c := identity.Credentials{Bearer: token}
 	firstBlob := s.blobFixture(t, owner.ID, true)
 	initial := content.Snapshot{Type: "media", Title: "Media", Tags: []string{}, Description: ptr("description"), BlobID: &firstBlob}
-	page := s.createPage(t, c, "public", initial, "media-workflow-page")
+	page := s.createPageWithProposal(t, c, "public", initial, "media-workflow-page")
 	base := s.publish(t, admin, page.Proposal, nil, "media-workflow-base")
 	secondBlob, thirdBlob := s.blobFixture(t, owner.ID, true), s.blobFixture(t, owner.ID, true)
 	ours, theirs := initial, initial
@@ -107,19 +107,19 @@ func TestMergeAndRollbackRecheckFixedReferenceACL(t *testing.T) {
 	owner, token := s.register(t, "reference_owner")
 	c := identity.Credentials{Bearer: token}
 	blob := s.blobFixture(t, owner.ID, true)
-	media := s.createPage(t, c, "public", content.Snapshot{Type: "media", Title: "Reference", Tags: []string{}, Description: ptr(""), BlobID: &blob}, "referenced-media-page")
+	media := s.createPageWithProposal(t, c, "public", content.Snapshot{Type: "media", Title: "Reference", Tags: []string{}, Description: ptr(""), BlobID: &blob}, "referenced-media-page")
 	mediaRev := s.publish(t, admin, media.Proposal, nil, "referenced-media-publish")
 	link := "![fixed](/api/v1/pages/" + media.Page.ID + "/revisions/" + mediaRev.ID + "/content)"
-	doc := s.createPage(t, c, "public", document("Document", link), "reference-document-page")
+	doc := s.createPageWithProposal(t, c, "public", document("Document", link), "reference-document-page")
 	first := s.publish(t, admin, doc.Proposal, nil, "reference-document-publish")
 	p := s.createProposal(t, c, doc.Page.ID, &first.ID, document("Document", link+"\nmore"), "reference-document-next")
-	s.review(t, admin, p, &first.ID, "approve", "reference-next-review", 201)
+
 	policy := access.Policy{PageID: media.Page.ID, Visibility: "restricted", Status: "published", Version: 2, Grants: []access.Grant{{SubjectType: "user", SubjectID: owner.ID, Capabilities: []string{"read", "propose"}}}}
 	s.seedPolicy(t, policy)
 	_, otherToken := s.register(t, "reference_merger")
 	other := identity.Credentials{Bearer: otherToken}
 	// Give this actor review on the source only, preserving no target read grant.
-	if _, err := s.access.UpdatePolicy(ctx, requestKey(admin, "reference-source-grant"), doc.Page.ID, access.Policy{Visibility: "public", Grants: []access.Grant{{SubjectType: "user", SubjectID: owner.ID, Capabilities: []string{"read", "propose"}}, {SubjectType: "user", SubjectID: s.accountID(t, other), Capabilities: []string{"read", "review"}}}}, 1); err != nil {
+	if _, err := s.access.UpdatePolicy(ctx, requestKey(admin, "reference-source-grant"), doc.Page.ID, access.Policy{Visibility: "public", Grants: []access.Grant{{SubjectType: "user", SubjectID: owner.ID, Capabilities: []string{"read", "propose"}}, {SubjectType: "user", SubjectID: s.accountID(t, other), Capabilities: []string{"read", "merge"}}}}, 1); err != nil {
 		t.Fatal(err)
 	}
 	s.merge(t, other, p, &first.ID, "target-revoked-merge", 404)

@@ -27,7 +27,7 @@ func textValid(s string, max int, nonblank bool) bool {
 func load(ctx context.Context, tx Tx, c identity.Credentials, scope, id string, management bool) (loaded, error) {
 	var v loaded
 	id = strings.ToLower(id)
-	if !identity.ValidID(id) {
+	if (scope == "page" && !access.ValidPageID(id)) || (scope != "page" && !identity.ValidID(id)) {
 		return v, fault.NotFound
 	}
 	var err error

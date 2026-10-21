@@ -7,6 +7,11 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { Label } from './ui/label'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select'
+import { Badge } from './ui/badge'
+import { Alert } from './ui/alert'
+import { Skeleton } from './ui/skeleton'
+import { useEffect } from 'react'
 
 export function Field({
   label,
@@ -73,20 +78,25 @@ export function SelectField({
   return (
     <div className="field">
       <Label htmlFor={id}>{label}</Label>
-      <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map(([value, text]) => (
-          <option key={value} value={value}>
-            {text}
-          </option>
-        ))}
-      </select>
+      <Select value={value || '__all__'} onValueChange={(v) => onChange(v === '__all__' ? '' : v)}>
+        <SelectTrigger id={id}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(([v, text]) => (
+            <SelectItem key={v} value={v || '__all__'}>
+              {text}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }
 export function ErrorNotice({ error }: { error?: ApiError }) {
   if (!error) return null
   return (
-    <div className="error" role="alert">
+    <Alert variant="destructive" className="error">
       <p>
         <AlertCircle size={18} aria-hidden /> {error.message}
       </p>
@@ -112,7 +122,7 @@ export function ErrorNotice({ error }: { error?: ApiError }) {
           </div>
         </section>
       ))}
-    </div>
+    </Alert>
   )
 }
 export function ActionFeedback({ action }: { action: ReturnType<typeof useAction> }) {
@@ -130,23 +140,18 @@ export function Loading({ error }: { error?: ApiError }) {
     <ErrorNotice error={error} />
   ) : (
     <p role="status" className="muted">
-      正在读取…
+      <Skeleton className="h-5 w-40" />
+      <span className="sr-only">正在读取…</span>
     </p>
   )
 }
-export function SectionTitle({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow?: string
-  title: string
-  children?: ReactNode
-}) {
+export function SectionTitle({ title, children }: { title: string; children?: ReactNode }) {
+  useEffect(() => {
+    document.title = title + ' · Wikit'
+  }, [title])
   return (
     <header className="section-title">
       <div>
-        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1>{title}</h1>
       </div>
       {children}
@@ -157,8 +162,8 @@ export function TagLinks({ tags }: { tags: string[] }) {
   return (
     <div className="tags">
       {tags.map((tag) => (
-        <Link key={tag} to={`/?tag=${encodeURIComponent(tag)}`}>
-          {tag}
+        <Link key={tag} to={`/pages?tag=${encodeURIComponent(tag)}`}>
+          <Badge variant="secondary">{tag}</Badge>
         </Link>
       ))}
     </div>
@@ -171,9 +176,11 @@ export function Collection<T>({
   path,
   children,
   empty = '暂无内容。',
+  renderItems,
 }: {
   path: string
   children: (item: T) => ReactNode
+  renderItems?: (rows: ReactNode[]) => ReactNode
   empty?: string
 }) {
   const [cursors, setCursors] = useState<string[]>([''])
@@ -204,7 +211,15 @@ export function Collection<T>({
   return (
     <>
       <div className="collection">
-        {items.length ? items.map(children) : <p className="empty">{empty}</p>}
+        {items.length ? (
+          renderItems ? (
+            renderItems(items.map(children))
+          ) : (
+            items.map(children)
+          )
+        ) : (
+          <p className="empty">{empty}</p>
+        )}
       </div>
       {(next_cursor || cursors.length > 1) && (
         <nav className="pagination" aria-label="分页">

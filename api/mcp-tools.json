@@ -43,7 +43,9 @@
               "username",
               "display_name",
               "role",
-              "status"
+              "status",
+              "create_page",
+              "can_create_page"
             ],
             "properties": {
               "id": {
@@ -62,7 +64,7 @@
                 "type": "string",
                 "enum": [
                   "member",
-                  "reviewer",
+                  "moderator",
                   "admin"
                 ]
               },
@@ -72,6 +74,12 @@
                   "active",
                   "disabled"
                 ]
+              },
+              "create_page": {
+                "type": "boolean"
+              },
+              "can_create_page": {
+                "type": "boolean"
               }
             }
           },
@@ -156,6 +164,7 @@
             "required": [
               "role",
               "status",
+              "create_page",
               "expected_auth_version"
             ],
             "properties": {
@@ -163,7 +172,7 @@
                 "type": "string",
                 "enum": [
                   "member",
-                  "reviewer",
+                  "moderator",
                   "admin"
                 ]
               },
@@ -173,6 +182,9 @@
                   "active",
                   "disabled"
                 ]
+              },
+              "create_page": {
+                "type": "boolean"
               },
               "expected_auth_version": {
                 "type": "integer",
@@ -202,7 +214,9 @@
               "username",
               "display_name",
               "role",
-              "status"
+              "status",
+              "create_page",
+              "can_create_page"
             ],
             "properties": {
               "id": {
@@ -221,7 +235,7 @@
                 "type": "string",
                 "enum": [
                   "member",
-                  "reviewer",
+                  "moderator",
                   "admin"
                 ]
               },
@@ -231,6 +245,12 @@
                   "active",
                   "disabled"
                 ]
+              },
+              "create_page": {
+                "type": "boolean"
+              },
+              "can_create_page": {
+                "type": "boolean"
               }
             }
           },
@@ -300,7 +320,8 @@
               "id",
               "name",
               "version",
-              "member_ids"
+              "member_ids",
+              "create_page"
             ],
             "properties": {
               "id": {
@@ -321,6 +342,9 @@
                   "type": "string",
                   "format": "uuid"
                 }
+              },
+              "create_page": {
+                "type": "boolean"
               }
             }
           },
@@ -381,9 +405,13 @@
             "type": "object",
             "additionalProperties": false,
             "required": [
+              "create_page",
               "name"
             ],
             "properties": {
+              "create_page": {
+                "type": "boolean"
+              },
               "name": {
                 "type": "string",
                 "maxLength": 100,
@@ -412,7 +440,8 @@
               "id",
               "name",
               "version",
-              "member_ids"
+              "member_ids",
+              "create_page"
             ],
             "properties": {
               "id": {
@@ -433,6 +462,9 @@
                   "type": "string",
                   "format": "uuid"
                 }
+              },
+              "create_page": {
+                "type": "boolean"
               }
             }
           }
@@ -476,11 +508,15 @@
             "type": "object",
             "additionalProperties": false,
             "required": [
+              "create_page",
               "name",
               "member_ids",
               "expected_version"
             ],
             "properties": {
+              "create_page": {
+                "type": "boolean"
+              },
               "name": {
                 "type": "string",
                 "maxLength": 100
@@ -519,7 +555,8 @@
               "id",
               "name",
               "version",
-              "member_ids"
+              "member_ids",
+              "create_page"
             ],
             "properties": {
               "id": {
@@ -540,6 +577,9 @@
                   "type": "string",
                   "format": "uuid"
                 }
+              },
+              "create_page": {
+                "type": "boolean"
               }
             }
           }
@@ -616,8 +656,7 @@
                 "type": [
                   "string",
                   "null"
-                ],
-                "format": "uuid"
+                ]
               },
               "request_id": {
                 "type": "string",
@@ -793,7 +832,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "type": {
                 "type": "string",
@@ -812,7 +851,6 @@
               "status": {
                 "type": "string",
                 "enum": [
-                  "proposed",
                   "published",
                   "hidden"
                 ]
@@ -835,11 +873,25 @@
             "additionalProperties": false,
             "required": [
               "page",
+              "capabilities",
               "revision"
             ],
             "properties": {
               "page": {
                 "$ref": "#/$defs/Page"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "read",
+                    "propose",
+                    "discuss",
+                    "merge",
+                    "manage"
+                  ]
+                }
               },
               "revision": {
                 "anyOf": [
@@ -883,6 +935,7 @@
               "page_id",
               "parent_id",
               "source_proposal_id",
+              "source_kind",
               "snapshot",
               "created_at",
               "author_id",
@@ -895,7 +948,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "parent_id": {
                 "type": [
@@ -905,8 +958,19 @@
                 "format": "uuid"
               },
               "source_proposal_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
+              },
+              "source_kind": {
+                "type": "string",
+                "enum": [
+                  "bootstrap",
+                  "create",
+                  "merge"
+                ]
               },
               "snapshot": {
                 "$ref": "#/$defs/Snapshot"
@@ -916,7 +980,10 @@
                 "format": "date-time"
               },
               "author_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
               },
               "content_url": {
@@ -1092,14 +1159,14 @@
             "additionalProperties": false,
             "required": [
               "page",
-              "proposal"
+              "revision"
             ],
             "properties": {
               "page": {
                 "$ref": "#/$defs/Page"
               },
-              "proposal": {
-                "$ref": "#/$defs/Proposal"
+              "revision": {
+                "$ref": "#/$defs/Revision"
               }
             }
           },
@@ -1192,7 +1259,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "type": {
                 "type": "string",
@@ -1211,7 +1278,6 @@
               "status": {
                 "type": "string",
                 "enum": [
-                  "proposed",
                   "published",
                   "hidden"
                 ]
@@ -1229,17 +1295,19 @@
               }
             }
           },
-          "Proposal": {
+          "Revision": {
             "type": "object",
             "additionalProperties": false,
             "required": [
               "id",
               "page_id",
+              "parent_id",
+              "source_proposal_id",
+              "source_kind",
+              "snapshot",
+              "created_at",
               "author_id",
-              "state",
-              "version",
-              "review_round",
-              "current_revision"
+              "content_url"
             ],
             "properties": {
               "id": {
@@ -1248,58 +1316,29 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
-              "author_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "state": {
-                "type": "string",
-                "enum": [
-                  "open",
-                  "merged",
-                  "closed"
-                ]
-              },
-              "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "current_revision": {
-                "$ref": "#/$defs/ProposalRevision"
-              }
-            }
-          },
-          "ProposalRevision": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "id",
-              "proposal_id",
-              "base_revision_id",
-              "snapshot",
-              "created_at"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "proposal_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "base_revision_id": {
+              "parent_id": {
                 "type": [
                   "string",
                   "null"
                 ],
                 "format": "uuid"
+              },
+              "source_proposal_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "source_kind": {
+                "type": "string",
+                "enum": [
+                  "bootstrap",
+                  "create",
+                  "merge"
+                ]
               },
               "snapshot": {
                 "$ref": "#/$defs/Snapshot"
@@ -1307,6 +1346,19 @@
               "created_at": {
                 "type": "string",
                 "format": "date-time"
+              },
+              "author_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "content_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           },
@@ -1342,7 +1394,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           }
         }
       },
@@ -1447,7 +1499,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "type": {
                 "type": "string",
@@ -1466,7 +1518,6 @@
               "status": {
                 "type": "string",
                 "enum": [
-                  "proposed",
                   "published",
                   "hidden"
                 ]
@@ -1489,11 +1540,25 @@
             "additionalProperties": false,
             "required": [
               "page",
+              "capabilities",
               "revision"
             ],
             "properties": {
               "page": {
                 "$ref": "#/$defs/Page"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "read",
+                    "propose",
+                    "discuss",
+                    "merge",
+                    "manage"
+                  ]
+                }
               },
               "revision": {
                 "anyOf": [
@@ -1515,6 +1580,7 @@
               "page_id",
               "parent_id",
               "source_proposal_id",
+              "source_kind",
               "snapshot",
               "created_at",
               "author_id",
@@ -1527,7 +1593,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "parent_id": {
                 "type": [
@@ -1537,8 +1603,19 @@
                 "format": "uuid"
               },
               "source_proposal_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
+              },
+              "source_kind": {
+                "type": "string",
+                "enum": [
+                  "bootstrap",
+                  "create",
+                  "merge"
+                ]
               },
               "snapshot": {
                 "$ref": "#/$defs/Snapshot"
@@ -1548,7 +1625,10 @@
                 "format": "date-time"
               },
               "author_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
               },
               "content_url": {
@@ -1591,7 +1671,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           }
         }
       },
@@ -1635,7 +1715,7 @@
                     "read",
                     "propose",
                     "discuss",
-                    "review",
+                    "merge",
                     "manage"
                   ]
                 },
@@ -1695,7 +1775,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "body": {
             "$ref": "#/$defs/PolicyInput"
@@ -1735,7 +1815,7 @@
                     "read",
                     "propose",
                     "discuss",
-                    "review",
+                    "merge",
                     "manage"
                   ]
                 },
@@ -1813,7 +1893,7 @@
                     "read",
                     "propose",
                     "discuss",
-                    "review",
+                    "merge",
                     "manage"
                   ]
                 },
@@ -1873,7 +1953,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "body": {
             "$ref": "#/$defs/ModerationInput"
@@ -1936,7 +2016,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "type": {
                 "type": "string",
@@ -1955,7 +2035,6 @@
               "status": {
                 "type": "string",
                 "enum": [
-                  "proposed",
                   "published",
                   "hidden"
                 ]
@@ -1995,7 +2074,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "limit": {
             "type": "integer",
@@ -2104,6 +2183,7 @@
               "page_id",
               "parent_id",
               "source_proposal_id",
+              "source_kind",
               "snapshot",
               "created_at",
               "author_id",
@@ -2116,7 +2196,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "parent_id": {
                 "type": [
@@ -2126,8 +2206,19 @@
                 "format": "uuid"
               },
               "source_proposal_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
+              },
+              "source_kind": {
+                "type": "string",
+                "enum": [
+                  "bootstrap",
+                  "create",
+                  "merge"
+                ]
               },
               "snapshot": {
                 "$ref": "#/$defs/Snapshot"
@@ -2137,7 +2228,10 @@
                 "format": "date-time"
               },
               "author_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
               },
               "content_url": {
@@ -2203,7 +2297,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "revision_id": {
             "type": "string",
@@ -2306,6 +2400,7 @@
               "page_id",
               "parent_id",
               "source_proposal_id",
+              "source_kind",
               "snapshot",
               "created_at",
               "author_id",
@@ -2318,7 +2413,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "parent_id": {
                 "type": [
@@ -2328,8 +2423,19 @@
                 "format": "uuid"
               },
               "source_proposal_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
+              },
+              "source_kind": {
+                "type": "string",
+                "enum": [
+                  "bootstrap",
+                  "create",
+                  "merge"
+                ]
               },
               "snapshot": {
                 "$ref": "#/$defs/Snapshot"
@@ -2339,7 +2445,10 @@
                 "format": "date-time"
               },
               "author_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
               },
               "content_url": {
@@ -2372,7 +2481,7 @@
     },
     {
       "name": "wikit_proposal_queue",
-      "description": "列出可读的提案审核队列",
+      "description": "列出可读的提案摘要",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -2494,7 +2603,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -2504,7 +2612,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -2519,10 +2627,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -2620,7 +2724,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "limit": {
             "type": "integer",
@@ -2730,7 +2834,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -2740,7 +2843,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -2755,10 +2858,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -2858,7 +2957,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "body": {
             "$ref": "#/$defs/CreateProposal"
@@ -3073,7 +3172,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -3083,7 +3181,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -3098,10 +3196,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -3277,7 +3371,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -3287,7 +3380,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -3302,10 +3395,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -3793,7 +3882,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -3803,7 +3891,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -3818,10 +3906,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -3996,7 +4080,7 @@
     },
     {
       "name": "wikit_proposal_rebase",
-      "description": "三方合并至当前发布版本并使审核失效",
+      "description": "三方合并至当前发布版本并生成新候选",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -4139,7 +4223,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -4149,7 +4232,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -4164,10 +4247,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -4232,278 +4311,8 @@
       "x-rest-operation": "proposal_rebase"
     },
     {
-      "name": "wikit_reviews_list",
-      "description": "列出审核记录",
-      "inputSchema": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "proposal_id"
-        ],
-        "properties": {
-          "proposal_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 100,
-            "default": 20
-          },
-          "cursor": {
-            "type": "string",
-            "maxLength": 2048
-          }
-        }
-      },
-      "outputSchema": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "data"
-        ],
-        "properties": {
-          "data": {
-            "$ref": "#/$defs/ReviewList"
-          }
-        },
-        "$defs": {
-          "Review": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "id",
-              "actor_id",
-              "proposal_revision_id",
-              "base_revision_id",
-              "round",
-              "decision",
-              "body",
-              "created_at"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "actor_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "proposal_revision_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "base_revision_id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "format": "uuid"
-              },
-              "round": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "decision": {
-                "type": "string",
-                "enum": [
-                  "approve",
-                  "request_changes",
-                  "comment"
-                ]
-              },
-              "body": {
-                "type": "string",
-                "maxLength": 65536
-              },
-              "created_at": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
-          },
-          "ReviewList": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "items",
-              "next_cursor"
-            ],
-            "properties": {
-              "items": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/$defs/Review"
-                }
-              },
-              "next_cursor": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            }
-          }
-        }
-      },
-      "annotations": {
-        "readOnlyHint": true,
-        "destructiveHint": false,
-        "idempotentHint": true,
-        "openWorldHint": false
-      },
-      "x-rest-operation": "reviews_list"
-    },
-    {
-      "name": "wikit_review_create",
-      "description": "对明确版本提交审核",
-      "inputSchema": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "proposal_id",
-          "body",
-          "idempotency_key"
-        ],
-        "properties": {
-          "proposal_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "body": {
-            "$ref": "#/$defs/ReviewInput"
-          },
-          "idempotency_key": {
-            "type": "string",
-            "minLength": 8,
-            "maxLength": 128
-          }
-        },
-        "$defs": {
-          "ReviewInput": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "expected_head_revision_id",
-              "expected_proposal_revision_id",
-              "expected_review_round",
-              "decision",
-              "body"
-            ],
-            "properties": {
-              "expected_head_revision_id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "format": "uuid"
-              },
-              "expected_proposal_revision_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "expected_review_round": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "decision": {
-                "type": "string",
-                "enum": [
-                  "approve",
-                  "request_changes",
-                  "comment"
-                ]
-              },
-              "body": {
-                "type": "string",
-                "maxLength": 65536
-              }
-            }
-          }
-        }
-      },
-      "outputSchema": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "data"
-        ],
-        "properties": {
-          "data": {
-            "$ref": "#/$defs/Review"
-          }
-        },
-        "$defs": {
-          "Review": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "id",
-              "actor_id",
-              "proposal_revision_id",
-              "base_revision_id",
-              "round",
-              "decision",
-              "body",
-              "created_at"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "actor_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "proposal_revision_id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "base_revision_id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "format": "uuid"
-              },
-              "round": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "decision": {
-                "type": "string",
-                "enum": [
-                  "approve",
-                  "request_changes",
-                  "comment"
-                ]
-              },
-              "body": {
-                "type": "string",
-                "maxLength": 65536
-              },
-              "created_at": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
-          }
-        }
-      },
-      "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": true,
-        "idempotentHint": true,
-        "openWorldHint": false
-      },
-      "x-rest-operation": "review_create"
-    },
-    {
       "name": "wikit_proposal_merge",
-      "description": "原子合并经有效审核的提案",
+      "description": "按当前合并权限与预期版本原子发布提案",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -4645,6 +4454,7 @@
               "page_id",
               "parent_id",
               "source_proposal_id",
+              "source_kind",
               "snapshot",
               "created_at",
               "author_id",
@@ -4657,7 +4467,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "parent_id": {
                 "type": [
@@ -4667,8 +4477,19 @@
                 "format": "uuid"
               },
               "source_proposal_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
+              },
+              "source_kind": {
+                "type": "string",
+                "enum": [
+                  "bootstrap",
+                  "create",
+                  "merge"
+                ]
               },
               "snapshot": {
                 "$ref": "#/$defs/Snapshot"
@@ -4678,7 +4499,10 @@
                 "format": "date-time"
               },
               "author_id": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "uuid"
               },
               "content_url": {
@@ -4854,7 +4678,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -4864,7 +4687,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -4879,10 +4702,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -4960,7 +4779,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "body": {
             "$ref": "#/$defs/RollbackInput"
@@ -5088,7 +4907,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -5098,7 +4916,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -5113,10 +4931,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -5194,7 +5008,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "body": {
             "$ref": "#/$defs/RollbackInput"
@@ -5322,7 +5136,6 @@
               "author_id",
               "state",
               "version",
-              "review_round",
               "current_revision"
             ],
             "properties": {
@@ -5332,7 +5145,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -5347,10 +5160,6 @@
                 ]
               },
               "version": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "review_round": {
                 "type": "integer",
                 "minimum": 0
               },
@@ -5426,7 +5235,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "limit": {
             "type": "integer",
@@ -5484,7 +5293,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -5571,7 +5380,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "body": {
             "$ref": "#/$defs/IssueInput"
@@ -5638,7 +5447,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -5742,7 +5551,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -5876,7 +5685,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -6007,7 +5816,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -6143,7 +5952,7 @@
               },
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "author_id": {
                 "type": "string",
@@ -6862,7 +6671,7 @@
             "properties": {
               "page_id": {
                 "type": "string",
-                "format": "uuid"
+                "pattern": "^[1-9][0-9]{0,18}$"
               },
               "revision_id": {
                 "type": "string",

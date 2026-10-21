@@ -15,11 +15,13 @@ import (
 )
 
 type Account struct {
-	ID          string `json:"id"`
-	Username    string `json:"username"`
-	DisplayName string `json:"display_name"`
-	Role        string `json:"role"`
-	Status      string `json:"status"`
+	ID            string `json:"id"`
+	Username      string `json:"username"`
+	DisplayName   string `json:"display_name"`
+	Role          string `json:"role"`
+	CreatePage    bool   `json:"create_page"`
+	CanCreatePage bool   `json:"can_create_page"`
+	Status        string `json:"status"`
 }
 type Record struct {
 	Account
@@ -83,6 +85,7 @@ type Authentication interface {
 	FindSession(context.Context, string) (Session, error)
 }
 type Tx interface {
+	GrantedCreate(context.Context, string) (bool, error)
 	Authentication
 	UserByName(context.Context, string) (Record, error)
 	InsertUser(context.Context, Record) error
@@ -201,7 +204,19 @@ func Require(ctx context.Context, tx Authentication, c Credentials) (Actor, erro
 }
 func (s *Service) Current(ctx context.Context, c Credentials) (Account, error) {
 	var out Account
-	err := s.repo.WithinIdentity(ctx, func(tx Tx) error { a, err := Require(ctx, tx, c); out = a.Account; return err })
+	err := s.repo.WithinIdentity(ctx, func(tx Tx) error {
+		a, err := Require(ctx, tx, c)
+		if err != nil {
+			return err
+		}
+		granted, err := tx.GrantedCreate(ctx, a.ID)
+		if err != nil {
+			return err
+		}
+		out = a.Account
+		out.CanCreatePage = a.Role == "admin" || a.CreatePage || granted
+		return nil
+	})
 	return out, err
 }
 func (s *Service) create(ctx context.Context, username, password, role, requestID string) (Account, string, error) {
@@ -220,7 +235,7 @@ func (s *Service) create(ctx context.Context, username, password, role, requestI
 	if err != nil {
 		return Account{}, "", err
 	}
-	u := Record{Account: Account{id, username, username, role, "active"}, PasswordHash: hash, AuthVersion: 1}
+	u := Record{Account: Account{ID: id, Username: username, DisplayName: username, Role: role, Status: "active", CanCreatePage: role == "admin"}, PasswordHash: hash, AuthVersion: 1}
 	err = s.repo.WithinIdentity(ctx, func(tx Tx) error {
 		if err := tx.InsertUser(ctx, u); err != nil {
 			return err
@@ -292,6 +307,11 @@ func (s *Service) Login(ctx context.Context, username, password, ip, requestID s
 		if err := tx.SaveSession(ctx, Session{Digest(plain), u.ID, Digest(csrf), u.AuthVersion, time.Now().Add(s.options.SessionTTL)}); err != nil {
 			return err
 		}
+		granted, err := tx.GrantedCreate(ctx, u.ID)
+		if err != nil {
+			return err
+		}
+		u.CanCreatePage = u.Role == "admin" || u.CreatePage || granted
 		out = Login{u.Account, plain, csrf}
 		return tx.Audit(ctx, Actor{Record: u, Method: "session"}, "session.create", u.ID, requestID)
 	})

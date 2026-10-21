@@ -57,11 +57,11 @@ func (s *Store) WithinIdentity(ctx context.Context, fn func(identity.Tx) error) 
 
 func scanUser(row pgx.Row) (identity.Record, error) {
 	var u identity.Record
-	err := row.Scan(&u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Status, &u.PasswordHash, &u.AuthVersion)
+	err := row.Scan(&u.ID, &u.Username, &u.DisplayName, &u.Role, &u.Status, &u.PasswordHash, &u.AuthVersion, &u.CreatePage)
 	return u, storageError(err)
 }
 
-const userColumns = "id::text,username,display_name,role,status,password_hash,auth_version"
+const userColumns = "id::text,username,display_name,role,status,password_hash,auth_version,create_page"
 
 func (t *securityTx) User(ctx context.Context, id string) (identity.Record, error) {
 	return scanUser(t.QueryRow(ctx, "SELECT "+userColumns+" FROM wikit.users WHERE id=$1", id))
@@ -70,11 +70,11 @@ func (t *securityTx) UserByName(ctx context.Context, name string) (identity.Reco
 	return scanUser(t.QueryRow(ctx, "SELECT "+userColumns+" FROM wikit.users WHERE username_key=$1", name))
 }
 func (t *securityTx) InsertUser(ctx context.Context, u identity.Record) error {
-	_, err := t.Exec(ctx, "INSERT INTO wikit.users VALUES($1,$2,$3,$4,$5,$6,$7,$8)", u.ID, u.Username, strings.ToLower(u.Username), u.DisplayName, u.PasswordHash, u.Role, u.Status, u.AuthVersion)
+	_, err := t.Exec(ctx, "INSERT INTO wikit.users VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)", u.ID, u.Username, strings.ToLower(u.Username), u.DisplayName, u.PasswordHash, u.Role, u.Status, u.AuthVersion, u.CreatePage)
 	return storageError(err)
 }
 func (t *securityTx) SaveUser(ctx context.Context, u identity.Record) error {
-	_, err := t.Exec(ctx, "UPDATE wikit.users SET display_name=$2,password_hash=$3,role=$4,status=$5,auth_version=$6 WHERE id=$1", u.ID, u.DisplayName, u.PasswordHash, u.Role, u.Status, u.AuthVersion)
+	_, err := t.Exec(ctx, "UPDATE wikit.users SET display_name=$2,password_hash=$3,role=$4,status=$5,auth_version=$6,create_page=$7 WHERE id=$1", u.ID, u.DisplayName, u.PasswordHash, u.Role, u.Status, u.AuthVersion, u.CreatePage)
 	return storageError(err)
 }
 func (t *securityTx) Token(ctx context.Context, id string) (identity.Token, error) {
@@ -115,7 +115,7 @@ func (t *securityTx) DeleteSessions(ctx context.Context, id string) error {
 	return storageError(err)
 }
 func (t *securityTx) Audit(ctx context.Context, a identity.Actor, action, target, requestID string) error {
-	_, err := t.Exec(ctx, `INSERT INTO wikit.audit_events(actor_id,method,credential_generation,action,target_id,request_id) VALUES(nullif($1,'')::uuid,$2,$3,$4,nullif($5,'')::uuid,$6)`, a.ID, a.Method, a.Generation, action, target, requestID)
+	_, err := t.Exec(ctx, `INSERT INTO wikit.audit_events(actor_id,method,credential_generation,action,target_id,request_id) VALUES(nullif($1,'')::uuid,$2,$3,$4,nullif($5,''),$6)`, a.ID, a.Method, a.Generation, action, target, requestID)
 	return storageError(err)
 }
 func (s *Store) Allow(ctx context.Context, operation, key string) (result error) {
@@ -159,4 +159,10 @@ func (s *Store) Allow(ctx context.Context, operation, key string) (result error)
 		return fault.Limited
 	}
 	return nil
+}
+
+func (t *securityTx) GrantedCreate(ctx context.Context, id string) (bool, error) {
+	var allowed bool
+	err := t.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM wikit.groups g JOIN wikit.group_members m ON m.group_id=g.id WHERE m.user_id=$1 AND g.create_page)", id).Scan(&allowed)
+	return allowed, storageError(err)
 }

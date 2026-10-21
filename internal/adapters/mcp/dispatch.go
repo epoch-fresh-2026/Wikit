@@ -9,7 +9,6 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/discussions"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
-	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/search"
@@ -18,7 +17,7 @@ import (
 var operations = []string{
 	"accounts_list", "account_update", "groups_list", "group_create", "group_update", "audit_list",
 	"pages_list", "page_create", "page_get", "page_policy_get", "page_policy_update", "page_moderate", "revisions_list", "revision_get",
-	"proposal_queue", "proposals_list", "proposal_create", "proposal_get", "proposal_revisions_list", "proposal_update", "proposal_diff", "proposal_rebase", "reviews_list", "review_create", "proposal_merge", "proposal_state", "page_revert", "page_restore",
+	"proposal_queue", "proposals_list", "proposal_create", "proposal_get", "proposal_revisions_list", "proposal_update", "proposal_diff", "proposal_rebase", "proposal_merge", "proposal_state", "page_revert", "page_restore",
 	"issues_list", "issue_create", "issue_get", "issue_state", "issue_link_proposal", "issue_moderate", "comments_list", "comment_create", "comment_moderate", "upload_prepare", "upload_get", "tags_list", "search",
 }
 
@@ -70,31 +69,33 @@ func (s Services) invoke(ctx context.Context, op string, a arguments, r access.R
 		return s.Access.List(ctx, c, kind, a.Cursor, limit)
 	case "account_update":
 		in, err := decode[struct {
-			Role    string `json:"role"`
-			Status  string `json:"status"`
-			Version int64  `json:"expected_auth_version"`
+			CreatePage bool   `json:"create_page"`
+			Role       string `json:"role"`
+			Status     string `json:"status"`
+			Version    int64  `json:"expected_auth_version"`
 		}](a.Body)
 		if err != nil {
 			return nil, err
 		}
-		return s.Access.UpdateAccount(ctx, r, a.AccountID, in.Role, in.Status, in.Version)
+		return s.Access.UpdateAccount(ctx, r, a.AccountID, in.Role, in.Status, in.Version, in.CreatePage)
 	case "group_create", "group_update":
 		in, err := decode[struct {
-			Name    string   `json:"name"`
-			Members []string `json:"member_ids"`
-			Version int64    `json:"expected_version"`
+			CreatePage bool     `json:"create_page"`
+			Name       string   `json:"name"`
+			Members    []string `json:"member_ids"`
+			Version    int64    `json:"expected_version"`
 		}](a.Body)
 		if err != nil {
 			return nil, err
 		}
-		return s.Access.SaveGroup(ctx, r, a.GroupID, in.Name, in.Members, in.Version)
+		return s.Access.SaveGroup(ctx, r, a.GroupID, in.Name, in.Members, in.Version, in.CreatePage)
 	case "page_policy_get":
-		if !identity.ValidID(a.PageID) {
+		if !access.ValidPageID(a.PageID) {
 			return nil, fault.NotFound
 		}
 		return s.Access.GetPolicy(ctx, c, a.PageID)
 	case "page_policy_update":
-		if !identity.ValidID(a.PageID) {
+		if !access.ValidPageID(a.PageID) {
 			return nil, fault.NotFound
 		}
 		in, err := decode[struct {
@@ -142,8 +143,6 @@ func (s Services) invoke(ctx context.Context, op string, a arguments, r access.R
 		return s.Proposals.Update(ctx, r, a.ProposalID, in.Expected, in.Snapshot)
 	case "proposal_diff":
 		return s.Proposals.Diff(ctx, c, a.ProposalID)
-	case "reviews_list":
-		return s.Proposals.Reviews(ctx, c, a.ProposalID, a.Cursor, limit)
 	case "proposal_merge", "proposal_rebase":
 		in, err := decode[proposals.Expected](a.Body)
 		if err != nil {
@@ -153,17 +152,6 @@ func (s Services) invoke(ctx context.Context, op string, a arguments, r access.R
 			return s.Proposals.Merge(ctx, r, a.ProposalID, in)
 		}
 		return s.Proposals.Rebase(ctx, r, a.ProposalID, in)
-	case "review_create":
-		in, err := decode[struct {
-			proposals.Expected
-			Round    int64  `json:"expected_review_round"`
-			Decision string `json:"decision"`
-			Body     string `json:"body"`
-		}](a.Body)
-		if err != nil {
-			return nil, err
-		}
-		return s.Proposals.Review(ctx, r, a.ProposalID, in.Expected, in.Round, in.Decision, in.Body)
 	case "proposal_state":
 		in, err := decode[struct {
 			State   string `json:"state"`

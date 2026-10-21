@@ -19,7 +19,7 @@ func (t *securityTx) InsertPage(ctx context.Context, p pages.Page) error {
 	return storageError(err)
 }
 func (t *securityTx) InsertInitial(ctx context.Context, p proposals.Proposal, refs []content.MediaRef) error {
-	if _, err := t.Exec(ctx, "INSERT INTO wikit.proposals VALUES($1,$2,$3,$4,$5,$6,$7)", p.ID, p.PageID, p.AuthorID, p.State, p.Version, p.ReviewRound, p.CurrentRevision.ID); err != nil {
+	if _, err := t.Exec(ctx, "INSERT INTO wikit.proposals VALUES($1,$2,$3,$4,$5,$6)", p.ID, p.PageID, p.AuthorID, p.State, p.Version, p.CurrentRevision.ID); err != nil {
 		return storageError(err)
 	}
 	return t.InsertCandidate(ctx, p, refs)
@@ -64,7 +64,7 @@ func (t *securityTx) PageCandidates(ctx context.Context, tag, kind string) ([]pa
 func (t *securityTx) Revision(ctx context.Context, page, id string) (pages.Revision, error) {
 	var v pages.Revision
 	var raw []byte
-	err := t.QueryRow(ctx, `SELECT id::text,page_id::text,parent_id::text,source_proposal_id::text,snapshot,created_at,author_id::text FROM wikit.revisions WHERE page_id=$1 AND id=$2 AND sealed`, page, id).Scan(&v.ID, &v.PageID, &v.ParentID, &v.SourceProposalID, &raw, &v.CreatedAt, &v.AuthorID)
+	err := t.QueryRow(ctx, `SELECT id::text,page_id::text,parent_id::text,source_proposal_id::text,snapshot,created_at,author_id::text,source_kind FROM wikit.revisions WHERE page_id=$1 AND id=$2 AND sealed`, page, id).Scan(&v.ID, &v.PageID, &v.ParentID, &v.SourceProposalID, &raw, &v.CreatedAt, &v.AuthorID, &v.SourceKind)
 	if err != nil {
 		return v, storageError(err)
 	}
@@ -115,14 +115,14 @@ func (t *securityTx) PublishedTags(ctx context.Context, ids []string) ([]string,
 func (t *securityTx) Proposal(ctx context.Context, id string) (proposals.Proposal, error) {
 	var p proposals.Proposal
 	var raw []byte
-	err := t.QueryRow(ctx, `SELECT p.id::text,p.page_id::text,p.author_id::text,p.state,p.version,p.review_round,r.id::text,r.proposal_id::text,r.base_revision_id::text,r.snapshot,r.created_at FROM wikit.proposals p JOIN wikit.proposal_revisions r ON r.id=p.current_revision_id WHERE p.id=$1 AND r.sealed`, id).Scan(&p.ID, &p.PageID, &p.AuthorID, &p.State, &p.Version, &p.ReviewRound, &p.CurrentRevision.ID, &p.CurrentRevision.ProposalID, &p.CurrentRevision.BaseRevisionID, &raw, &p.CurrentRevision.CreatedAt)
+	err := t.QueryRow(ctx, `SELECT p.id::text,p.page_id::text,p.author_id::text,p.state,p.version,r.id::text,r.proposal_id::text,r.base_revision_id::text,r.snapshot,r.created_at FROM wikit.proposals p JOIN wikit.proposal_revisions r ON r.id=p.current_revision_id WHERE p.id=$1 AND r.sealed`, id).Scan(&p.ID, &p.PageID, &p.AuthorID, &p.State, &p.Version, &p.CurrentRevision.ID, &p.CurrentRevision.ProposalID, &p.CurrentRevision.BaseRevisionID, &raw, &p.CurrentRevision.CreatedAt)
 	if err != nil {
 		return p, storageError(err)
 	}
 	return p, storageError(json.Unmarshal(raw, &p.CurrentRevision.Snapshot))
 }
 func (t *securityTx) ProposalCandidates(ctx context.Context, page, state string) ([]proposals.Summary, error) {
-	rows, err := t.Query(ctx, "SELECT id::text,page_id::text,state FROM wikit.proposals WHERE ($1='' OR page_id=nullif($1,'')::uuid) AND ($2='' OR state=$2) ORDER BY id", page, state)
+	rows, err := t.Query(ctx, "SELECT id::text,page_id::text,state FROM wikit.proposals WHERE ($1='' OR page_id=nullif($1,'')::bigint) AND ($2='' OR state=$2) ORDER BY id", page, state)
 	if err != nil {
 		return nil, storageError(err)
 	}
@@ -166,8 +166,8 @@ func (t *securityTx) Policies(ctx context.Context, ids []string) ([]access.Polic
 	rows, err := t.Query(ctx, `SELECT p.page_id::text,p.visibility,p.status,p.policy_version,
 	 coalesce(jsonb_agg(jsonb_build_object('subject_type',g.subject_type,'subject_id',g.subject_id::text,'capabilities',g.caps)) FILTER(WHERE g.subject_id IS NOT NULL),'[]'::jsonb)
 	 FROM wikit.page_policies p LEFT JOIN (
-	 SELECT page_id,subject_type,subject_id,array_agg(capability ORDER BY capability) caps FROM wikit.page_grants WHERE page_id=ANY($1::uuid[]) GROUP BY page_id,subject_type,subject_id
-	 ) g ON g.page_id=p.page_id WHERE p.page_id=ANY($1::uuid[]) GROUP BY p.page_id`, ids)
+	 SELECT page_id,subject_type,subject_id,array_agg(capability ORDER BY capability) caps FROM wikit.page_grants WHERE page_id=ANY($1::bigint[]) GROUP BY page_id,subject_type,subject_id
+	 ) g ON g.page_id=p.page_id WHERE p.page_id=ANY($1::bigint[]) GROUP BY p.page_id`, ids)
 	if err != nil {
 		return nil, storageError(err)
 	}
@@ -190,4 +190,10 @@ func (t *securityTx) Blob(ctx context.Context, id string) (pages.Blob, error) {
 	var b pages.Blob
 	err := t.QueryRow(ctx, "SELECT id::text,state,uploader::text,storage_key,size FROM wikit.blobs WHERE id=$1", id).Scan(&b.ID, &b.State, &b.Uploader, &b.Key, &b.Size)
 	return b, storageError(err)
+}
+
+func (t *securityTx) NextPageID(ctx context.Context) (string, error) {
+	var id string
+	err := t.QueryRow(ctx, "SELECT nextval('wikit.page_ids')::text").Scan(&id)
+	return id, storageError(err)
 }

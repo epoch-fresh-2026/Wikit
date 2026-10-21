@@ -1,6 +1,6 @@
 # REST 契约
 
-> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
 
 机器契约：[OpenAPI 3.1](../api/openapi.json)。源码为
 `scripts/build-contracts.mjs`，修改后运行 `npm run contracts:build`。
@@ -8,7 +8,7 @@
 
 ## 统一约定
 
-Issue #9 增加 /mcp 的 41 个目录工具，直接复用既有 Core。REST/MCP 的 JSON body 幂等摘要
+Issue #9 增加 /mcp 的 39 个目录工具，直接复用既有 Core。REST/MCP 的 JSON body 幂等摘要
 忽略对象字段顺序和无意义空白，保留数字词法；旧原始字节摘要仍兼容原 body 字节的重试。
 稳定错误 DTO 共用，工具业务拒绝通过 isError 与同一 error JSON 返回；协议身份失败在执行前处理。
 
@@ -16,7 +16,7 @@ Issue #8 实现 GET /search：q、tag、limit、cursor；拒绝其他查询参�
 候选权限过滤。返回 SearchHitList，不返回总数、facet 或搜索引擎原始摘要。
 当前 head/policy_version 不匹配的候选跳过并安排修复；索引不可用返回 search_unavailable / 503。
 
-- 基础路径 `/api/v1`，JSON UTF-8；ID 使用 UUID，时间 RFC 3339 UTC。
+- 基础路径 `/api/v1`，JSON UTF-8；Page ID 使用正整数十进制字符串，其余 ID 使用 UUID，时间 RFC 3339 UTC。
 - UUID 输入接受大小写十六进制，Core 统一为小写后比较主体、组成员和幂等操作范围。
 - Cookie 会话或 Bearer Token 二选一；若两者同时提供且身份不同，返回
   `invalid_request`。匿名读取仅开放公开对象。
@@ -38,27 +38,22 @@ Issue #8 实现 GET /search：q、tag、limit、cursor；拒绝其他查询参�
 
 ## 版本字段的含义
 
-Issue #5 增加提案创建/更新/状态、明确版本审核、审核历史/diff、rebase、merge 和
-revert/restore 的 REST 入口。所有写入要求 Idempotency-Key；nullable head 字段必须
-显式提供（首次发布为 null）。审核缺失或有当前有效负面立场返回 review_required；
-三方冲突返回 merge_conflict 与 conflicts 的 B/H/P，不写入候选。媒体原件端点由 #6 提供，
-MCP 工具由 #9 提供。合并的 outbox 事件已持久化，投递 worker 由 #8 提供。
+`POST /pages` 检查 create_page 并原子发布首版，返回 `{page, revision}`，不返回 proposal。
+会话账户信息返回有效 can_create_page，管理账户/组契约使用 create_page 配置授权。
+Page 1 由部署创建，不允许隐藏、替换、改为受限；只有管理员可合并其修改。
+PageDetail 包含当前有效 capabilities。前端显示入口，服务端每次操作重新鉴权。
+目录/标签只从可读、未隐藏的发布 head 生成，候选只在提案接口返回。
 
-Issue #4 实现 POST/GET `/pages`、GET `/pages/{id}`、发布历史列表/明确版本、
-提案队列/详情/候选历史及标签列表。未发布 Page 的详情仅有元数据与 null revision，
-候选内容只在提案视图返回。目录与标签只从可读、未隐藏、已发布 head 生成。
-旧版本及候选始终检查当前源 Page ACL；媒体引用的 URL 不授予目标读取权限。
-页面创建使用 5 MiB 请求字节上限（同时保留字符上限），最多 1000 个不同媒体引用。
-媒体 Page 创建仅接受当前账户上传的 ready blob，管理员可代用；上传入口仍待 #6。
-列表使用当前 ACL 过滤后分页，游标绑定调用账户（匿名为独立身份）、查询与页大小。
+提案创建、更新、状态、diff、rebase、merge、revert/restore 均复用 Core。
+删除 reviews 读写接口及 Review/ReviewInput/ReviewList 类型，无 review_round 或 review_required。
+`expected_head_revision_id` 必须显式提供并匹配读取时的当前发布 head，
+`expected_proposal_revision_id` 必须匹配读取时的候选。新部署页面创建已发布，提案有实际基础版本。
+rebase 使用目标当前 head；手工冲突解决提交完整快照。版本变化返回 stale_revision，必须重新读取差异。
+三方冲突返回 merge_conflict 与 B/H/P 内容，不保存有冲突标记的候选。
+关闭/重开使用 proposal version，ACL 使用 policy_version；治理使用 expected_version。
 
-`expected_head_revision_id` 是调用时看到的当前发布 head，新页面为 null；
-`expected_proposal_revision_id` 是调用时看到的候选快照 ID。
-rebase 时前者是目标当前 head，候选仍保存旧 base。
-更新候选时可以提交相对于当前 head 解决后的完整快照。
-审核必须额外绑定 `expected_review_round`。
-关闭／重开使用 proposal version，ACL 使用 policy_version，
-讨论状态与治理使用各自 version。Page 治理的 expected_version 指 policy_version。
+页面创建请求上限 5 MiB，最多 1000 个不同媒体引用；媒体创建只接受本人或管理员可用的 ready blob。
+历史、候选及下载始终验证当前源 Page ACL，固定媒体 URL 不授予读取权限。
 
 ## 媒体与 Agent 上传
 
@@ -71,7 +66,7 @@ ready 后重试仍逐字节摘要校验，不覆盖原件；GET 状态始终按�
 
 下载在当前 Page read 权限事务中打开文件，再由 HTTP 处理 Range/条件请求；不存在
 按 blob/hash 的公开读取路由。响应 private,no-store、nosniff，并加受限 CSP；
-图片/音视频可以 inline，PDF 及显式 download=1 使用 attachment。没有 OCR、转码或前端播放器实现。
+图片/音视频可以 inline，PDF 及显式 download=1 使用 attachment。没有 OCR 或服务端转码。
 已开始传输的文件句柄按本次授权继续，之后的请求（包括 Range、HEAD）重新检查当前 ACL。
 
 1. POST `/uploads` 预约文件名、声明大小和 MIME，返回上传 ID、过期时间及同源路径。
@@ -99,10 +94,6 @@ issues_list、issue_get、comments_list 支持 include_hidden=true 的管理视�
 moderation 要求 reason 与 expected_version；Page 使用 policy_version，Issue/评论使用各自 version。
 议题标题和治理理由的字符上限同时约束 NFC 规范化后的值；超限统一返回 validation_failed。
 
-Issue #3 实现 `/auth/*`、账户/用户组/审计管理及页面 policy 接口；页面内容、历史、
-提案、讨论与下载仍由后续 Issue 提供。ACL 可以对已存在的页面策略操作；本阶段无公开
-的空页面创建入口。页面创建用例将在 #4/#5 的事务中同时写入页面与策略。
-
 Cookie 名为 `wikit_session`；成功登录返回 account/csrf_token 并设置 Cookie。
 注册仅返回 account/token，不自动建立会话。敏感操作要求有效会话及当前密码；
 Bearer 不能调用。Cookie 与 Bearer 同时出现时两者均须有效并属于同一账户，
@@ -117,5 +108,5 @@ Bearer 通过每次读取当前状态即时生效。Token 管理返回创建时�
 
 账户／用户组／审计操作仅管理员可执行；不允许禁用或降级最后一个活跃管理员。
 页面策略采用整体替换，Core 校验调用者可授予范围，不能通过一个 PUT 扩大自身权限。
-审核队列、页面列表和讨论列表使用统一读权限过滤。
+提案列表、页面列表和讨论列表使用统一读权限过滤。
 缺少公开部署能力的管理命令不伪装成 HTTP 端点；见部署手册。

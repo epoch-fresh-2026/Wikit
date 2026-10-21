@@ -1,53 +1,33 @@
 # 协作状态机
 
-> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
 
-## 提案与审核
+## 创建与提案
 
-Page 发布历史为线性序列。Proposal 保存独立的不可变候选快照，
-每个快照包含 `base_revision_id`，首次创建页面时为 null。
-提案版本不能作为已发布内容被普通页面／媒体读取接口返回。
+创建页面要求独立 create_page 能力，在一个授权事务中写入 Page、首版 Revision、head、
+标签/媒体关联、审计、outbox 与幂等结果，不生成提案。已发布页面的修改通过提案。
+发布历史为线性序列，候选快照不可变且保存 base_revision_id；候选不作为发布正文或媒体返回。
 
 | 操作 | 前置条件 | 结果 |
 | --- | --- | --- |
-| 创建 | 可读且有 propose；新建时为活跃账户 | open 提案与第一个快照 |
-| 更新 | open，作者或页面管理者，仍有 propose | 新快照，旧审核失效 |
-| 审核 | open，可读且有 review | 绑定当前候选与基础版本的审核 |
-| 关闭 | open，作者或页面管理者 | closed，审核不再用于合并 |
-| 重开 | closed，作者或页面管理者且有 propose | open，新审核轮次，重新审核 |
-| 合并 | open，有 review，有效批准，基础仍为 head | 新发布版本，merged |
+| 提案创建 | 当前 read + propose | open 提案与候选快照 |
+| 更新/rebase | open，作者或管理者，仍有 propose | 新候选，递增 proposal version |
+| 关闭 | open，当前可读，作者或管理者 | closed |
+| 重开 | closed，作者或管理者且有 propose | open，递增 version |
+| 合并 | open，当前 merge，候选/base/head 匹配，媒体可用 | 新发布版本，merged |
 
-`approve`、`request_changes`、`comment` 是审核意见，均不可变。
-同一账户对同一审核轮次的最新 approve/request_changes 决定该账户立场；
-comment 不改变立场。至少一个当前仍有审核权限的账户批准，且没有当前仍有
-审核权限账户的未解决 request_changes，才能合并。提出 request_changes 的账户
-可改为批准，或提案更新使整轮审核失效。管理者不能直接删除负面审核。
-
-作者拥有 review 时允许自审、自合并。共享同一账户 Token 的多个 Agent
-仍算一个账户，不构成多个独立审核者。权限收回或账户禁用立即使其批准失去效力。
-
-合并请求必须提供 `expected_head_revision_id`（创建时 null）与
-`expected_proposal_revision_id`。合并事务依次锁定 Page、Proposal，
-重新检查当前权限、版本、审核、引用媒体和 blob 状态，再原子写入发布版本、
-head、merged 状态、审计、outbox。权限／账户治理事务与合并共享相关授权版本锁，
-不能仅在事务外做一次权限检查。
-
-同一提案合并请求使用同一个 Idempotency-Key 重试时返回原结果；新 key 对已经
-merged 的提案返回 `invalid_state`。禁止把传输重试误当新发布。
+取消独立审核、批准、负面审核阻塞和审核轮次。作者有 merge 时可自合并；版主可合并普通公开页，
+受限页需显式授权，首页仅管理员。合并请求明确绑定 expected_head_revision_id 与
+expected_proposal_revision_id。事务内重新校验当前账户、权限、状态、版本、媒体引用和 blob，
+原子写入发布版本、head、提案状态、审计、outbox 与幂等结果。撤权和发布共享授权事务锁。
+同 key 重试返回原结果；新 key 对 merged 提案返回 invalid_state。重放仍检查当前可读性。
 
 ## 三方合并
-
-Issue #5 将状态、审核、diff、rebase、merge、revert/restore 作为同一 Core 提案服务的用例。
-所有业务写入先在事务内验证当前 read，再重放幂等结果或检查操作权限；
-审核记录按数据库递增序号确定同账户的最新立场，不依赖同时间戳排序。
-关闭不要求仍有 propose，但必须仍可读且为作者或管理者；重开递增轮次。
-更新候选和 rebase 同时递增 proposal version 与 review round；审核本身不改候选版本。
-已过期 base 不接受新审核，需先 rebase 或提交明确解决后的完整候选。
 
 逐行差异由注入的文本适配器计算，Core 组合两侧不重叠的编辑；相同重叠结果兼容，
 不同重叠结果返回整个 Markdown 字段的结构化冲突。保留换行及末行无换行状态。
 diff 返回 base 与候选的字段值（Markdown 同时提供 unified diff），stale 独立反映 base/head。
-空 base 按同类型空快照参与首次发布竞争的三方比较。
+新部署的提案始终基于一个已发布 head。
 
 媒体候选允许复用本 Page 的已发布或候选历史 blob（包括关闭提案），新 blob 仍要求
 上传者本人或管理员；复用不授予跨 Page 或未关联 blob 的访问权限。所有发布/回滚引用
@@ -55,12 +35,12 @@ diff 返回 base 与候选的字段值（Markdown 同时提供 unified diff）�
 
 设 B 为候选基础发布快照，H 为当前发布快照，P 为候选快照。
 
-1. B = H 时可正常审核合并。
-2. B ≠ H 时旧批准无效，合并返回 `stale_revision`。作者调用 rebase。
+1. B = H 时可正常合并。
+2. B ≠ H 时合并返回 `stale_revision`。作者调用 rebase。
 3. Markdown 使用逐行三方合并；标题、媒体 blob 和媒体描述字段分别比较；
    blob 不合并字节。双方改为相同值不冲突，只有一方变化时取变化值，
    双方改为不同值时冲突。标签作为规范化集合逐项合并。
-4. 无冲突时保存新候选快照，base = H，清空有效审核并展示新 diff。
+4. 无冲突时保存新候选快照，base = H，展示新 diff，合并必须绑定新候选。
 5. 有冲突时返回结构化冲突路径和 B/H/P 内容，不保存含冲突标记的候选。
    编辑者提交完整解决后快照与预期 H；H 再次变化则重新处理。
 6. 不提供绕过过期检查的强制合并。
@@ -93,5 +73,5 @@ Issue #7 的创建 Issue 与追加评论要求当前 read + discuss；关闭或�
 普通 GET/列表始终过滤隐藏 Issue/评论，连管理员也不通过普通读取看到隐藏正文。
 管理者显式使用 include_hidden=true 读取治理视图；该模式检查当前 manage，
 并可处理隐藏 Page 下的讨论。隐藏 Issue 遮蔽其全部评论；恢复 Issue 不会恢复单独隐藏的评论。
-状态、关联、隐藏/恢复均使用明确对象版本，审核合并不会改写讨论状态。
+状态、关联、隐藏/恢复均使用明确对象版本，合并不会改写讨论状态。
 正文以 UTF-8 文本保存，不修改原评论；后续渲染不得执行原始 HTML。

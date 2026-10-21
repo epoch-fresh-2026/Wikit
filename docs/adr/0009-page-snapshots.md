@@ -1,5 +1,6 @@
 # 页面快照与固定媒体引用
 
+后续变更：首次创建提案、UUID Page 与批准前置/审核轮次已由 [ADR 0018](0018-wiki-publication-redesign.md) 替代，其余约束继续适用。
 状态：accepted；日期：2026-10-20；对应已确认的 Issue #4。
 
 页面元数据与内容版本由 pages 模块拥有；候选类型由 proposals 模块公开，通用的

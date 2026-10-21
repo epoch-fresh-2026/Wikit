@@ -1,89 +1,52 @@
 # 数据与事务设计
 
-> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
 
-下列业务实体仍是逻辑模型，后续 Issue 逐步提供 SQL migration。
-ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
+Page ID 使用 PostgreSQL 正整数 bigint 序列，预留 1，后续从 2 分配，可有间隙且不复用。
+REST/MCP 使用规范十进制字符串，范围 1–9223372036854775807；其他对象继续 UUID。
+UTC timestamptz 对外输出 RFC 3339。页面关联、ACL、媒体引用、搜索与游标都使用数字 Page ID。
+审计 target_id 使用 text，兼容 Page 数字 ID 和其他 UUID。
 
-## 实体
-
-Issue #8 的 0007 migration 为 outbox 增加顺序、持久 task UID、目标索引及安全错误代码，
-新增 search_state 保存 active_index。政策变更触发器与业务事务一起追加事件；事件的
-revision_id 可空以表示权限/隐藏/修复。worker 每次读取当前 Page/head/ACL 投影，不使用旧事件正文。
-
-Issue #7 的 0006 migration 增加 page_issues、comments、issue_proposals 与 moderation_events。
-关联用两侧 (对象 ID, page_id) 复合外键强制同 Page，唯一关联不可更改或删除。
-Issue 标题/正文、评论正文及归属创建后不可变，状态/隐藏修改递增对象版本；无删除入口。
-moderation_events 追加保存理由、目标、操作账户与请求 ID，和状态、普通审计、幂等结果同事务提交。
-Page moderation 仅改变策略 status/version；恢复按当前 head 还原 published/proposed，不改写 ACL 或历史。
-
-Issue #5 的 0004 migration 增加不可变 reviews（递增 sequence、明确候选/base/round）与
-outbox_events。审核候选与提案使用复合外键；合并写入发布快照、关联、head、提案状态、
-审计、outbox 与幂等结果，一次提交。沿用授权事务锁，再依次行锁 Page、Proposal。
-此阶段只持久化待投递事件，搜索投递 worker 仍属于 #8。
-
-Issue #4 的 0003 migration 增加 pages、revisions、proposals、proposal_revisions、
-blobs 元数据、tags、两类快照标签关联及两类快照媒体引用。blobs 只有元数据模型与
-ready 检查，上传/原件存储实现仍属于 #6。页面类型创建后不可变；治理属性继续由
-page_policies 独占，API 显式组合，内容恢复不修改策略。
-
-复合外键约束 parent/base/head 的 Page 归属和 current candidate 的 Proposal 归属。
-发布来源 Proposal 唯一，父版本唯一（含 null）；写入发布版本时锁页面并校验旧 head，
-head 只可前进到其直接子版本。两个快照表及其标签/媒体关联禁止 UPDATE/DELETE/TRUNCATE。
-快照与关联在同一事务插入；媒体目标必须是已发布 media Revision，media 快照引用 ready blob。
-此阶段通过真实数据库约束测试验证这些性质，不提供绕过审核的发布命令。
-
-Issue #3 的 0002 migration 实现 users、user_tokens（含撤销后的代次记录）、sessions、
-groups/group_members、page_policies/page_grants、audit_events、auth_limits、
-idempotency_records 和 list_cursors。page_policies 持有页面 ACL 与状态，后续 pages
-通过同一 UUID 关联，避免安全模块读取内容模块私有表。业务 Page 尚未公开创建。
-账户 auth_version、组 version、策略 policy_version 防止过期覆盖；安全变更与审计原子提交。
+## 实体与发布约束
 
 | 实体 | 核心字段与约束 |
 | --- | --- |
-| users | id、username_key unique、password_hash、role、status、auth_version |
-| user_tokens | user_id unique、digest unique、generation、created_at；零或一个有效记录 |
-| sessions | id_digest、user_id、csrf_digest、expires_at、auth_version |
-| groups / group_members | group ID；成员 `(group_id,user_id)` unique |
-| pages | id、type、visibility、status、head_revision_id nullable、policy_version |
-| page_grants | page_id、subject_type、subject_id、capability；组合 unique |
-| revisions | id、page_id、parent_id、source_proposal_id、snapshot、author、created_at |
-| proposals | id、page_id、author、state、current_revision_id、review_round、version |
-| proposal_revisions | id、proposal_id、base_revision_id nullable、snapshot、created_at |
-| reviews | id、proposal_id、proposal_revision_id、base_revision_id、round、actor、decision |
-| page_issues / comments | page_id、author、state／hidden、version、正文 |
-| issue_proposals | issue_id、proposal_id；必须属于同一 Page |
-| blobs | id、digest、size、mime、storage_key、state、uploader、created_at |
-| revision_media_refs | 来源发布／提案快照、目标 media Page 与发布 revision |
-| tags / revision_tags | 规范化 tag key unique；关联不可变快照 |
-| audit_events | actor、credential_generation、action、target、request_id、时间、变更摘要 |
-| outbox_events | event ID、page_id、kind、attempts、next_attempt、lease、完成状态 |
-| idempotency_records | actor、operation、key unique、request_hash、result、expires_at |
+| users | UUID、唯一 username_key、password_hash、role、status、auth_version、create_page |
+| user_tokens / sessions | 摘要、代次、有效期；不保存明文凭证 |
+| groups / group_members | UUID、version、create_page；成员组合唯一 |
+| page_policies / page_grants | bigint page_id、visibility、published/hidden、policy_version；能力 read/propose/discuss/merge/manage |
+| pages | bigint id、不可变 document/media 类型、head_revision_id |
+| revisions | UUID、page_id、parent_id、source_kind、source_proposal_id、snapshot、author_id、publisher_id、created_at |
+| proposals | UUID、page_id、author_id、open/closed/merged、current_revision_id、version |
+| proposal_revisions | UUID、proposal_id、page_id、base_revision_id、不可变 snapshot |
+| page_issues / comments / issue_proposals | 页面归属、作者、正文、状态、治理版本，同 Page 复合外键 |
+| blobs / uploads | UUID、原件摘要、大小、状态、上传者、预约与租约 |
+| tags / revision_tags / revision_media_refs | 规范化标签与固定发布媒体关联，随快照密封 |
+| audit_events / moderation_events | 追加审计、理由、主体、请求 ID |
+| outbox_events / search_state | 顺序、任务 UID、目标索引、重试状态、active_index |
+| idempotency_records / list_cursors | 绑定当前账户、操作/查询与有效期 |
 
-snapshot 区分 document 与 media。document 为 title、tags、markdown；
-media 为 title、tags、description、blob_id。发布内容不可 UPDATE/DELETE；
-通过数据库权限及约束测试防止应用误改。治理元数据在 pages 上，不能混入内容回滚。
+source_kind 区分 bootstrap/create/merge。只有 merge 有 source_proposal_id 且要求 parent；
+bootstrap 只允许 Page 1、无用户作者和发布者；create/merge 必须有作者与发布者。
+记录提案作者和实际发布者是两件事，首页插入发布版本必须由当前活跃管理员发布。
+父版本唯一（包括 null），来源提案唯一；复合外键确保 parent/base/head/候选归属。
+快照及标签/媒体关联密封后禁止修改/删除/清空；head 只能前进到密封的直接子版本。
+没有 reviews 表、审核轮次或审核写入。页面与策略禁止删除首页，首页策略 CHECK 固定公开已发布。
 
-外键必须保证 parent/base/head 属于正确 Page，candidate 属于正确 Proposal。
-合并来源 proposal 唯一；一个 Proposal 最多对应一次发布。
-引用目标必须为已发布媒体 Revision，不能指向提案快照。
-父版本不可成环；发布 parent 只能是事务内锁定的旧 head。
+0008 在迁移事务中创建标题“首页”、空正文、空标签的 Page 1、系统首版、head、审计及 outbox。
+迁移历史确保重复初始化不再发布也不覆盖首页。普通创建事务一次分配 ID 并完成首版发布，
+失败全部回滚（序列值允许跳过），不生成占位提案。
 
-## 合并事务
+## 授权与事务
 
-1. 获取账户及涉及授权记录的一致视图；锁 Page，再锁 Proposal。
-2. 校验请求预期版本、状态、当前权限、有效审核、媒体引用和可用 blob。
-3. 插入不可变 Revision，parent = 旧 head。
-4. 更新 Page.head、Proposal.state、审计、outbox 与幂等结果。
-5. 一次提交。任何失败均不产生可见的部分发布。
+创建先检查当前 create_page；合并先检查当前 merge。所有业务使用统一授权 advisory lock，
+再锁 Page、Proposal，检查预期 head/候选、媒体 ACL 和 ready blob。
+Revision、关联、head、提案状态（仅合并）、审计、outbox 和幂等结果一次提交。
+账户/组/页面治理与发布使用同一锁确定提交顺序，不依赖事务外权限缓存。
+治理只改变策略与状态，不改变历史；恢复页面回到 published。
 
-账户禁用、角色、组成员和 ACL 变化需要通过统一授权协调锁／代次重检与上述
-事务序列化。锁顺序为账户与组（按 ID 排序）、Page（按 ID 排序）、Proposal。
-实现阶段用集成测试证明权限收回和合并竞态，而非仅检查代码顺序。
-
-outbox 与业务变更同事务写入。worker 使用数据库租约领取工作；
-对同 Page 串行投递，等待搜索 task 完成后再确认事件。
-重试读取当前 Page，不将过期事件携带的旧内容重新写回搜索。
+outbox worker 按 Page 顺序投递并持久化远端 task UID。每次读取当前 head/ACL，不将旧事件
+正文投回索引。完成远端任务后确认事件；失败保留可重试状态。搜索最终响应由 Core 再次鉴权。
 
 ## 媒体原件
 
@@ -130,7 +93,7 @@ Issue #2 的首个迁移只建立 `wikit` schema，不提前创建业务表。
 `public.wikit_schema_migrations` 记录编号、文件名、SHA-256 和 UTC 应用时间。
 独立 migrate 命令在一个事务内获取固定 transaction advisory lock，然后校验历史，
 应用全部待执行 SQL 并记录版本；失败回滚整批，取消／超时释放锁。
-已应用迁移不得修改；历史缺口、校验和差异、未知新版本均拒绝执行。
+本次明确为不兼容的新部署基线，旧库校验和不匹配即拒绝，不清空、不原地转换；此基线发布后已应用迁移不得修改。历史缺口、校验和差异、未知新版本均拒绝执行。
 应用启动与 readiness 均要求历史与本二进制内嵌迁移完全一致，不隐式升级数据库。
 SQL 文件通过 `.gitattributes` 固定 LF，避免跨平台 checkout 改变校验和。
 迁移 SQL 禁止自行控制事务或包含不能在事务内执行的语句；无 down 命令。

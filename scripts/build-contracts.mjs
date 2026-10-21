@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url';
 
 const string = (maxLength = 4096) => ({ type: 'string', maxLength });
 const id = { type: 'string', format: 'uuid' };
+const pageId = { type: 'string', pattern: '^[1-9][0-9]{0,18}$' };
 const nullableId = { type: ['string', 'null'], format: 'uuid' };
 const integer = { type: 'integer', minimum: 0 };
 const date = { type: 'string', format: 'date-time' };
@@ -28,7 +29,7 @@ const snapshotBase = {
 const schemas = {
   Account: object({
     id, username: string(32), display_name: string(100),
-    role: enumOf('member', 'reviewer', 'admin'), status: enumOf('active', 'disabled'),
+    role: enumOf('member', 'moderator', 'admin'), status: enumOf('active', 'disabled'), create_page: { type: 'boolean' }, can_create_page: { type: 'boolean' },
   }),
   RegisterInput: object({
     username: { ...string(32), minLength: 3, pattern: '^[A-Za-z0-9_]+$' },
@@ -45,13 +46,13 @@ const schemas = {
   Token: object({ token: string(256), generation: integer, created_at: date }),
   TokenStatus: object({ active: { type: 'boolean' }, generation: integer, created_at: date }),
   AccountUpdate: object({
-    role: enumOf('member', 'reviewer', 'admin'),
-    status: enumOf('active', 'disabled'), expected_auth_version: integer,
+    role: enumOf('member', 'moderator', 'admin'),
+    status: enumOf('active', 'disabled'), create_page: { type: 'boolean' }, expected_auth_version: integer,
   }),
   AccountAdmin: object({ account: ref('Account'), auth_version: integer }),
-  Group: object({ id, name: string(100), version: integer, member_ids: array(id) }),
-  GroupCreate: object({ name: { ...string(100), minLength: 1 } }),
-  GroupUpdate: object({ name: string(100), member_ids: array(id), expected_version: integer }),
+  Group: object({ id, name: string(100), version: integer, member_ids: array(id), create_page: { type: 'boolean' } }),
+  GroupCreate: object({ create_page: { type: 'boolean' }, name: { ...string(100), minLength: 1 } }),
+  GroupUpdate: object({ create_page: { type: 'boolean' }, name: string(100), member_ids: array(id), expected_version: integer }),
   DocumentSnapshot: object({
     type: { const: 'document', type: 'string' }, ...snapshotBase, markdown: string(1048576),
   }),
@@ -61,48 +62,39 @@ const schemas = {
   }),
   Snapshot: { oneOf: [ref('DocumentSnapshot'), ref('MediaSnapshot')] },
   Page: object({
-    id, type: enumOf('document', 'media'), visibility: enumOf('public', 'restricted'),
-    status: enumOf('proposed', 'published', 'hidden'),
+    id: pageId, type: enumOf('document', 'media'), visibility: enumOf('public', 'restricted'),
+    status: enumOf('published', 'hidden'),
     head_revision_id: nullableId, policy_version: integer,
   }),
   Revision: object({
-    id, page_id: id, parent_id: nullableId, source_proposal_id: id,
-    snapshot: ref('Snapshot'), created_at: date, author_id: id,
+    id, page_id: pageId, parent_id: nullableId, source_proposal_id: nullableId, source_kind: enumOf('bootstrap', 'create', 'merge'),
+    snapshot: ref('Snapshot'), created_at: date, author_id: nullableId,
     content_url: { type: ['string', 'null'] },
   }),
   PageDetail: object({
-    page: ref('Page'), revision: { anyOf: [ref('Revision'), { type: 'null' }] },
+    page: ref('Page'), capabilities: array(enumOf('read', 'propose', 'discuss', 'merge', 'manage')), revision: { anyOf: [ref('Revision'), { type: 'null' }] },
   }),
   ProposalRevision: object({
     id, proposal_id: id, base_revision_id: nullableId,
     snapshot: ref('Snapshot'), created_at: date,
   }),
   Proposal: object({
-    id, page_id: id, author_id: id, state: enumOf('open', 'merged', 'closed'),
-    version: integer, review_round: integer, current_revision: ref('ProposalRevision'),
+    id, page_id: pageId, author_id: id, state: enumOf('open', 'merged', 'closed'),
+    version: integer, current_revision: ref('ProposalRevision'),
   }),
   CreatePage: object({ visibility: enumOf('public', 'restricted'), snapshot: ref('Snapshot') }),
-  CreatedPage: object({ page: ref('Page'), proposal: ref('Proposal') }),
+  CreatedPage: object({ page: ref('Page'), revision: ref('Revision') }),
   CreateProposal: object({ expected_head_revision_id: nullableId, snapshot: ref('Snapshot') }),
   UpdateProposal: object({ ...expected, snapshot: ref('Snapshot') }),
   VersionPair: object(expected),
   ProposalState: object({
     state: enumOf('open', 'closed'), expected_proposal_version: integer,
   }),
-  ReviewInput: object({
-    ...expected, expected_review_round: integer,
-    decision: enumOf('approve', 'request_changes', 'comment'), body: string(65536),
-  }),
-  Review: object({
-    id, actor_id: id, proposal_revision_id: id, base_revision_id: nullableId,
-    round: integer, decision: enumOf('approve', 'request_changes', 'comment'),
-    body: string(65536), created_at: date,
-  }),
   RollbackInput: object({ revision_id: id, expected_head_revision_id: id }),
   Grant: object({
     subject_type: enumOf('user', 'group'), subject_id: id,
     capabilities: {
-      ...array(enumOf('read', 'propose', 'discuss', 'review', 'manage')), uniqueItems: true,
+      ...array(enumOf('read', 'propose', 'discuss', 'merge', 'manage')), uniqueItems: true,
     },
   }),
   Policy: object({
@@ -116,7 +108,7 @@ const schemas = {
     hidden: { type: 'boolean' }, reason: { ...string(2000), minLength: 1 }, expected_version: integer,
   }),
   Issue: object({
-    id, page_id: id, author_id: id, title: string(300), body: string(65536),
+    id, page_id: pageId, author_id: id, title: string(300), body: string(65536),
     state: enumOf('open', 'closed'), hidden: { type: 'boolean' }, version: integer,
     proposal_ids: array(id), created_at: date,
   }),
@@ -149,18 +141,18 @@ const schemas = {
   }),
   Tag: object({ key: string(64) }),
   SearchHit: object({
-    page_id: id, revision_id: id, type: enumOf('document', 'media'),
+    page_id: pageId, revision_id: id, type: enumOf('document', 'media'),
     title: string(300), tags: array(string(64)), snippet: string(2000),
   }),
   AuditEvent: object({
-    id, actor_id: nullableId, action: string(100), target_id: nullableId,
+    id, actor_id: nullableId, action: string(100), target_id: { type: ['string','null'] },
     request_id: string(100), created_at: date,
   }),
   Error: object({
     error: object({
       code: enumOf(
         'invalid_request', 'unauthenticated', 'forbidden', 'not_found', 'stale_revision',
-        'merge_conflict', 'invalid_state', 'review_required', 'idempotency_conflict',
+        'merge_conflict', 'invalid_state', 'idempotency_conflict',
         'validation_failed', 'rate_limited', 'upload_too_large', 'unsupported_media',
         'search_unavailable', 'storage_unavailable', 'internal_error',
       ),
@@ -184,8 +176,8 @@ const implementedRest = new Set([
   'group_create', 'group_update', 'audit_list', 'page_policy_get', 'page_policy_update',
   'page_create', 'pages_list', 'page_get', 'revisions_list', 'revision_get',
   'proposal_queue', 'proposals_list', 'proposal_get', 'proposal_revisions_list', 'tags_list',
-  'proposal_create', 'proposal_update', 'proposal_diff', 'proposal_rebase', 'reviews_list',
-  'review_create', 'proposal_merge', 'proposal_state', 'page_revert', 'page_restore',
+  'proposal_create', 'proposal_update', 'proposal_diff', 'proposal_rebase',
+   'proposal_merge', 'proposal_state', 'page_revert', 'page_restore',
   'upload_prepare', 'upload_content', 'upload_get', 'revision_content', 'proposal_content',
   'search', 'page_moderate', 'issues_list', 'issue_create', 'issue_get', 'issue_state',
   'issue_link_proposal', 'issue_moderate', 'comments_list', 'comment_create', 'comment_moderate',
@@ -218,7 +210,7 @@ op('post', '/pages/{page_id}/moderation', 'page_moderate', 'Pages', '管理者�
 op('get', '/pages/{page_id}/revisions', 'revisions_list', 'Pages', '列出页面发布历史', 'RevisionList', null, { public: true, list: true });
 op('get', '/pages/{page_id}/revisions/{revision_id}', 'revision_get', 'Pages', '读取明确发布版本', 'Revision', null, { public: true });
 op('get', '/pages/{page_id}/revisions/{revision_id}/content', 'revision_content', 'Media', '鉴权后读取固定版本原件', 'binary', null, { public: true, mcp: false, query: { download: enumOf('1') } });
-op('get', '/proposals', 'proposal_queue', 'Proposals', '列出可读的提案审核队列', 'ProposalList', null, { public: true, list: true, query: { state: enumOf('open', 'closed', 'merged') } });
+op('get', '/proposals', 'proposal_queue', 'Proposals', '列出可读的提案摘要', 'ProposalList', null, { public: true, list: true, query: { state: enumOf('open', 'closed', 'merged') } });
 op('get', '/pages/{page_id}/proposals', 'proposals_list', 'Proposals', '列出页面提案', 'ProposalList', null, { public: true, list: true });
 op('post', '/pages/{page_id}/proposals', 'proposal_create', 'Proposals', '提交单页面修改提案', 'Proposal', 'CreateProposal', { status: 201 });
 op('get', '/proposals/{proposal_id}', 'proposal_get', 'Proposals', '读取提案及当前候选', 'Proposal', null, { public: true });
@@ -226,10 +218,8 @@ op('get', '/proposals/{proposal_id}/revisions', 'proposal_revisions_list', 'Prop
 op('post', '/proposals/{proposal_id}/revisions', 'proposal_update', 'Proposals', '提交候选更新或已解决冲突', 'Proposal', 'UpdateProposal');
 op('get', '/proposals/{proposal_id}/revisions/{proposal_revision_id}/content', 'proposal_content', 'Media', '鉴权后读取候选媒体原件', 'binary', null, { public: true, mcp: false, query: { download: enumOf('1') } });
 op('get', '/proposals/{proposal_id}/diff', 'proposal_diff', 'Proposals', '对比基础与候选并标记过期', 'Diff', null, { public: true });
-op('post', '/proposals/{proposal_id}/rebase', 'proposal_rebase', 'Proposals', '三方合并至当前发布版本并使审核失效', 'Proposal', 'VersionPair');
-op('get', '/proposals/{proposal_id}/reviews', 'reviews_list', 'Proposals', '列出审核记录', 'ReviewList', null, { public: true, list: true });
-op('post', '/proposals/{proposal_id}/reviews', 'review_create', 'Proposals', '对明确版本提交审核', 'Review', 'ReviewInput', { status: 201 });
-op('post', '/proposals/{proposal_id}/merge', 'proposal_merge', 'Proposals', '原子合并经有效审核的提案', 'Revision', 'VersionPair');
+op('post', '/proposals/{proposal_id}/rebase', 'proposal_rebase', 'Proposals', '三方合并至当前发布版本并生成新候选', 'Proposal', 'VersionPair');
+op('post', '/proposals/{proposal_id}/merge', 'proposal_merge', 'Proposals', '按当前合并权限与预期版本原子发布提案', 'Revision', 'VersionPair');
 op('post', '/proposals/{proposal_id}/state', 'proposal_state', 'Proposals', '关闭或重开提案', 'Proposal', 'ProposalState');
 op('post', '/pages/{page_id}/revert', 'page_revert', 'Pages', '为撤销一次发布创建提案', 'Proposal', 'RollbackInput', { status: 201 });
 op('post', '/pages/{page_id}/restore', 'page_restore', 'Pages', '为恢复旧快照创建提案', 'Proposal', 'RollbackInput', { status: 201 });
@@ -279,7 +269,7 @@ export function buildContracts() {
   const error = { $ref: '#/components/responses/BusinessError' };
   for (const o of operations) {
     const pathNames = [...o.path.matchAll(/\{([^}]+)\}/g)].map((m) => m[1]);
-    const parameters = pathNames.map((name) => ({ name, in: 'path', required: true, schema: id }));
+    const parameters = pathNames.map((name) => ({ name, in: 'path', required: true, schema: name === 'page_id' ? pageId : id }));
     const query = {
       ...(o.list ? { limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 }, cursor: string(2048) } : {}),
       ...o.query,
@@ -324,7 +314,7 @@ export function buildContracts() {
     paths[o.path] ??= {};
     paths[o.path][o.method] = operation;
     if (o.mcp !== false) {
-      const inputProperties = Object.fromEntries(pathNames.map((n) => [n, id]));
+      const inputProperties = Object.fromEntries(pathNames.map((n) => [n, n === 'page_id' ? pageId : id]));
       Object.assign(inputProperties, query);
       const required = [...pathNames, ...(o.requiredQuery ?? [])];
       if (o.input) {
@@ -349,7 +339,7 @@ export function buildContracts() {
     openapi: '3.1.0',
     info: {
       title: 'Wikit REST API', version: '0.1.0',
-      description: '已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚、讨论、媒体上传/下载及搜索 REST 已实现；目录内 MCP 工具已实现。所有传输入口复用 Core。',
+      description: '已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案合并/回滚、讨论、媒体上传/下载及搜索 REST 已实现；目录内 MCP 工具已实现。所有传输入口复用 Core。',
       license: { name: 'MIT', identifier: 'MIT' },
     },
     servers: [{ url: 'https://wiki.example.com/api/v1', description: '替换为自托管站点地址' }],

@@ -93,7 +93,7 @@ it('uses the same authentication reset for a 401 media response as for JSON resp
   expect(api.csrf).toBe('')
 })
 it('uploads original bytes through the reserved same-origin HTTP path using CSRF', async () => {
-  const path = `/api/v1/uploads/${pageID}/content`,
+  const path = `/api/v1/uploads/${revisionID}/content`,
     file = new File(['original bytes'], 'a.png', { type: 'image/png' })
   const fetcher = vi
     .fn()

@@ -35,7 +35,7 @@ func (s *Service) open(ctx context.Context, b Stored) (Reader, error) {
 
 func (s *Service) Read(ctx context.Context, c identity.Credentials, kind, id, revision string) (Download, error) {
 	id, revision = strings.ToLower(id), strings.ToLower(revision)
-	if !identity.ValidID(id) || !identity.ValidID(revision) {
+	if (kind == "published" && !access.ValidPageID(id)) || (kind != "published" && !identity.ValidID(id)) || !identity.ValidID(revision) {
 		return Download{}, fault.NotFound
 	}
 	var out Download

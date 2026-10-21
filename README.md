@@ -3,17 +3,16 @@
 [中文](README.zh-CN.md) · [Design documentation](docs/README.md) · [Contributing](CONTRIBUTING.md)
 
 Wikit is an open-source, self-hosted community wiki with Git-inspired proposals,
-diff reviews, merges, and immutable publication history. Documents and media are
+diffs, merges, and immutable publication history. Documents and media are
 independent Pages organized with tags. Humans and agents share the same account
 permissions through REST and MCP.
 
-**Status: Go backend with accounts, permission governance, immutable history, reviewed
-atomic publication, three-way rebase and revert/restore proposals, backed by PostgreSQL
+**Status: Go backend with accounts, permission governance, immutable history, atomic publication, three-way rebase and revert/restore proposals, backed by PostgreSQL
 tests. Media uploads, authorized Range downloads and safe local GC are implemented.
 Page Issues, immutable comments, proposal associations and audited moderation are implemented.
 Chinese/English search, durable indexing tasks and full index rebuilds are implemented with Meilisearch.
-The official Go SDK serves 41 authenticated MCP tools using the same Core.
-The React WebUI provides reading, editing, review, discussion and governance flows with frontend CI.
+The official Go SDK serves 39 authenticated MCP tools using the same Core.
+The React WebUI provides reading, editing, merge, discussion and governance flows with frontend CI.
 The v0.1.0 GHCR image has passed full release CI and acceptance after pulling its immutable digest;
 production deployment remains manual.** See the [release evidence and registry access requirements](docs/release-readiness.md),
 [implementation roadmap](docs/roadmap.md) and
@@ -28,7 +27,7 @@ English search. Git is not a runtime storage dependency.
 
 The v0.1 target is a single-host Docker Compose deployment. Public and restricted
 Pages, per-Page permissions, single-Page proposals, version-pinned media references,
-reviews, restore/revert proposals, and Page Issues are specified in the
+merges, restore/revert proposals, and Page Issues are specified in the
 [design](docs/design.md). Native Git access, multi-tenancy, templates, collaborative
 editing, notifications, semantic search, S3, and high availability are outside v0.1.
 

@@ -121,7 +121,7 @@ func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (
 		seen := map[string]bool{}
 		for _, candidate := range candidates {
 			consumed++
-			if !identity.ValidID(candidate.ID) || !identity.ValidID(candidate.Revision) {
+			if !access.ValidPageID(candidate.ID) || !identity.ValidID(candidate.Revision) {
 				continue
 			}
 			source, err := tx.SearchSource(ctx, candidate.ID)

@@ -20,7 +20,7 @@ func (t *securityTx) ActiveAdmins(ctx context.Context) (int, error) {
 	return n, storageError(err)
 }
 func (t *securityTx) Accounts(ctx context.Context) ([]access.AccountAdmin, error) {
-	rows, err := t.Query(ctx, "SELECT id::text,username,display_name,role,status,auth_version FROM wikit.users ORDER BY id")
+	rows, err := t.Query(ctx, "SELECT id::text,username,display_name,role,status,auth_version,create_page FROM wikit.users ORDER BY id")
 	if err != nil {
 		return nil, storageError(err)
 	}
@@ -28,7 +28,7 @@ func (t *securityTx) Accounts(ctx context.Context) ([]access.AccountAdmin, error
 	out := []access.AccountAdmin{}
 	for rows.Next() {
 		var v access.AccountAdmin
-		if err := rows.Scan(&v.Account.ID, &v.Account.Username, &v.Account.DisplayName, &v.Account.Role, &v.Account.Status, &v.AuthVersion); err != nil {
+		if err := rows.Scan(&v.Account.ID, &v.Account.Username, &v.Account.DisplayName, &v.Account.Role, &v.Account.Status, &v.AuthVersion, &v.Account.CreatePage); err != nil {
 			return nil, storageError(err)
 		}
 		out = append(out, v)
@@ -36,7 +36,7 @@ func (t *securityTx) Accounts(ctx context.Context) ([]access.AccountAdmin, error
 	return out, storageError(rows.Err())
 }
 func (t *securityTx) Groups(ctx context.Context) ([]access.Group, error) {
-	rows, err := t.Query(ctx, `SELECT g.id::text,g.name,g.version,coalesce(array_agg(m.user_id::text ORDER BY m.user_id) FILTER(WHERE m.user_id IS NOT NULL),'{}') FROM wikit.groups g LEFT JOIN wikit.group_members m ON m.group_id=g.id GROUP BY g.id ORDER BY g.id`)
+	rows, err := t.Query(ctx, `SELECT g.id::text,g.name,g.version,g.create_page,coalesce(array_agg(m.user_id::text ORDER BY m.user_id) FILTER(WHERE m.user_id IS NOT NULL),'{}') FROM wikit.groups g LEFT JOIN wikit.group_members m ON m.group_id=g.id GROUP BY g.id ORDER BY g.id`)
 	if err != nil {
 		return nil, storageError(err)
 	}
@@ -44,7 +44,7 @@ func (t *securityTx) Groups(ctx context.Context) ([]access.Group, error) {
 	out := []access.Group{}
 	for rows.Next() {
 		var g access.Group
-		if err := rows.Scan(&g.ID, &g.Name, &g.Version, &g.Members); err != nil {
+		if err := rows.Scan(&g.ID, &g.Name, &g.Version, &g.CreatePage, &g.Members); err != nil {
 			return nil, storageError(err)
 		}
 		out = append(out, g)
@@ -64,7 +64,7 @@ func (t *securityTx) Group(ctx context.Context, id string) (access.Group, error)
 	return access.Group{}, fault.NotFound
 }
 func (t *securityTx) SaveGroup(ctx context.Context, g access.Group) error {
-	if _, err := t.Exec(ctx, `INSERT INTO wikit.groups VALUES($1,$2,$3) ON CONFLICT(id) DO UPDATE SET name=excluded.name,version=excluded.version`, g.ID, g.Name, g.Version); err != nil {
+	if _, err := t.Exec(ctx, `INSERT INTO wikit.groups VALUES($1,$2,$3,$4) ON CONFLICT(id) DO UPDATE SET name=excluded.name,version=excluded.version,create_page=excluded.create_page`, g.ID, g.Name, g.Version, g.CreatePage); err != nil {
 		return storageError(err)
 	}
 	if _, err := t.Exec(ctx, "DELETE FROM wikit.group_members WHERE group_id=$1", g.ID); err != nil {

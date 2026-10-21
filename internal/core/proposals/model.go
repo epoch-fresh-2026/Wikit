@@ -1,4 +1,4 @@
-// Package proposals owns candidate histories, review rounds and publication use cases.
+// Package proposals owns candidate histories and publication use cases.
 package proposals
 
 import (
@@ -19,11 +19,10 @@ type Proposal struct {
 	AuthorID        string   `json:"author_id"`
 	State           string   `json:"state"`
 	Version         int64    `json:"version"`
-	ReviewRound     int64    `json:"review_round"`
 	CurrentRevision Revision `json:"current_revision"`
 }
 type Summary struct{ ID, PageID, State string }
 
 func Initial(id, page, author, revision string, snapshot content.Snapshot, now time.Time) Proposal {
-	return Proposal{ID: id, PageID: page, AuthorID: author, State: "open", Version: 1, ReviewRound: 1, CurrentRevision: Revision{ID: revision, ProposalID: id, Snapshot: snapshot, CreatedAt: now}}
+	return Proposal{ID: id, PageID: page, AuthorID: author, State: "open", Version: 1, CurrentRevision: Revision{ID: revision, ProposalID: id, Snapshot: snapshot, CreatedAt: now}}
 }

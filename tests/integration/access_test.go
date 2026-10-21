@@ -39,10 +39,10 @@ func TestACLMatrixGroupsAndGrantBoundaries(t *testing.T) {
 	m := identity.Credentials{Bearer: managerToken}
 	r := identity.Credentials{Bearer: readerToken}
 	v := identity.Credentials{Bearer: reviewerToken}
-	if _, err := s.access.UpdateAccount(ctx, requestKey(admin, "reviewer-role"), reviewer.ID, "reviewer", "active", 1); err != nil {
+	if _, err := s.access.UpdateAccount(ctx, requestKey(admin, "reviewer-role"), reviewer.ID, "moderator", "active", 1, false); err != nil {
 		t.Fatal(err)
 	}
-	groupJSON, err := s.access.SaveGroup(ctx, requestKey(admin, "create-group"), "", "Readers", nil, 0)
+	groupJSON, err := s.access.SaveGroup(ctx, requestKey(admin, "create-group"), "", "Readers", nil, 0, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,17 +50,17 @@ func TestACLMatrixGroupsAndGrantBoundaries(t *testing.T) {
 	if err := json.Unmarshal(groupJSON, &group); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "group-members"), group.ID, "Readers", []string{reader.ID}, 1); err != nil {
+	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "group-members"), group.ID, "Readers", []string{reader.ID}, 1, false); err != nil {
 		t.Fatal(err)
 	}
-	page := s.id(t)
-	p := access.Policy{PageID: page, Visibility: "restricted", Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: manager.ID, Capabilities: []string{"read", "manage"}}, {SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read", "review"}}}}
+	page := s.pageID(t)
+	p := access.Policy{PageID: page, Visibility: "restricted", Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: manager.ID, Capabilities: []string{"read", "manage"}}, {SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read", "merge"}}}}
 	s.seedPolicy(t, p)
 	for _, tc := range []struct {
 		c    identity.Credentials
 		cap  string
 		want error
-	}{{identity.Credentials{}, "read", fault.NotFound}, {v, "read", fault.NotFound}, {m, "read", nil}, {m, "review", fault.Forbidden}, {r, "review", nil}, {admin, "manage", nil}} {
+	}{{identity.Credentials{}, "read", fault.NotFound}, {v, "read", fault.NotFound}, {m, "read", nil}, {m, "merge", fault.Forbidden}, {r, "merge", nil}, {admin, "manage", nil}} {
 		if err := s.access.Check(ctx, tc.c, page, tc.cap, false); err != tc.want {
 			t.Fatalf("%s: %v expected %v", tc.cap, err, tc.want)
 		}
@@ -68,7 +68,7 @@ func TestACLMatrixGroupsAndGrantBoundaries(t *testing.T) {
 	s.req(t, "GET", "pages/"+page+"/policy", nil, m, "", 200)
 	s.req(t, "GET", "pages/"+page+"/policy", nil, r, "", 403)
 	s.req(t, "GET", "pages/"+page+"/policy", nil, identity.Credentials{}, "", 404)
-	expanded := access.Policy{Visibility: "restricted", Grants: []access.Grant{{SubjectType: "user", SubjectID: manager.ID, Capabilities: []string{"read", "manage", "review"}}}}
+	expanded := access.Policy{Visibility: "restricted", Grants: []access.Grant{{SubjectType: "user", SubjectID: manager.ID, Capabilities: []string{"read", "manage", "merge"}}}}
 	if _, err := s.access.UpdatePolicy(ctx, requestKey(m, "self-expansion"), page, expanded, 1); err != fault.Forbidden {
 		t.Fatal("manager gained review", err)
 	}
@@ -76,7 +76,7 @@ func TestACLMatrixGroupsAndGrantBoundaries(t *testing.T) {
 	if _, err := s.access.UpdatePolicy(ctx, requestKey(m, "manage-expansion"), page, expanded, 1); err != fault.Forbidden {
 		t.Fatal("manager granted manage", err)
 	}
-	expanded.Grants = []access.Grant{{SubjectType: "user", SubjectID: reader.ID, Capabilities: []string{"review"}}}
+	expanded.Grants = []access.Grant{{SubjectType: "user", SubjectID: reader.ID, Capabilities: []string{"merge"}}}
 	if _, err := s.access.UpdatePolicy(ctx, requestKey(admin, "missing-read"), page, expanded, 1); err != fault.Invalid {
 		t.Fatal("non-read grant lacks read", err)
 	}
@@ -92,16 +92,16 @@ func TestACLMatrixGroupsAndGrantBoundaries(t *testing.T) {
 	if err := s.access.Check(ctx, identity.Credentials{}, page, "read", false); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.access.Check(ctx, v, page, "review", false); err != nil {
+	if err := s.access.Check(ctx, v, page, "merge", false); err != nil {
 		t.Fatal("public reviewer", err)
 	}
 	// A separate restricted page demonstrates immediate group-based revocation.
-	other := s.id(t)
+	other := s.pageID(t)
 	p.PageID = other
 	p.Visibility = "restricted"
 	p.Version = 1
 	s.seedPolicy(t, p)
-	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "revoke-group"), group.ID, "Readers", nil, 2); err != nil {
+	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "revoke-group"), group.ID, "Readers", nil, 2, false); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.access.Check(ctx, r, other, "read", false); err != fault.NotFound {
@@ -147,8 +147,8 @@ func TestACL03RevocationSerializesWithProtectedWrite(t *testing.T) {
 	ctx := context.Background()
 	u, token := s.register(t, "concurrent_reviewer")
 	c := identity.Credentials{Bearer: token}
-	page := s.id(t)
-	p := access.Policy{PageID: page, Visibility: "restricted", Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: u.ID, Capabilities: []string{"read", "review"}}}}
+	page := s.pageID(t)
+	p := access.Policy{PageID: page, Visibility: "restricted", Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: u.ID, Capabilities: []string{"read", "merge"}}}}
 	s.seedPolicy(t, p)
 	// Hold the same database lock used by both governance and publication use cases,
 	// remove review, then prove the waiting protected action rechecks after commit.
@@ -156,11 +156,11 @@ func TestACL03RevocationSerializesWithProtectedWrite(t *testing.T) {
 	if _, err := s.db.conn.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", postgres.SecurityLock); err != nil {
 		t.Fatal(err)
 	}
-	execSQL(t, s.db.conn, "DELETE FROM wikit.page_grants WHERE page_id='"+page+"' AND capability='review'")
+	execSQL(t, s.db.conn, "DELETE FROM wikit.page_grants WHERE page_id='"+page+"' AND capability='merge'")
 	done := make(chan error, 1)
 	go func() {
 		done <- s.db.store.WithinAccess(ctx, func(tx access.Tx) error {
-			a, _, err := access.Authorize(ctx, tx, c, page, "review", false)
+			a, _, err := access.Authorize(ctx, tx, c, page, "merge", false)
 			if err != nil {
 				return err
 			}
@@ -182,15 +182,15 @@ func TestACL03ProtectedWriteCompletesBeforeRevocation(t *testing.T) {
 	s := newSuite(t)
 	ctx := context.Background()
 	u, token := s.register(t, "ordered_reviewer")
-	page := s.id(t)
+	page := s.pageID(t)
 	c := identity.Credentials{Bearer: token}
-	s.seedPolicy(t, access.Policy{PageID: page, Visibility: "restricted", Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: u.ID, Capabilities: []string{"read", "review"}}}})
+	s.seedPolicy(t, access.Policy{PageID: page, Visibility: "restricted", Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: u.ID, Capabilities: []string{"read", "merge"}}}})
 	checked := make(chan struct{})
 	release := make(chan struct{})
 	done := make(chan error, 1)
 	go func() {
 		done <- s.db.store.WithinAccess(ctx, func(tx access.Tx) error {
-			a, _, err := access.Authorize(ctx, tx, c, page, "review", false)
+			a, _, err := access.Authorize(ctx, tx, c, page, "merge", false)
 			if err != nil {
 				return err
 			}
@@ -214,7 +214,16 @@ func TestACL03ProtectedWriteCompletesBeforeRevocation(t *testing.T) {
 	if err := <-revoked; err != nil {
 		t.Fatal(err)
 	}
-	if err := s.access.Check(ctx, c, page, "review", false); err != fault.Forbidden {
+	if err := s.access.Check(ctx, c, page, "merge", false); err != fault.Forbidden {
 		t.Fatal("post-revocation access", err)
 	}
+}
+
+func (s *suite) pageID(t *testing.T) string {
+	t.Helper()
+	var id string
+	if err := s.db.conn.QueryRow(context.Background(), "SELECT nextval('wikit.page_ids')::text").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	return id
 }

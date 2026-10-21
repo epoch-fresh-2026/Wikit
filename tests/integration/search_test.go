@@ -49,9 +49,9 @@ func (s *suite) find(t *testing.T, c identity.Credentials, q string) search.Resu
 	raw, _ := s.req(t, "GET", "search?q="+url.QueryEscape(q), nil, c, "", 200)
 	return decodeResult[search.Result](t, raw)
 }
-func (s *suite) searchPage(t *testing.T, c identity.Credentials, visibility string, snapshot content.Snapshot, key string) pages.Created {
+func (s *suite) searchPage(t *testing.T, c identity.Credentials, visibility string, snapshot content.Snapshot, key string) pageFixture {
 	t.Helper()
-	p := s.createPage(t, c, visibility, snapshot, key+"-page")
+	p := s.createPageWithProposal(t, c, visibility, snapshot, key+"-page")
 	revision := s.publish(t, c, p.Proposal, nil, key)
 	p.Page.HeadRevisionID = &revision.ID
 	p.Page.Status = "published"
@@ -72,7 +72,8 @@ func TestSEARCH01ChineseEnglishRankingAndPlainText(t *testing.T) {
 	title := s.searchPage(t, c, "public", content.Snapshot{Type: "document", Title: "知识管理 Orbit", Tags: []string{}, Markdown: ptr("团队协作基础。")}, "search-title")
 	tagged := s.searchPage(t, c, "public", content.Snapshot{Type: "document", Title: "分类页面", Tags: []string{"知识", "orbit"}, Markdown: ptr("归档资料。")}, "search-tag")
 	body := s.searchPage(t, c, "public", content.Snapshot{Type: "document", Title: "正文页面", Tags: []string{}, Markdown: ptr("知识管理能够帮助团队共享文档。 orbit catalog **searchable** [label](https://notindexed.example/private-target)\n\n<script>notindexedscript</script>")}, "search-body")
-	draft := s.createPage(t, c, "public", document("draftonlyneedle", "draftonlyneedle"), "search-draft")
+	draft := s.createPageWithProposal(t, c, "public", document("Draft target", "Published content"), "search-draft")
+	s.req(t, "POST", "proposals/"+draft.Proposal.ID+"/revisions", map[string]any{"expected_head_revision_id": draft.Page.HeadRevisionID, "expected_proposal_revision_id": draft.Proposal.CurrentRevision.ID, "snapshot": document("draftonlyneedle", "draftonlyneedle")}, c, "search-draft-update", 200)
 	s.issue(t, c, draft.Page.ID, "search-draft-issue")
 	rawIssue, _ := s.req(t, "POST", "pages/"+title.Page.ID+"/issues", map[string]any{"title": "discussiononlyneedle", "body": "discussiononlyneedle"}, c, "search-unindexed-issue", 201)
 	var issue struct {
@@ -260,7 +261,8 @@ func (d *delayedTask) Wait(ctx context.Context, id int64) error {
 func TestSEARCH03DurableTaskCheckpointAndRetry(t *testing.T) {
 	s := newSearchSuite(t)
 	_, c := s.reviewer(t, "search_task_author")
-	s.searchPage(t, c, "public", document("taskneedle", "body"), "search-task")
+	s.drain(t)
+	s.createPageWithProposal(t, c, "public", document("taskneedle", "body"), "search-task")
 	// Prepare settings before interrupting document task observation.
 	if err := s.index.Ensure(context.Background(), activeIndex(t, s)); err != nil {
 		t.Fatal(err)
@@ -395,7 +397,7 @@ func TestSEARCH02GroupMembershipAndDisabledAccount(t *testing.T) {
 	rc := identity.Credentials{Bearer: token}
 	admin := identity.Credentials{Bearer: s.adminToken}
 	ctx := context.Background()
-	raw, err := s.access.SaveGroup(ctx, requestKey(admin, "search-create-group"), "", "Search readers", []string{reader.ID}, 0)
+	raw, err := s.access.SaveGroup(ctx, requestKey(admin, "search-create-group"), "", "Search readers", []string{reader.ID}, 0, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,13 +414,13 @@ func TestSEARCH02GroupMembershipAndDisabledAccount(t *testing.T) {
 	if r := s.find(t, identity.Credentials{}, "groupneedle"); len(r.Items) != 0 {
 		t.Fatal("private group hit leaked")
 	}
-	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "search-remove-member"), group.ID, group.Name, []string{}, 1); err != nil {
+	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "search-remove-member"), group.ID, group.Name, []string{}, 1, false); err != nil {
 		t.Fatal(err)
 	}
 	if r := s.find(t, rc, "groupneedle"); len(r.Items) != 0 {
 		t.Fatal("group removal not immediate")
 	}
-	if _, err := s.access.UpdateAccount(ctx, requestKey(admin, "search-disable-reader"), reader.ID, "member", "disabled", 1); err != nil {
+	if _, err := s.access.UpdateAccount(ctx, requestKey(admin, "search-disable-reader"), reader.ID, "member", "disabled", 1, false); err != nil {
 		t.Fatal(err)
 	}
 	s.req(t, "GET", "search?q=groupneedle", nil, rc, "", 401)
@@ -441,7 +443,7 @@ func TestSEARCH03FailedTaskBackoffAndPageOrder(t *testing.T) {
 	if err := s.index.Wait(ctx, uid); !errors.Is(err, search.ErrTaskFailed) {
 		t.Fatal("invalid document task did not fail", err)
 	}
-	if _, err := s.db.conn.Exec(ctx, `UPDATE wikit.outbox_events SET task_uid=$1,target_index=$2 WHERE page_id=$3`, uid, index, p.Page.ID); err != nil {
+	if _, err := s.db.conn.Exec(ctx, `UPDATE wikit.outbox_events SET task_uid=$1,target_index=$2 WHERE sequence=(SELECT min(sequence) FROM wikit.outbox_events WHERE page_id=$3)`, uid, index, p.Page.ID); err != nil {
 		t.Fatal(err)
 	}
 	policy := access.Policy{Visibility: "restricted", Grants: []access.Grant{{SubjectType: "user", SubjectID: author.ID, Capabilities: []string{"read"}}}}
@@ -473,7 +475,7 @@ func TestSEARCH03FailedTaskBackoffAndPageOrder(t *testing.T) {
 func TestSEARCH03HTTPOutageKeepsDatabaseAvailable(t *testing.T) {
 	s := newSearchSuite(t)
 	admin := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, admin, "public", document("Outage page", "database body"), "search-outage-page")
+	p := s.createPageWithProposal(t, admin, "public", document("Outage page", "database body"), "search-outage-page")
 	bad := meili.New("http://127.0.0.1:1", "local_outage_test_key_2026")
 	api := httpadapter.API{Search: search.New(s.db.store, bad, textadapter.Parser{}, s.secrets), Identity: s.accounts, Access: s.access, Pages: pages.New(s.db.store, s.secrets, textadapter.Parser{}, s.files), Secrets: s.secrets, PublicURL: "http://localhost:8080", SessionTTL: time.Hour}
 	original := s.server
@@ -489,7 +491,7 @@ func TestSEARCH03HTTPOutageKeepsDatabaseAvailable(t *testing.T) {
 		t.Fatalf("wrong search outage error: %v", err)
 	}
 	s.req(t, "GET", "pages/"+p.Page.ID, nil, admin, "", 200)
-	s.createPage(t, admin, "public", document("Outage write", "new body"), "search-outage-write")
+	s.req(t, "POST", "pages", map[string]any{"visibility": "public", "snapshot": document("Outage write", "new body")}, admin, "search-outage-write", 201)
 	res, err := http.Get(s.server.URL + "/health/ready")
 	if err != nil {
 		t.Fatal(err)

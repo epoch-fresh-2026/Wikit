@@ -3,7 +3,7 @@
   "info": {
     "title": "Wikit REST API",
     "version": "0.1.0",
-    "description": "已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案审核合并/回滚、讨论、媒体上传/下载及搜索 REST 已实现；目录内 MCP 工具已实现。所有传输入口复用 Core。",
+    "description": "已锁定的 v0.1 设计契约；账户、授权、页面/历史、提案合并/回滚、讨论、媒体上传/下载及搜索 REST 已实现；目录内 MCP 工具已实现。所有传输入口复用 Core。",
     "license": {
       "name": "MIT",
       "identifier": "MIT"
@@ -1384,7 +1384,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           }
         ],
@@ -1458,7 +1458,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           }
         ],
@@ -1530,7 +1530,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -1635,7 +1635,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -1741,7 +1741,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -1836,7 +1836,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -1920,7 +1920,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -2123,8 +2123,8 @@
         "tags": [
           "Proposals"
         ],
-        "summary": "列出可读的提案审核队列",
-        "description": "列出可读的提案审核队列。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "summary": "列出可读的提案摘要",
+        "description": "列出可读的提案摘要。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {},
           {
@@ -2240,7 +2240,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -2332,7 +2332,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -2989,8 +2989,8 @@
         "tags": [
           "Proposals"
         ],
-        "summary": "三方合并至当前发布版本并使审核失效",
-        "description": "三方合并至当前发布版本并使审核失效。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "summary": "三方合并至当前发布版本并生成新候选",
+        "description": "三方合并至当前发布版本并生成新候选。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3088,212 +3088,14 @@
         }
       }
     },
-    "/proposals/{proposal_id}/reviews": {
-      "get": {
-        "operationId": "reviews_list",
-        "tags": [
-          "Proposals"
-        ],
-        "summary": "列出审核记录",
-        "description": "列出审核记录。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
-        "security": [
-          {},
-          {
-            "session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "proposal_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "maxLength": 2048
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "操作成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewList"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "401": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "403": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "404": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "409": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "413": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "415": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "422": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "429": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "500": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "503": {
-            "$ref": "#/components/responses/BusinessError"
-          }
-        }
-      },
-      "post": {
-        "operationId": "review_create",
-        "tags": [
-          "Proposals"
-        ],
-        "summary": "对明确版本提交审核",
-        "description": "对明确版本提交审核。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
-        "security": [
-          {
-            "session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "proposal_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "description": "同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。",
-            "schema": {
-              "type": "string",
-              "minLength": 8,
-              "maxLength": 128
-            }
-          },
-          {
-            "name": "X-CSRF-Token",
-            "in": "header",
-            "required": false,
-            "description": "Cookie 会话变更请求必填；Bearer-only 请求不需要。",
-            "schema": {
-              "type": "string",
-              "maxLength": 256
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "操作成功",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Review"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "401": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "403": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "404": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "409": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "413": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "415": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "422": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "429": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "500": {
-            "$ref": "#/components/responses/BusinessError"
-          },
-          "503": {
-            "$ref": "#/components/responses/BusinessError"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewInput"
-              }
-            }
-          }
-        }
-      }
-    },
     "/proposals/{proposal_id}/merge": {
       "post": {
         "operationId": "proposal_merge",
         "tags": [
           "Proposals"
         ],
-        "summary": "原子合并经有效审核的提案",
-        "description": "原子合并经有效审核的提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "summary": "按当前合并权限与预期版本原子发布提案",
+        "description": "按当前合并权限与预期版本原子发布提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
         "security": [
           {
             "session": []
@@ -3519,7 +3321,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -3624,7 +3426,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -3730,7 +3532,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -3842,7 +3644,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "pattern": "^[1-9][0-9]{0,18}$"
             }
           },
           {
@@ -5185,7 +4987,9 @@
           "username",
           "display_name",
           "role",
-          "status"
+          "status",
+          "create_page",
+          "can_create_page"
         ],
         "properties": {
           "id": {
@@ -5204,7 +5008,7 @@
             "type": "string",
             "enum": [
               "member",
-              "reviewer",
+              "moderator",
               "admin"
             ]
           },
@@ -5214,6 +5018,12 @@
               "active",
               "disabled"
             ]
+          },
+          "create_page": {
+            "type": "boolean"
+          },
+          "can_create_page": {
+            "type": "boolean"
           }
         }
       },
@@ -5262,6 +5072,7 @@
         "required": [
           "role",
           "status",
+          "create_page",
           "expected_auth_version"
         ],
         "properties": {
@@ -5269,7 +5080,7 @@
             "type": "string",
             "enum": [
               "member",
-              "reviewer",
+              "moderator",
               "admin"
             ]
           },
@@ -5279,6 +5090,9 @@
               "active",
               "disabled"
             ]
+          },
+          "create_page": {
+            "type": "boolean"
           },
           "expected_auth_version": {
             "type": "integer",
@@ -5317,8 +5131,7 @@
             "type": [
               "string",
               "null"
-            ],
-            "format": "uuid"
+            ]
           },
           "request_id": {
             "type": "string",
@@ -5503,14 +5316,14 @@
         "additionalProperties": false,
         "required": [
           "page",
-          "proposal"
+          "revision"
         ],
         "properties": {
           "page": {
             "$ref": "#/components/schemas/Page"
           },
-          "proposal": {
-            "$ref": "#/components/schemas/Proposal"
+          "revision": {
+            "$ref": "#/components/schemas/Revision"
           }
         }
       },
@@ -5646,7 +5459,6 @@
                   "stale_revision",
                   "merge_conflict",
                   "invalid_state",
-                  "review_required",
                   "idempotency_conflict",
                   "validation_failed",
                   "rate_limited",
@@ -5734,7 +5546,7 @@
                 "read",
                 "propose",
                 "discuss",
-                "review",
+                "merge",
                 "manage"
               ]
             },
@@ -5749,7 +5561,8 @@
           "id",
           "name",
           "version",
-          "member_ids"
+          "member_ids",
+          "create_page"
         ],
         "properties": {
           "id": {
@@ -5770,6 +5583,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "create_page": {
+            "type": "boolean"
           }
         }
       },
@@ -5777,9 +5593,13 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
+          "create_page",
           "name"
         ],
         "properties": {
+          "create_page": {
+            "type": "boolean"
+          },
           "name": {
             "type": "string",
             "maxLength": 100,
@@ -5813,11 +5633,15 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
+          "create_page",
           "name",
           "member_ids",
           "expected_version"
         ],
         "properties": {
+          "create_page": {
+            "type": "boolean"
+          },
           "name": {
             "type": "string",
             "maxLength": 100
@@ -5857,7 +5681,7 @@
           },
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "author_id": {
             "type": "string",
@@ -6074,7 +5898,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "type": {
             "type": "string",
@@ -6093,7 +5917,6 @@
           "status": {
             "type": "string",
             "enum": [
-              "proposed",
               "published",
               "hidden"
             ]
@@ -6116,11 +5939,25 @@
         "additionalProperties": false,
         "required": [
           "page",
+          "capabilities",
           "revision"
         ],
         "properties": {
           "page": {
             "$ref": "#/components/schemas/Page"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "propose",
+                "discuss",
+                "merge",
+                "manage"
+              ]
+            }
           },
           "revision": {
             "anyOf": [
@@ -6256,7 +6093,6 @@
           "author_id",
           "state",
           "version",
-          "review_round",
           "current_revision"
         ],
         "properties": {
@@ -6266,7 +6102,7 @@
           },
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "author_id": {
             "type": "string",
@@ -6281,10 +6117,6 @@
             ]
           },
           "version": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "review_round": {
             "type": "integer",
             "minimum": 0
           },
@@ -6432,123 +6264,6 @@
           }
         }
       },
-      "Review": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "actor_id",
-          "proposal_revision_id",
-          "base_revision_id",
-          "round",
-          "decision",
-          "body",
-          "created_at"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "actor_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "proposal_revision_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "base_revision_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "round": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "decision": {
-            "type": "string",
-            "enum": [
-              "approve",
-              "request_changes",
-              "comment"
-            ]
-          },
-          "body": {
-            "type": "string",
-            "maxLength": 65536
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ReviewInput": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "expected_head_revision_id",
-          "expected_proposal_revision_id",
-          "expected_review_round",
-          "decision",
-          "body"
-        ],
-        "properties": {
-          "expected_head_revision_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "expected_proposal_revision_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "expected_review_round": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "decision": {
-            "type": "string",
-            "enum": [
-              "approve",
-              "request_changes",
-              "comment"
-            ]
-          },
-          "body": {
-            "type": "string",
-            "maxLength": 65536
-          }
-        }
-      },
-      "ReviewList": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "items",
-          "next_cursor"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Review"
-            }
-          },
-          "next_cursor": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
       "Revision": {
         "type": "object",
         "additionalProperties": false,
@@ -6557,6 +6272,7 @@
           "page_id",
           "parent_id",
           "source_proposal_id",
+          "source_kind",
           "snapshot",
           "created_at",
           "author_id",
@@ -6569,7 +6285,7 @@
           },
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "parent_id": {
             "type": [
@@ -6579,8 +6295,19 @@
             "format": "uuid"
           },
           "source_proposal_id": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
+          },
+          "source_kind": {
+            "type": "string",
+            "enum": [
+              "bootstrap",
+              "create",
+              "merge"
+            ]
           },
           "snapshot": {
             "$ref": "#/components/schemas/Snapshot"
@@ -6590,7 +6317,10 @@
             "format": "date-time"
           },
           "author_id": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "content_url": {
@@ -6655,7 +6385,7 @@
         "properties": {
           "page_id": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[1-9][0-9]{0,18}$"
           },
           "revision_id": {
             "type": "string",

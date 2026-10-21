@@ -77,50 +77,6 @@ func (s *Service) Diff(ctx context.Context, c identity.Credentials, id string) (
 	return out, err
 }
 
-type ReviewList struct {
-	Items []Review `json:"items"`
-	Next  *string  `json:"next_cursor"`
-}
-
-func (s *Service) Reviews(ctx context.Context, c identity.Credentials, id, cursor string, limit int) (ReviewList, error) {
-	if limit < 1 || limit > 100 {
-		return ReviewList{}, fault.BadRequest
-	}
-	out := ReviewList{Items: []Review{}}
-	err := read(ctx, s, c, id, func(tx Tx, p Proposal, page content.Page, a identity.Actor) error {
-		binding := "reviews:" + p.ID
-		offset := 0
-		var err error
-		if cursor != "" {
-			offset, err = tx.Cursor(ctx, cursor, a.ID, binding, limit)
-			if err != nil {
-				return err
-			}
-		}
-		rows, err := tx.Reviews(ctx, p.ID)
-		if err != nil {
-			return err
-		}
-		if offset > len(rows) {
-			return fault.BadRequest
-		}
-		end := min(offset+limit, len(rows))
-		out.Items = append(out.Items, rows[offset:end]...)
-		if end < len(rows) {
-			plain, err := s.secrets.Secret()
-			if err != nil {
-				return err
-			}
-			token, err := tx.NewCursor(ctx, plain, a.ID, binding, end, limit)
-			if err != nil {
-				return err
-			}
-			out.Next = &token
-		}
-		return nil
-	})
-	return out, err
-}
 func (s *Service) Rebase(ctx context.Context, r access.Request, id string, e Expected) (Proposal, error) {
 	return write(ctx, s, r, id, "proposal.rebase", false, func(tx Tx, v loaded) (Proposal, error) {
 		if err := open(v.proposal); err != nil {

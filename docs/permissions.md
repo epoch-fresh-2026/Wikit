@@ -1,6 +1,6 @@
 # 账户、权限与治理
 
-> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
 
 ## 身份
 
@@ -46,30 +46,34 @@ User-Agent 不作为可验证 Agent 身份。
 
 ## 权限矩阵
 
-能力：read、propose、discuss、review、manage。review 包含审核和合并；
-任意非 read 能力必须同时满足 read。manage 不自动包含 review。
+能力：read、propose、discuss、merge、manage。merge 表示直接合并；
+任意非 read 能力必须同时满足 read。manage 不自动包含 merge。
 
 | 主体 | 公开 Page | 受限 Page |
 | --- | --- | --- |
 | 匿名 | read | 无 |
 | 普通活跃账户 | read/propose/discuss | 仅显式用户／组授权 |
-| 全站 reviewer | read/propose/discuss/review | 仍需显式页面授权 |
+| 全站版主 moderator | read/propose/discuss/merge | 仍需显式页面授权 |
 | 页面管理者 | 显式能力及 manage | 显式能力及 manage |
 | 站点管理员 | 全部，包括治理 | 全部，包括治理 |
 | 禁用账户 | 认证请求拒绝 | 认证请求拒绝 |
 
 ACL 只做允许授权，不设计 allow/deny 优先级。全站公开贡献策略与页面授权取并集，
-受限 Page 不继承 reviewer 的全站公开权限。隐藏状态优先阻止普通读取，
+受限 Page 不继承 moderator 的全站公开权限。隐藏状态优先阻止普通读取，
 仅管理者和管理员能通过管理入口查看。
 
 用户组由站点管理员管理；组成员变化即时参与鉴权。只有站点管理员可授予或
 撤销 manage、修改全站角色。页面管理者可在其现有能力范围内修改 read/propose/
-discuss/review 授权及 visibility，不能借组授权扩张自己的管理权。
+discuss/merge 授权及 visibility，不能借组授权扩张自己的管理权。
 页面作者不自动成为管理者。受限页面必须保留至少一个可读的内容参与者，
 站点管理员始终可处理治理。
 
-首次受限创建提案的作者获得 read/propose/discuss，站点管理员完成初次审核，
-或先显式授权审核者；不会因全站 reviewer 角色暴露受限提案。
+创建页面需要独立 create_page 能力，由管理员授予账户或组，管理员始终拥有。
+新账户默认没有；组成员变化、个人/组撤权及账户禁用在后续授权事务即时生效。
+创建直接发布首版，作者保留 read/propose/discuss，不自动获得 merge/manage。
+身份响应提供 can_create_page，管理契约通过 create_page 配置个人/组授权。
+首页 Page 1 始终公开且已发布；普通用户可提案，但所有非管理员的 merge/manage 均被移除，
+即使显式 ACL 授权也不能越过首页限制。Core 与数据库共同拒绝隐藏、删除、身份替换和改为受限。
 
 ## 一致性与隐藏
 

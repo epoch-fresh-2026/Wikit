@@ -35,11 +35,11 @@ func TestMEDIA03GarbageRetainsAllCandidateAndPublishedHistory(t *testing.T) {
 	unreferenced := s.uploadPNG(t, admin, "gc-unused-upload")
 	closedBlob := s.uploadPNG(t, admin, "gc-closed-upload")
 	snapshot := content.Snapshot{Type: "media", Title: "Closed", Tags: []string{}, Description: ptr(""), BlobID: &closedBlob.ID}
-	closed := s.createPage(t, admin, "public", snapshot, "gc-closed-page")
+	closed := s.createPageWithProposal(t, admin, "public", snapshot, "gc-closed-page")
 	s.req(t, "POST", "proposals/"+closed.Proposal.ID+"/state", map[string]any{"state": "closed", "expected_proposal_version": 1}, admin, "gc-close-proposal", 200)
 	firstBlob := s.uploadPNG(t, admin, "gc-first-upload")
 	snapshot.BlobID = &firstBlob.ID
-	page := s.createPage(t, admin, "public", snapshot, "gc-history-page")
+	page := s.createPageWithProposal(t, admin, "public", snapshot, "gc-history-page")
 	first := s.publish(t, admin, page.Proposal, nil, "gc-first-publication")
 	secondBlob := s.uploadPNG(t, admin, "gc-second-upload")
 	snapshot.BlobID = &secondBlob.ID
@@ -206,8 +206,8 @@ type heldPageTx struct {
 func (h heldPage) WithinPages(ctx context.Context, fn func(pages.Tx) error) error {
 	return h.Repository.WithinPages(ctx, func(tx pages.Tx) error { return fn(heldPageTx{tx, h.entered, h.release}) })
 }
-func (h heldPageTx) InsertInitial(ctx context.Context, p proposals.Proposal, refs []content.MediaRef) error {
-	if err := h.Tx.InsertInitial(ctx, p, refs); err != nil {
+func (h heldPageTx) Publish(ctx context.Context, p content.Published, refs []content.MediaRef) error {
+	if err := h.Tx.Publish(ctx, p, refs); err != nil {
 		return err
 	}
 	close(h.entered)
@@ -258,7 +258,7 @@ func TestMEDIA03GCAndFirstReferenceCommitOrders(t *testing.T) {
 				t.Fatal("wrong GC/reference serial outcome", err)
 			}
 			var n int
-			if err := s.db.conn.QueryRow(ctx, "SELECT count(*) FROM wikit.proposal_revisions").Scan(&n); err != nil {
+			if err := s.db.conn.QueryRow(ctx, "SELECT count(*) FROM wikit.revisions WHERE source_kind='create'").Scan(&n); err != nil {
 				t.Fatal(err)
 			}
 			want := 1
@@ -278,9 +278,9 @@ func TestMEDIA03GCSerializesWithRealPublication(t *testing.T) {
 	defer cancel()
 	c := identity.Credentials{Bearer: s.adminToken}
 	b := s.uploadPNG(t, c, "gc-real-merge-upload")
-	page := s.createPage(t, c, "public", content.Snapshot{Type: "media", Title: "Publication", Tags: []string{}, Description: ptr(""), BlobID: &b.ID}, "gc-real-merge-page")
+	page := s.createPageWithProposal(t, c, "public", content.Snapshot{Type: "media", Title: "Publication", Tags: []string{}, Description: ptr(""), BlobID: &b.ID}, "gc-real-merge-page")
 	s.ageBlob(t, b.ID)
-	s.review(t, c, page.Proposal, nil, "approve", "gc-real-merge-approve", 201)
+
 	entered, release := make(chan struct{}), make(chan struct{})
 	publisher := proposals.New(heldPublication{s.db.store, entered, release}, s.secrets, textadapter.Parser{}, textadapter.Differ{}, s.files)
 	merged, collected := make(chan error, 1), make(chan error, 1)

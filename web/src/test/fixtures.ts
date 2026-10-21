@@ -1,5 +1,5 @@
 import type { Schema } from '@/lib/api'
-export const pageID = '11111111-1111-4111-8111-111111111111'
+export const pageID = '2'
 export const proposalID = '22222222-2222-4222-8222-222222222222'
 export const revisionID = '33333333-3333-4333-8333-333333333333'
 export const candidateID = '44444444-4444-4444-8444-444444444444'
@@ -9,6 +9,8 @@ export const account: Schema<'Account'> = {
   display_name: 'Alice',
   role: 'admin',
   status: 'active',
+  create_page: false,
+  can_create_page: true,
 }
 export const snapshot: Schema<'Snapshot'> = {
   type: 'document',
@@ -20,6 +22,7 @@ export const revision: Schema<'Revision'> = {
   id: revisionID,
   page_id: pageID,
   parent_id: null,
+  source_kind: 'merge',
   source_proposal_id: proposalID,
   snapshot,
   created_at: '2026-10-20T00:00:00Z',
@@ -27,6 +30,7 @@ export const revision: Schema<'Revision'> = {
   content_url: null,
 }
 export const detail: Schema<'PageDetail'> = {
+  capabilities: ['read', 'propose', 'discuss', 'merge', 'manage'],
   page: {
     id: pageID,
     type: 'document',
@@ -43,7 +47,6 @@ export const proposal: Schema<'Proposal'> = {
   author_id: account.id,
   state: 'open',
   version: 3,
-  review_round: 2,
   current_revision: {
     id: candidateID,
     proposal_id: proposalID,

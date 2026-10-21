@@ -107,20 +107,20 @@ func TestMCPACL03RealMergeAndRevocationOrders(t *testing.T) {
 				owner, ownerToken := s.register(t, "mcp_race_owner")
 				reviewer, reviewToken := s.register(t, "mcp_race_reviewer")
 				adminCredentials := identity.Credentials{Bearer: s.adminToken}
-				created := s.createPage(t, identity.Credentials{Bearer: ownerToken}, "restricted", document("MCP race", "body"), "mcp-race-page")
-				grants := []access.Grant{{SubjectType: "user", SubjectID: owner.ID, Capabilities: []string{"read", "propose"}}, {SubjectType: "user", SubjectID: reviewer.ID, Capabilities: []string{"read", "review"}}}
+				created := s.createPageWithProposal(t, identity.Credentials{Bearer: ownerToken}, "restricted", document("MCP race", "body"), "mcp-race-page")
+				grants := []access.Grant{{SubjectType: "user", SubjectID: owner.ID, Capabilities: []string{"read", "propose"}}, {SubjectType: "user", SubjectID: reviewer.ID, Capabilities: []string{"read", "merge"}}}
 				var group access.Group
 				if kind == "group" {
-					raw, err := s.access.SaveGroup(context.Background(), requestKey(adminCredentials, "mcp-race-group-create"), "", "MCP reviewers", []string{reviewer.ID}, 0)
+					raw, err := s.access.SaveGroup(context.Background(), requestKey(adminCredentials, "mcp-race-group-create"), "", "MCP reviewers", []string{reviewer.ID}, 0, false)
 					if err != nil {
 						t.Fatal(err)
 					}
 					group = decodeResult[access.Group](t, raw)
 					grants[1].Capabilities = []string{"read"}
-					grants = append(grants, access.Grant{SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read", "review"}})
+					grants = append(grants, access.Grant{SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read", "merge"}})
 				}
-				s.seedPolicy(t, access.Policy{PageID: created.Page.ID, Visibility: "restricted", Status: "proposed", Version: 2, Grants: grants})
-				s.review(t, identity.Credentials{Bearer: reviewToken}, created.Proposal, nil, "approve", "mcp-race-approve", 201)
+				s.seedPolicy(t, access.Policy{PageID: created.Page.ID, Visibility: "restricted", Status: "published", Version: 2, Grants: grants})
+
 				admin, _ := s.connectMCP(t, s.adminToken)
 				publisher, _ := s.connectMCP(t, reviewToken)
 				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -131,10 +131,10 @@ func TestMCPACL03RealMergeAndRevocationOrders(t *testing.T) {
 				switch kind {
 				case "account":
 					operation = "account_update"
-					mutation = map[string]any{"account_id": reviewer.ID, "body": map[string]any{"role": "member", "status": "disabled", "expected_auth_version": 1}, "idempotency_key": "mcp-race-disable"}
+					mutation = map[string]any{"account_id": reviewer.ID, "body": map[string]any{"create_page": false, "role": "member", "status": "disabled", "expected_auth_version": 1}, "idempotency_key": "mcp-race-disable"}
 				case "group":
 					operation = "group_update"
-					mutation = map[string]any{"group_id": group.ID, "body": map[string]any{"name": group.Name, "member_ids": []string{}, "expected_version": 1}, "idempotency_key": "mcp-race-group-revoke"}
+					mutation = map[string]any{"group_id": group.ID, "body": map[string]any{"create_page": false, "name": group.Name, "member_ids": []string{}, "expected_version": 1}, "idempotency_key": "mcp-race-group-revoke"}
 				case "page":
 					grants[1].Capabilities = []string{"read"}
 					operation = "page_policy_update"
@@ -172,9 +172,9 @@ func TestMCPACL03RealMergeAndRevocationOrders(t *testing.T) {
 				if err := s.db.conn.QueryRow(context.Background(), `SELECT count(*) FROM wikit.revisions WHERE page_id=$1`, created.Page.ID).Scan(&count); err != nil {
 					t.Fatal(err)
 				}
-				want := 0
+				want := 1
 				if mergeFirst {
-					want = 1
+					want = 2
 				}
 				if count != want {
 					t.Fatalf("publication count %d want %d", count, want)
@@ -279,7 +279,10 @@ func callMCP(t *testing.T, c *sdk.ClientSession, name string, args any, code str
 }
 func TestMCPAPI02LostResponseRetry(t *testing.T) {
 	s := newMCPSuite(t)
-	_, token := s.register(t, "mcp_retry_owner")
+	u, token := s.register(t, "mcp_retry_owner")
+	if _, err := s.access.UpdateAccount(context.Background(), requestKey(identity.Credentials{Bearer: s.adminToken}, "retry-create-grant"), u.ID, "member", "active", 1, true); err != nil {
+		t.Fatal(err)
+	}
 	client, transport := s.connectMCP(t, token)
 	args := map[string]any{"body": map[string]any{"visibility": "public", "snapshot": document("Lost response", "retry safely")}, "idempotency_key": "mcp-lost-response"}
 	transport.dropNext.Store(true)
@@ -290,7 +293,7 @@ func TestMCPAPI02LostResponseRetry(t *testing.T) {
 	}
 	// A client may reconnect after a transport failure; the key is independent of session.
 	reconnected, _ := s.connectMCP(t, token)
-	result := decodeResult[pages.Created](t, callMCP(t, reconnected, "page_create", args, ""))
+	result := decodeResult[pageFixture](t, callMCP(t, reconnected, "page_create", args, ""))
 	var pagesCount, proposalsCount int
 	if err := s.db.conn.QueryRow(context.Background(), `SELECT count(*) FROM wikit.pages`).Scan(&pagesCount); err != nil {
 		t.Fatal(err)
@@ -298,7 +301,7 @@ func TestMCPAPI02LostResponseRetry(t *testing.T) {
 	if err := s.db.conn.QueryRow(context.Background(), `SELECT count(*) FROM wikit.proposals WHERE page_id=$1`, result.Page.ID).Scan(&proposalsCount); err != nil {
 		t.Fatal(err)
 	}
-	if pagesCount != 1 || proposalsCount != 1 {
+	if pagesCount != 2 || proposalsCount != 0 {
 		t.Fatal("retry duplicated page or proposal")
 	}
 }
@@ -306,7 +309,7 @@ func TestMCPAPI02LostResponseRetry(t *testing.T) {
 func TestMCPAPI02LargeIntegerOutput(t *testing.T) {
 	s := newMCPSuite(t)
 	admin, _ := s.connectMCP(t, s.adminToken)
-	raw := callMCP(t, admin, "group_create", map[string]any{"body": map[string]any{"name": "Precise version"}, "idempotency_key": "precise-group"}, "")
+	raw := callMCP(t, admin, "group_create", map[string]any{"body": map[string]any{"create_page": false, "name": "Precise version"}, "idempotency_key": "precise-group"}, "")
 	group := decodeResult[access.Group](t, raw)
 	const version int64 = 9007199254740993
 	if _, err := s.db.conn.Exec(context.Background(), `UPDATE wikit.groups SET version=$1 WHERE id=$2`, version, group.ID); err != nil {
@@ -328,9 +331,12 @@ func TestMCPAPI02LargeIntegerOutput(t *testing.T) {
 	}
 }
 
-func TestMCP01OfficialClientCatalogAndReadWriteReview(t *testing.T) {
+func TestMCP01OfficialClientCatalogAndDirectPublication(t *testing.T) {
 	s := newMCPSuite(t)
-	_, token := s.register(t, "mcp_author")
+	user, token := s.register(t, "mcp_author")
+	if _, err := s.access.UpdateAccount(context.Background(), requestKey(identity.Credentials{Bearer: s.adminToken}, "mcp-grant-create"), user.ID, "member", "active", 1, true); err != nil {
+		t.Fatal(err)
+	}
 	admin, _ := s.connectMCP(t, s.adminToken)
 	client, _ := s.connectMCP(t, token)
 	tools, err := client.ListTools(context.Background(), nil)
@@ -358,21 +364,19 @@ func TestMCP01OfficialClientCatalogAndReadWriteReview(t *testing.T) {
 	}
 	body := map[string]any{"visibility": "public", "snapshot": document("MCP page", "body")}
 	raw := callMCP(t, client, "page_create", map[string]any{"body": body, "idempotency_key": "mcp-page-create"}, "")
-	created := decodeResult[pages.Created](t, raw)
+	created := decodeResult[pageFixture](t, raw)
 	// Replay across adapters and JSON field ordering/whitespace, not just within MCP.
 	restRaw, _ := s.req(t, "POST", "pages", body, identity.Credentials{Bearer: token}, "mcp-page-create", 201)
-	if decodeResult[pages.Created](t, restRaw).Page.ID != created.Page.ID {
+	if decodeResult[pageFixture](t, restRaw).Page.ID != created.Page.ID {
 		t.Fatal("REST/MCP replay duplicated Page")
 	}
 	read := callMCP(t, client, "page_get", map[string]any{"page_id": created.Page.ID}, "")
-	if decodeResult[pages.Detail](t, read).Revision != nil {
+	if decodeResult[pages.Detail](t, read).Revision == nil {
 		t.Fatal("draft became published")
 	}
-	pair := map[string]any{"expected_head_revision_id": nil, "expected_proposal_revision_id": created.Proposal.CurrentRevision.ID}
+	created.Proposal = decodeResult[proposals.Proposal](t, callMCP(t, client, "proposal_create", map[string]any{"page_id": created.Page.ID, "body": map[string]any{"expected_head_revision_id": created.Revision.ID, "snapshot": document("MCP edit", "new body")}, "idempotency_key": "mcp-edit-key"}, ""))
+	pair := expected(created.Proposal, &created.Revision.ID)
 	callMCP(t, client, "proposal_merge", map[string]any{"proposal_id": created.Proposal.ID, "body": pair, "idempotency_key": "mcp-denied-merge"}, "forbidden")
-	callMCP(t, admin, "proposal_merge", map[string]any{"proposal_id": created.Proposal.ID, "body": pair, "idempotency_key": "mcp-no-review"}, "review_required")
-	review := map[string]any{"expected_head_revision_id": nil, "expected_proposal_revision_id": created.Proposal.CurrentRevision.ID, "expected_review_round": 1, "decision": "approve", "body": "reviewed through MCP"}
-	callMCP(t, admin, "review_create", map[string]any{"proposal_id": created.Proposal.ID, "body": review, "idempotency_key": "mcp-review-key"}, "")
 	revision := decodeResult[content.Published](t, callMCP(t, admin, "proposal_merge", map[string]any{"proposal_id": created.Proposal.ID, "body": pair, "idempotency_key": "mcp-merge-key"}, ""))
 	callMCP(t, client, "revision_get", map[string]any{"page_id": created.Page.ID, "revision_id": revision.ID}, "")
 	callMCP(t, client, "pages_list", map[string]any{}, "")
@@ -399,14 +403,14 @@ func TestMCP01EveryCatalogToolUsesLiveCore(t *testing.T) {
 		return run(name, args)
 	}
 	run("accounts_list", map[string]any{})
-	write("account_update", map[string]any{"account_id": target.ID}, map[string]any{"role": "reviewer", "status": "active", "expected_auth_version": 1}, "catalog-account-update")
-	group := decodeResult[access.Group](t, write("group_create", map[string]any{}, map[string]any{"name": "MCP group"}, "catalog-group-create"))
-	write("group_update", map[string]any{"group_id": group.ID}, map[string]any{"name": "MCP group", "member_ids": []string{target.ID}, "expected_version": 1}, "catalog-group-update")
+	write("account_update", map[string]any{"account_id": target.ID}, map[string]any{"create_page": false, "role": "moderator", "status": "active", "expected_auth_version": 1}, "catalog-account-update")
+	group := decodeResult[access.Group](t, write("group_create", map[string]any{}, map[string]any{"create_page": false, "name": "MCP group"}, "catalog-group-create"))
+	write("group_update", map[string]any{"group_id": group.ID}, map[string]any{"create_page": false, "name": "MCP group", "member_ids": []string{target.ID}, "expected_version": 1}, "catalog-group-update")
 	run("groups_list", map[string]any{})
 	run("audit_list", map[string]any{})
-	created := decodeResult[pages.Created](t, write("page_create", map[string]any{}, map[string]any{"visibility": "public", "snapshot": document("Catalog", "A\nb\nc\n")}, "catalog-page-create"))
+	created := decodeResult[pageFixture](t, write("page_create", map[string]any{}, map[string]any{"visibility": "public", "snapshot": document("Catalog", "A\nb\nc\n")}, "catalog-page-create"))
 	page := created.Page.ID
-	p := created.Proposal
+	p := decodeResult[proposals.Proposal](t, write("proposal_create", map[string]any{"page_id": page}, map[string]any{"expected_head_revision_id": created.Revision.ID, "snapshot": document("Catalog", "A\nb\nc\n")}, "catalog-edit-create"))
 	run("page_policy_get", map[string]any{"page_id": page})
 	write("page_policy_update", map[string]any{"page_id": page}, map[string]any{"visibility": "public", "grants": []access.Grant{{SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read"}}}, "expected_policy_version": 1}, "catalog-policy-update")
 	write("page_moderate", map[string]any{"page_id": page}, map[string]any{"hidden": true, "reason": "catalog hide", "expected_version": 2}, "catalog-page-hide")
@@ -417,15 +421,13 @@ func TestMCP01EveryCatalogToolUsesLiveCore(t *testing.T) {
 	run("proposals_list", map[string]any{"page_id": page})
 	run("proposal_revisions_list", map[string]any{"proposal_id": p.ID})
 	run("proposal_diff", map[string]any{"proposal_id": p.ID})
-	run("reviews_list", map[string]any{"proposal_id": p.ID})
 	write("proposal_state", map[string]any{"proposal_id": p.ID}, map[string]any{"state": "closed", "expected_proposal_version": 1}, "catalog-proposal-close")
 	write("proposal_state", map[string]any{"proposal_id": p.ID}, map[string]any{"state": "open", "expected_proposal_version": 2}, "catalog-proposal-open")
-	p = decodeResult[proposals.Proposal](t, write("proposal_update", map[string]any{"proposal_id": p.ID}, map[string]any{"expected_head_revision_id": nil, "expected_proposal_revision_id": p.CurrentRevision.ID, "snapshot": document("Catalog", "A\nB\nc\n")}, "catalog-candidate-update"))
+	p = decodeResult[proposals.Proposal](t, write("proposal_update", map[string]any{"proposal_id": p.ID}, map[string]any{"expected_head_revision_id": created.Revision.ID, "expected_proposal_revision_id": p.CurrentRevision.ID, "snapshot": document("Catalog", "A\nB\nc\n")}, "catalog-candidate-update"))
 	publish := func(p proposals.Proposal, head *string, key string) content.Published {
-		write("review_create", map[string]any{"proposal_id": p.ID}, map[string]any{"expected_head_revision_id": head, "expected_proposal_revision_id": p.CurrentRevision.ID, "expected_review_round": p.ReviewRound, "decision": "approve", "body": "catalog review"}, key+"-review")
 		return decodeResult[content.Published](t, write("proposal_merge", map[string]any{"proposal_id": p.ID}, expected(p, head), key+"-merge"))
 	}
-	first := publish(p, nil, "catalog-first")
+	first := publish(p, &created.Revision.ID, "catalog-first")
 	run("pages_list", map[string]any{})
 	run("revisions_list", map[string]any{"page_id": page})
 	run("revision_get", map[string]any{"page_id": page, "revision_id": first.ID})
@@ -458,7 +460,7 @@ func TestMCP01EveryCatalogToolUsesLiveCore(t *testing.T) {
 	run("tags_list", map[string]any{})
 	s.drain(t)
 	run("search", map[string]any{"q": "Catalog"})
-	if len(used) != 41 {
+	if len(used) != 39 {
 		t.Fatalf("only exercised %d catalog tools", len(used))
 	}
 }
@@ -563,13 +565,15 @@ func TestMCPAPI02CrossAdapterJSONReplayAndCursors(t *testing.T) {
 	snapshot, _ := json.Marshal(document("Replay", "body"))
 	rawBody := ` { "snapshot": ` + string(snapshot) + `, "visibility": "public" } `
 	raw, _ := s.req(t, "POST", "pages", rawBody, c, "cross-json-replay-key", 201)
-	created := decodeResult[pages.Created](t, raw)
-	replay := decodeResult[pages.Created](t, callMCP(t, admin, "page_create", map[string]any{"body": map[string]any{"visibility": "public", "snapshot": document("Replay", "body")}, "idempotency_key": "cross-json-replay-key"}, ""))
+	created := decodeResult[pageFixture](t, raw)
+	replay := decodeResult[pageFixture](t, callMCP(t, admin, "page_create", map[string]any{"body": map[string]any{"visibility": "public", "snapshot": document("Replay", "body")}, "idempotency_key": "cross-json-replay-key"}, ""))
 	if replay.Page.ID != created.Page.ID {
 		t.Fatal("JSON envelope changed replay identity")
 	}
-	s.publish(t, c, created.Proposal, nil, "cross-first-publish")
-	second := s.createPage(t, c, "public", document("Second", "body"), "cross-second-page")
+	if created.Revision.ID == "" {
+		t.Fatal("missing direct revision")
+	}
+	second := s.createPageWithProposal(t, c, "public", document("Second", "body"), "cross-second-page")
 	s.publish(t, c, second.Proposal, nil, "cross-second-publish")
 	raw, _ = s.req(t, "GET", "pages?limit=1", nil, c, "", 200)
 	list := decodeResult[pages.List](t, raw)
@@ -592,12 +596,12 @@ func TestMCPAPI02CrossAdapterJSONReplayAndCursors(t *testing.T) {
 	// Emulate a pre-MCP byte digest and verify upgrade-safe replay.
 	legacyBody := `{"visibility":"public","snapshot":` + string(snapshot) + `}`
 	raw, _ = s.req(t, "POST", "pages", legacyBody, c, "legacy-replay-key", 201)
-	legacy := decodeResult[pages.Created](t, raw)
+	legacy := decodeResult[pageFixture](t, raw)
 	if _, err := s.db.conn.Exec(context.Background(), `UPDATE wikit.idempotency_records SET request_hash=$1 WHERE actor_id=$2 AND key='legacy-replay-key'`, identity.Digest(legacyBody), s.admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	raw, _ = s.req(t, "POST", "pages", legacyBody, c, "legacy-replay-key", 201)
-	if decodeResult[pages.Created](t, raw).Page.ID != legacy.Page.ID {
+	if decodeResult[pageFixture](t, raw).Page.ID != legacy.Page.ID {
 		t.Fatal("legacy replay lost")
 	}
 }
@@ -609,16 +613,16 @@ func TestMCPACL02CurrentPermissionsAcrossReadSurfaces(t *testing.T) {
 	admin, _ := s.connectMCP(t, s.adminToken)
 	client, _ := s.connectMCP(t, token)
 	ownerClient, _ := s.connectMCP(t, oc.Bearer)
-	created := s.createPage(t, oc, "public", document("privateneedle", "private body"), "mcp-acl-page")
+	created := s.createPageWithProposal(t, oc, "public", document("privateneedle", "private body"), "mcp-acl-page")
 	published := s.publish(t, oc, created.Proposal, nil, "mcp-acl-publish")
 	issue := s.issue(t, oc, created.Page.ID, "mcp-acl-issue")
 	s.req(t, "POST", "issues/"+issue.ID+"/comments", map[string]any{"body": "private comment"}, oc, "mcp-acl-comment", 201)
-	groupRaw, err := s.access.SaveGroup(context.Background(), requestKey(identity.Credentials{Bearer: s.adminToken}, "mcp-acl-group"), "", "MCP readers", []string{reader.ID}, 0)
+	groupRaw, err := s.access.SaveGroup(context.Background(), requestKey(identity.Credentials{Bearer: s.adminToken}, "mcp-acl-group"), "", "MCP readers", []string{reader.ID}, 0, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	group := decodeResult[access.Group](t, groupRaw)
-	policy := map[string]any{"visibility": "restricted", "grants": []access.Grant{{SubjectType: "user", SubjectID: owner.ID, Capabilities: []string{"read", "propose", "discuss", "review"}}, {SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read"}}}, "expected_policy_version": 1}
+	policy := map[string]any{"visibility": "restricted", "grants": []access.Grant{{SubjectType: "user", SubjectID: owner.ID, Capabilities: []string{"read", "propose", "discuss", "merge"}}, {SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read"}}}, "expected_policy_version": 1}
 	callMCP(t, admin, "page_policy_update", map[string]any{"page_id": created.Page.ID, "body": policy, "idempotency_key": "mcp-acl-restrict"}, "")
 	s.drain(t)
 	surfaces := []struct {
@@ -626,7 +630,7 @@ func TestMCPACL02CurrentPermissionsAcrossReadSurfaces(t *testing.T) {
 		args map[string]any
 	}{
 		{"page_get", map[string]any{"page_id": created.Page.ID}}, {"revision_get", map[string]any{"page_id": created.Page.ID, "revision_id": published.ID}}, {"revisions_list", map[string]any{"page_id": created.Page.ID}},
-		{"proposal_get", map[string]any{"proposal_id": created.Proposal.ID}}, {"proposal_diff", map[string]any{"proposal_id": created.Proposal.ID}}, {"proposal_revisions_list", map[string]any{"proposal_id": created.Proposal.ID}}, {"reviews_list", map[string]any{"proposal_id": created.Proposal.ID}},
+		{"proposal_get", map[string]any{"proposal_id": created.Proposal.ID}}, {"proposal_diff", map[string]any{"proposal_id": created.Proposal.ID}}, {"proposal_revisions_list", map[string]any{"proposal_id": created.Proposal.ID}},
 		{"issues_list", map[string]any{"page_id": created.Page.ID}}, {"issue_get", map[string]any{"issue_id": issue.ID}}, {"comments_list", map[string]any{"issue_id": issue.ID}},
 	}
 	for _, surface := range surfaces {
@@ -636,7 +640,7 @@ func TestMCPACL02CurrentPermissionsAcrossReadSurfaces(t *testing.T) {
 		t.Fatal("authorized private search missing")
 	}
 	callMCP(t, client, "comment_create", map[string]any{"issue_id": issue.ID, "body": map[string]any{"body": "read only"}, "idempotency_key": "mcp-acl-no-discuss"}, "forbidden")
-	callMCP(t, admin, "group_update", map[string]any{"group_id": group.ID, "body": map[string]any{"name": group.Name, "member_ids": []string{}, "expected_version": 1}, "idempotency_key": "mcp-acl-remove-member"}, "")
+	callMCP(t, admin, "group_update", map[string]any{"group_id": group.ID, "body": map[string]any{"create_page": false, "name": group.Name, "member_ids": []string{}, "expected_version": 1}, "idempotency_key": "mcp-acl-remove-member"}, "")
 	for _, surface := range surfaces {
 		callMCP(t, client, surface.name, surface.args, "not_found")
 	}
@@ -653,7 +657,7 @@ func TestMCPACL02CurrentPermissionsAcrossReadSurfaces(t *testing.T) {
 	callMCP(t, admin, "issue_get", map[string]any{"issue_id": issue.ID, "include_hidden": true}, "")
 	// URLs obtained over MCP still enforce current ACL at the binary endpoint.
 	blob := s.uploadPNG(t, oc, "mcp-acl-media-upload")
-	mediaPage := s.createPage(t, oc, "public", content.Snapshot{Type: "media", Title: "Media", Tags: []string{}, Description: ptr("description"), BlobID: &blob.ID}, "mcp-acl-media-page")
+	mediaPage := s.createPageWithProposal(t, oc, "public", content.Snapshot{Type: "media", Title: "Media", Tags: []string{}, Description: ptr("description"), BlobID: &blob.ID}, "mcp-acl-media-page")
 	mediaRevision := s.publish(t, oc, mediaPage.Proposal, nil, "mcp-acl-media-publish")
 	detail := decodeResult[content.Published](t, callMCP(t, client, "revision_get", map[string]any{"page_id": mediaPage.Page.ID, "revision_id": mediaRevision.ID}, ""))
 	if detail.ContentURL == nil {
@@ -671,12 +675,12 @@ func TestMCPACL01RoleGenerationAndSessionBinding(t *testing.T) {
 	member, _ := s.connectMCP(t, token)
 	admin, _ := s.connectMCP(t, s.adminToken)
 	callMCP(t, member, "accounts_list", map[string]any{}, "forbidden")
-	callMCP(t, admin, "account_update", map[string]any{"account_id": u.ID, "body": map[string]any{"role": "admin", "status": "active", "expected_auth_version": 1}, "idempotency_key": "mcp-promote-target"}, "")
+	callMCP(t, admin, "account_update", map[string]any{"account_id": u.ID, "body": map[string]any{"create_page": false, "role": "admin", "status": "active", "expected_auth_version": 1}, "idempotency_key": "mcp-promote-target"}, "")
 	request := map[string]any{"jsonrpc": "2.0", "id": 100, "method": "tools/list", "params": map[string]any{}}
 	s.mcpHTTP(t, "POST", token, member.ID(), member.InitializeResult().ProtocolVersion, request, nil, 403)
 	current, _ := s.connectMCP(t, token)
 	callMCP(t, current, "accounts_list", map[string]any{}, "")
-	callMCP(t, admin, "account_update", map[string]any{"account_id": u.ID, "body": map[string]any{"role": "member", "status": "disabled", "expected_auth_version": 2}, "idempotency_key": "mcp-disable-target"}, "")
+	callMCP(t, admin, "account_update", map[string]any{"account_id": u.ID, "body": map[string]any{"create_page": false, "role": "member", "status": "disabled", "expected_auth_version": 2}, "idempotency_key": "mcp-disable-target"}, "")
 	s.mcpHTTP(t, "POST", token, current.ID(), current.InitializeResult().ProtocolVersion, request, nil, 401)
 }
 
@@ -686,7 +690,7 @@ func TestMCPAPI02ErrorsConflictAndSharedRateLimit(t *testing.T) {
 	client, _ := s.connectMCP(t, token)
 	admin, _ := s.connectMCP(t, s.adminToken)
 	c := identity.Credentials{Bearer: token}
-	created := s.createPage(t, c, "public", document("Errors", "body"), "mcp-errors-page")
+	created := s.createPageWithProposal(t, c, "public", document("Errors", "body"), "mcp-errors-page")
 	issue := s.issue(t, c, created.Page.ID, "mcp-errors-issue")
 	for _, tc := range []struct {
 		operation, path, code string
@@ -716,7 +720,7 @@ func TestMCPAPI02ErrorsConflictAndSharedRateLimit(t *testing.T) {
 	s.req(t, "POST", "issues/"+issue.ID+"/comments", map[string]any{"body": "limited"}, c, "rest-rate-limited", 429)
 	// A real three-way conflict is returned with the same paths and values.
 	ac := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, ac, "public", document("Conflict", "base\n"), "mcp-conflict-page")
+	p := s.createPageWithProposal(t, ac, "public", document("Conflict", "base\n"), "mcp-conflict-page")
 	first := s.publish(t, ac, p.Proposal, nil, "mcp-conflict-first")
 	a := s.createProposal(t, ac, p.Page.ID, &first.ID, document("Conflict", "ours\n"), "mcp-conflict-a")
 	b := s.createProposal(t, ac, p.Page.ID, &first.ID, document("Conflict", "theirs\n"), "mcp-conflict-b")

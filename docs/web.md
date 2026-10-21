@@ -1,29 +1,50 @@
 # WebUI
 
-> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
 
 Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui；按阅读/搜索、
-编辑、提案审核、讨论、账户和治理 feature 分组。API 类型从 OpenAPI 生成，统一客户端负责
+编辑、提案合并、讨论、账户和治理 feature 分组。API 类型从 OpenAPI 生成，统一客户端负责
 同源 Cookie、CSRF、稳定错误及幂等 key，不在 UI 重写权限或发布状态机。
 
 ## 页面与闭环
 
-- 首页提供页面目录、搜索、标签和游标分页；页面提供阅读、固定发布历史、版本比较及媒体。
-- 新建文档或媒体创建首提案；编辑已有页面创建新提案。Markdown 编辑与安全预览并排，
-  原始 HTML 不执行，链接只允许 HTTP(S)、mailto 和安全相对路径。媒体引用使用固定版本路径。
-- 提案提供候选、diff、审核记录、候选历史、编辑、rebase、审核、合并、关闭/重开；
-  提交绑定读取时的 head、候选 ID、轮次或对象版本。冲突展示基础/本提案/当前发布值，
-  保留本地草稿，用户明确刷新或修订后重试；不静默更新版本条件或无条件自动重试。
-- 页面议题支持创建、详情、不可变评论、状态和提案关联；页面、议题及评论治理需明确理由。
-- 账户提供登录、注册、退出、密码和 Token 状态/轮换/撤销；注册和轮换的明文 Token 仅在
-  当前视图显示一次，离开后清除，不进入 URL、持久存储、日志或缓存。
-- 管理员提供账户角色/状态、用户组和审计；页面权限使用结构化主体与能力控件。
-  操作按钮只是入口，服务端仍按当前 Core 权限决定 403/404，UI 不推导授权结果。
+前台为 Wiki React SPA：顶部搜索和账户菜单、左侧站点导航、中间正文、右侧文章目录。
+窄屏导航使用 Sidebar/Sheet，文章目录按需打开。首页 `/` 读取 Page 1，与普通文档共用阅读与提案流程。
+不使用宣传标题、装饰英文眉题或口号。后台采用独立 AdminLayout，只保留账户、用户组与审计导航。
+
+| 路由 | 内容 |
+| --- | --- |
+| `/` | 固定首页 Page 1 |
+| `/pages`、`/search` | 页面目录、搜索、标签与类型过滤 |
+| `/pages/new` | 具有 create_page 时创建并直接发布文档或媒体 |
+| `/pages/:id` | 阅读、标签、当前版本、页面工具 |
+| `/pages/:id/history`、`/pages/:id/revisions/:revisionID` | 历史、比较、恢复与撤销提案 |
+| `/pages/:id/edit` | 为已有页面提出修改 |
+| `/pages/:id/proposals` | 该页面的提案列表 |
+| `/pages/:pageId/proposals/:id`、其 `/edit` | 独立提案详情与编辑，校验所属 Page |
+| `/pages/:id/issues`、`/pages/:pageId/issues/:id` | 页面讨论列表及独立讨论详情 |
+| `/pages/:id/policy` | 页面 ACL 与治理，首页不能隐藏或限制访问 |
+| `/proposals` | 辅助全站提案摘要与跳转 |
+| `/admin/accounts`、`/admin/groups`、`/admin/audit` | 账户角色/状态/创建权、组成员/创建权、审计 |
+
+`/admin` 默认进入账户管理。新建成功进入已发布页面；修改已有页面进入提案详情。
+提案默认展示差异，候选预览和候选历史通过 Tabs 切换，编辑使用独立路由。
+有有效 merge 能力且已读取匹配当前 head/候选的 diff 时可合并，无批准表单、审核记录或轮次。
+候选或 head 变化后必须重新读取；不会自动发布新的内容。恢复和撤销仍生成提案。
+页面工具按 Core 返回的 capabilities 展示操作；会话账户返回有效 can_create_page。
+
+官方 shadcn CLI 固定为 4.22.1，Radix/new-york/neutral 配置，组件源码和依赖锁提交仓库。
+复用 Sidebar、Breadcrumb、Button、Input、Textarea、Select、Checkbox、Badge、Tabs、
+Table、AlertDialog、DropdownMenu、Sheet、Alert、Skeleton 等组件。业务代码仅组合控件和内容排版。
+标签使用 Input、Badge、Button：Enter 形成标签、逐项删除，不按逗号或空格切分；
+中文 IME 确认不添加标签或提交表单。表单提交包括尚未确认的非空输入。
+Core 最终执行 NFC/case-fold、去重、数量与长度校验。用户组成员用账户选择控件。
 
 ## 状态与失败
 
 认证使用 HttpOnly 会话 Cookie。仅将不能独立授权的 CSRF nonce 存于 sessionStorage，
 支持同一标签刷新；密码、个人 Token、内容草稿和响应不持久化。缺少 CSRF 时提示重新登录。
+编辑内容未提交时，SPA 导航及浏览器离开均提示；草稿只在内存中。
 身份变化或 401 清空内容和草稿子树，取消在途读取；路由变化不显示旧对象数据。
 客户端不缓存受限响应、不使用 Service Worker；404 不展示之前读取的正文或标题。
 
