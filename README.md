@@ -13,6 +13,7 @@ tests. Media uploads, authorized Range downloads and safe local GC are implement
 Page Issues, immutable comments, proposal associations and audited moderation are implemented.
 Chinese/English search, durable indexing tasks and full index rebuilds are implemented with Meilisearch.
 The official Go SDK serves 41 authenticated MCP tools using the same Core.
+The React WebUI provides reading, editing, review, discussion and governance flows with frontend CI.
 Deployment remains unimplemented; no production image has been released.** See the
 [implementation roadmap](docs/roadmap.md) and
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
@@ -43,6 +44,9 @@ These commands validate documentation, API and MCP contracts, and repository
 workflow configuration. They do not test a working wiki. Application checks become
 mandatory as implementation stages are enabled. See [development](docs/development.md)
 and the [deployment specification](docs/operations.md) for planned runtime setup.
+
+For the WebUI, run `npm ci --prefix web`, then `npm run dev --prefix web`.
+See [WebUI development and state boundaries](docs/web.md) for the backend origin configuration and checks.
 
 ## Contribute
 

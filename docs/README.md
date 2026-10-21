@@ -12,6 +12,7 @@
 | [检索](search.md) | 中文检索、索引一致性、权限过滤 |
 | [REST 契约](api.md) | HTTP 约定及机器可读 OpenAPI |
 | [MCP 契约](mcp.md) | 工具目录、认证和错误语义 |
+| [WebUI](web.md) | 页面、编辑审核、状态隔离与前端验证 |
 | [部署恢复](operations.md) | 配置、备份、升级及恢复 |
 | [代码规范](coding-standards.md) | 高内聚、低耦合、模块化、可扩展 |
 | [开发工作流](development.md) | Issue、文档、PR、CI/CD |

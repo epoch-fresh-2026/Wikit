@@ -7,7 +7,14 @@ PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Iss
 创建/读取、首提案和历史读取；Issue #5 增加审核、原子合并、三方 rebase 与撤销/恢复。
 Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue #7 增加页面议题、评论、
 同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。可部署 v0.1 仍待后续实现。
-前端、容器与 release_ready 保持关闭。
+Issue #10 启用 frontend CI；容器与 release_ready 保持关闭。
+
+WebUI 位于 web/，使用 React 19.3.1、TypeScript 5.9.3、Vite 8.3.4、Tailwind 4.3.3 与 shadcn/ui。
+源码组件由 shadcn CLI 4.22.1 导入，使用本地 cn 工具；运行依赖由 package-lock.json 锁定。
+API 类型由 openapi-typescript 7.13.0 生成，typecheck 先检查生成结果与契约一致。
+测试使用 Vitest 5.0.5、Testing Library、jsdom 29.1.1（兼容本地 Node 24.14）。
+命令：npm ci --prefix web、npm run typecheck --prefix web、npm run test:ci --prefix web、
+npm run build --prefix web；开发代理与后端 origin 见 [WebUI](web.md)。
 
 Issue #9 增加官方 Go MCP SDK v1.7.0 和 jsonschema-go v0.4.3，协议依赖只在适配器/组合根使用。
 `serve` 同时提供 REST 和 /mcp；MCP 只使用用户 Bearer Token，空闲 session 15 分钟过期。
