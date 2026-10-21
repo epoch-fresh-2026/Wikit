@@ -1,7 +1,22 @@
 # 单机部署、备份与恢复
 
-状态：已提供后端基础、账户授权、提案发布和本地媒体持久化；产品部署仍为实现目标，无正式镜像。
-部署阶段须提交真实 Dockerfile、compose.yaml、环境示例与 smoke 测试后才能发布。
+状态：Issue #11 开始交付容器构建、Compose、恢复和基准工具；真实执行结果见后续验收记录。
+正式镜像发布须满足全部 release_ready 条件，工具存在不代表演练或发布已经完成。
+
+## 容器交付约定
+
+`docker build -t wikit:local .` 构建内嵌前端的非 root 镜像；普通 Go 开发构建只提供
+API，未内嵌前端的根路径返回 503。复制 `.env.compose.example` 为 `.env` 后替换秘密，
+`docker compose up -d postgres meilisearch`，`docker compose run --rm wikit migrate`，
+`docker compose run --rm wikit create-admin`（交互终端），最后 `docker compose up -d wikit`。
+Compose 不自动迁移或创建默认账户。命名卷沿用镜像内 UID 65532 的原件目录所有权；
+使用宿主 bind mount 时须预先授权同一 UID，禁止给应用 root 权限修复目录。
+
+隔离验收由 `scripts/smoke.sh` 使用独立 Compose project 和新卷执行；工具账户与夹具
+只存在于独立 acceptance 构建 target。脚本记录镜像 ID、主机资源和演练输出，失败即退出。
+恢复演练覆盖数据库、原件 checksum/可达性、旧凭证失效、管理员重新登录、索引重建、
+固定历史及下载，并在相同 schema 的两个镜像之间升级/回退。当前 schema 0001–0007
+只支持精确历史一致，不宣称向旧迁移版本降级；不兼容升级必须恢复匹配备份。
 
 ## 目标拓扑
 
