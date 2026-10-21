@@ -64,7 +64,9 @@ p95 需要纳入站点容量判断，尚未设定或承诺生产 SLO。
 
 待 PR 审查合并后，由维护者创建 main 历史上的受控 v0.1.0 tag；Release image 工作流
 必须再次运行完整 CI，再将 Linux amd64 镜像推送到 `ghcr.io/epoch-fresh-2026/wikit`，
-记录版本标签、sha-提交标签与 registry digest。工作流只在 publish job 取得 packages:write，
+记录版本标签、sha-提交标签与 registry digest。推送后从 registry 回读两个标签，要求其 digest
+均等于构建输出；按该 digest 拉取并在隔离 Compose 中重新运行完整恢复、回退及规模验收，
+通过后才登记发布成功。工作流只在 publish job 取得 packages:write，
 不会连接生产站点。实际 tag、发布运行和 GHCR digest：待执行后登记。
 
 部署/备份/恢复命令与兼容边界见 [运维说明](operations.md)。
