@@ -1,7 +1,7 @@
-# v0.1 发布候选验收记录
+# v0.1.0 发布验收记录
 
 日期：2026-10-21。Issue #11，交付 PR #31。#1–#10 均已关闭，#3 的跨 Issue
-账户/授权验收已在 #9 阶段补齐。候选具备受控发布资格；正式 tag/GHCR 发布待 PR 审查合并。
+账户/授权验收已在 #9 阶段补齐。PR #31 已审查修复并合并；正式发布执行记录见下文。
 
 ## 可复核证据
 
@@ -62,11 +62,44 @@ p95 需要纳入站点容量判断，尚未设定或承诺生产 SLO。
 远端 main PR/CI gate、v* tag 创建限制与 tag 更新/删除保护已核实 active，与仓库规则 JSON 一致。
 `release_ready=true` 登记上述候选验收。PR #31 使用 Refs #11，保留 Issue 直到实际发布完成。
 
-待 PR 审查合并后，由维护者创建 main 历史上的受控 v0.1.0 tag；Release image 工作流
-必须再次运行完整 CI，再将 Linux amd64 镜像推送到 `ghcr.io/epoch-fresh-2026/wikit`，
+PR #31 审查修订 `7fbadce5401ae31926776ed1b98b134b143dd016` 的
+[完整 CI](https://github.com/epoch-fresh-2026/Wikit/actions/runs/39550280618) 已通过；
+合并提交 `00366414f99e1dbbc9f6df98104d3adf7900eb42` 的
+[main 完整 CI](https://github.com/epoch-fresh-2026/Wikit/actions/runs/39551375008) 也已通过。
+审查补充了推送后回读标签及拉取实际 registry 产物的验收，避免仅将构建/推送成功当作发行验收。
+
+受控 annotated tag [v0.1.0](https://github.com/epoch-fresh-2026/Wikit/tree/v0.1.0)
+指向上述 main 合并提交，tag object 为 `626093acd261123fdcf3f558f7a38e59cfd831ec`。
+创建使用现有仅管理员可创建规则，未修改更新/删除禁止规则。
+[Release image 39551445557](https://github.com/epoch-fresh-2026/Wikit/actions/runs/39551445557)
+已再次运行完整 CI，再将 Linux amd64 镜像推送到 `ghcr.io/epoch-fresh-2026/wikit`，
 记录版本标签、sha-提交标签与 registry digest。推送后从 registry 回读两个标签，要求其 digest
 均等于构建输出；按该 digest 拉取并在隔离 Compose 中重新运行完整恢复、回退及规模验收，
 通过后才登记发布成功。工作流只在 publish job 取得 packages:write，
-不会连接生产站点。实际 tag、发布运行和 GHCR digest：待执行后登记。
+不会连接生产站点。该运行的 readiness、完整 validation、publish 及发布后实际镜像验收均已成功。
+
+| 发行产物 | 实际值 |
+| --- | --- |
+| 版本标签 | `ghcr.io/epoch-fresh-2026/wikit:v0.1.0` |
+| 提交标签 | `ghcr.io/epoch-fresh-2026/wikit:sha-00366414f99e1dbbc9f6df98104d3adf7900eb42` |
+| Registry digest（两标签相同） | `sha256:7d75052981a890810488d17d2232957139049a2c29082bae3815658069a2441a` |
+| 拉取平台 | `linux/amd64`，应用 UID/GID `65532:65532` |
+
+固定产物引用：
+`ghcr.io/epoch-fresh-2026/wikit@sha256:7d75052981a890810488d17d2232957139049a2c29082bae3815658069a2441a`。
+这是 registry 的 OCI index digest，不是本地 Docker image ID。
+发布作业回读两标签验证一致，按该 digest 拉取后命名为本地 `wikit:ci`，该引用用于实际应用容器；
+另建的 acceptance target 仅作为隔离测试客户端，未替代被验收应用镜像。
+
+实际发行镜像通过空卷初始化、REST 审核/20 次发布/固定原件、备份校验、拒绝损坏备份及非空恢复目标、
+旧凭证撤销、索引重建、真实旧后端回退及再升级。规模库 100004 页，索引重建 123 秒，
+发布后检索可见 415.178 ms；100 并发两轮各 2000 请求，错误率均为 0%，
+first-pass/warm p95 分别为 5037.121 / 5035.848 ms。该发布作业主机为 AMD EPYC 7763、
+4 vCPU / 15 GiB，Docker 28.0.4；合成负载及缓存边界与前述基准一致，硬件不同，
+不作受控性能对比或承诺生产 SLO。原始证据见发布运行的 Publish GHCR image 日志及摘要。
+
+当前匿名 pull 授权探测失败；CI 使用发布作业凭证实际拉取，不宣称镜像可匿名读取。
+部署者需要有该 package 的拉取权限及相应 registry 登录；本流程没有扩大包可见性。
+全部执行均在独立 CI Compose project/卷中完成并清理，没有连接或部署任何生产站点。
 
 部署/备份/恢复命令与兼容边界见 [运维说明](operations.md)。
