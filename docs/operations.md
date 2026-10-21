@@ -1,5 +1,7 @@
 # 单机部署、备份与恢复
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 状态：Issue #11 的容器、Compose、恢复和规模验收已在真实 CI 中通过，见
 [发布验收记录](release-readiness.md)。正式 tag、GHCR digest、CI 证据及拉取权限边界均在该记录登记。
 

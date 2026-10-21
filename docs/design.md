@@ -1,5 +1,7 @@
 # 产品与架构
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 ## 定位与边界
 
 Wikit 是单站点、面向公开社区的自托管 Wiki，源码 MIT。站点内容许可独立配置。

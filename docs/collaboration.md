@@ -1,5 +1,7 @@
 # 协作状态机
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 ## 提案与审核
 
 Page 发布历史为线性序列。Proposal 保存独立的不可变候选快照，

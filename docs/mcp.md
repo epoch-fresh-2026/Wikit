@@ -1,5 +1,7 @@
 # MCP 工具契约
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 端点 `/mcp`，Streamable HTTP。采用官方 Go MCP SDK；
 HTTP Bearer Token 由 Wikit 验证并映射为普通账户身份。
 所有 MCP 请求要求有效 Token，session ID 不是认证凭据。

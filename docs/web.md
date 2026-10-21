@@ -1,5 +1,7 @@
 # WebUI
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui；按阅读/搜索、
 编辑、提案审核、讨论、账户和治理 feature 分组。API 类型从 OpenAPI 生成，统一客户端负责
 同源 Cookie、CSRF、稳定错误及幂等 key，不在 UI 重写权限或发布状态机。

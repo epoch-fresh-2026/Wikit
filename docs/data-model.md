@@ -1,5 +1,7 @@
 # 数据与事务设计
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 下列业务实体仍是逻辑模型，后续 Issue 逐步提供 SQL migration。
 ID 统一为 UUID，时间为 UTC timestamptz；API 输出 RFC 3339。
 

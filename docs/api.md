@@ -1,5 +1,7 @@
 # REST 契约
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 机器契约：[OpenAPI 3.1](../api/openapi.json)。源码为
 `scripts/build-contracts.mjs`，修改后运行 `npm run contracts:build`。
 检查要求生成结果与源码一致。契约版本 0.1.0 不代表应用已经发布。

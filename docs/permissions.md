@@ -1,5 +1,7 @@
 # 账户、权限与治理
 
+> Issue #35 当前设计以 [ADR 0018](adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 ## 身份
 
 Issue #3 实现本节身份与治理基础。密码适配器使用 Argon2id（64 MiB、3 轮、

@@ -1,5 +1,7 @@
 # Wikit
 
+> Issue #35 当前设计以 [ADR 0018](docs/adr/0018-wiki-publication-redesign.md) 为准：数字 Page ID、固定首页、独立创建权限、直接首版发布、版主直接合并和 Wiki SPA。下文旧 Issue 的实现记录不作为新基线验收证据。
+
 Wikit 通过可审核的提案维护社区知识。文档与媒体共享协作语言。
 
 ## Language
