@@ -16,6 +16,7 @@
 | [部署恢复](operations.md) | 配置、备份、升级及恢复 |
 | [代码规范](coding-standards.md) | 高内聚、低耦合、模块化、可扩展 |
 | [开发工作流](development.md) | Issue、文档、PR、CI/CD |
+| [依赖升级](dependency-upgrades/README.md) | Issue #33 的十项升级、兼容性边界和集成验收 |
 | [验收计划](testing.md) | 必测场景与验收证据 |
 | [发布候选验收](release-readiness.md) | 容器、恢复、规模测试及受控发布状态 |
 | [开发路线](roadmap.md) | 阶段依赖与 GitHub Issue |

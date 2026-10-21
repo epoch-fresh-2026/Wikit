@@ -27,3 +27,11 @@ openapi-typescript 7.13.0 仍要求 TypeScript ^5.x，需要将生成器与应�
 strict、组件测试、生产构建、真实 PostgreSQL/Meilisearch 集成，以及完整容器恢复/规模验收。
 发布 Actions 另核对固定 SHA、输入、权限和输出；未实际执行的 GHCR 推送单独记录，
 不为依赖维护而创建新的发布标签。
+
+## 本地组合验证
+
+Node 24.15.0（官方可执行文件且 SHA-256 与发布清单一致）下，根目录和 web 干净 npm ci、
+API 类型同步、TypeScript 7 strict、28 项组件测试、生产构建全部通过；Prettier CLI 报告 3.9.10。
+Go 源码未改变，本次已运行 gofmt、go vet 与 go test -race -count=1 ./...，全部通过。
+本机未安装 Docker，最终 PostgreSQL/Meilisearch 集成、容器恢复和规模验收以集成 PR 的完整 CI 为准。
+组装期间的中间 PR 运行不作为最终验收证据；重复运行可在候选组装完成后取消。
