@@ -2,9 +2,9 @@ CREATE TABLE wikit.users (
     id uuid PRIMARY KEY, username text NOT NULL,
     username_key text NOT NULL UNIQUE CHECK (username_key = lower(username)),
     display_name text NOT NULL, password_hash text NOT NULL,
-    role text NOT NULL CHECK (role IN ('member','reviewer','admin')),
+    role text NOT NULL CHECK (role IN ('member','moderator','admin')),
     status text NOT NULL CHECK (status IN ('active','disabled')),
-    auth_version bigint NOT NULL CHECK (auth_version > 0)
+    auth_version bigint NOT NULL CHECK (auth_version > 0), create_page boolean NOT NULL DEFAULT false
 );
 CREATE TABLE wikit.user_tokens (
     user_id uuid PRIMARY KEY REFERENCES wikit.users(id), digest text UNIQUE,
@@ -15,26 +15,27 @@ CREATE TABLE wikit.sessions (
     csrf_digest text NOT NULL, auth_version bigint NOT NULL, expires_at timestamptz NOT NULL
 );
 CREATE INDEX ON wikit.sessions(user_id);
-CREATE TABLE wikit.groups (id uuid PRIMARY KEY, name text NOT NULL, version bigint NOT NULL);
+CREATE TABLE wikit.groups (id uuid PRIMARY KEY, name text NOT NULL, version bigint NOT NULL, create_page boolean NOT NULL DEFAULT false);
 CREATE TABLE wikit.group_members (
     group_id uuid REFERENCES wikit.groups(id), user_id uuid REFERENCES wikit.users(id),
     PRIMARY KEY(group_id,user_id)
 );
+CREATE SEQUENCE wikit.page_ids AS bigint START 2;
 CREATE TABLE wikit.page_policies (
-    page_id uuid PRIMARY KEY, visibility text NOT NULL CHECK (visibility IN ('public','restricted')),
-    status text NOT NULL CHECK (status IN ('proposed','published','hidden')),
-    policy_version bigint NOT NULL CHECK (policy_version > 0)
+    page_id bigint PRIMARY KEY CHECK(page_id>0), visibility text NOT NULL CHECK (visibility IN ('public','restricted')),
+    status text NOT NULL CHECK (status IN ('published','hidden')),
+    policy_version bigint NOT NULL CHECK (policy_version > 0), CHECK(page_id<>1 OR (visibility='public' AND status='published'))
 );
 CREATE TABLE wikit.page_grants (
-    page_id uuid REFERENCES wikit.page_policies(page_id),
+    page_id bigint REFERENCES wikit.page_policies(page_id),
     subject_type text NOT NULL CHECK (subject_type IN ('user','group')), subject_id uuid NOT NULL,
-    capability text NOT NULL CHECK (capability IN ('read','propose','discuss','review','manage')),
+    capability text NOT NULL CHECK (capability IN ('read','propose','discuss','merge','manage')),
     PRIMARY KEY(page_id,subject_type,subject_id,capability)
 );
 CREATE TABLE wikit.audit_events (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(), actor_id uuid REFERENCES wikit.users(id),
     method text NOT NULL, credential_generation bigint NOT NULL, action text NOT NULL,
-    target_id uuid, request_id text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
+    target_id text, request_id text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE wikit.auth_limits (key text PRIMARY KEY, window_start timestamptz NOT NULL, attempts integer NOT NULL);
 CREATE TABLE wikit.idempotency_records (

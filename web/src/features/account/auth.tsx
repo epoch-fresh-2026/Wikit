@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Button } from '@/components/ui/button'
 import { api, ApiError, type Schema } from '@/lib/api'
 
 type Auth = {
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (
       <div className="boot" role="alert">
         <p>{failure.message}</p>
-        <button onClick={() => window.location.reload()}>重新连接</button>
+        <Button onClick={() => window.location.reload()}>重新连接</Button>
       </div>
     )
   return (

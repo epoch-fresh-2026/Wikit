@@ -2,11 +2,9 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
-	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 )
@@ -26,17 +24,7 @@ func (a API) proposalRoute(r *http.Request, c identity.Credentials, requestID, p
 		case "diff":
 			out, err := a.Proposals.Diff(r.Context(), c, id)
 			return out, 200, err, true
-		case "reviews":
-			limit := 20
-			if raw := r.URL.Query().Get("limit"); raw != "" {
-				n, err := strconv.Atoi(raw)
-				if err != nil {
-					return nil, 0, fault.BadRequest, true
-				}
-				limit = n
-			}
-			out, err := a.Proposals.Reviews(r.Context(), c, id, r.URL.Query().Get("cursor"), limit)
-			return out, 200, err, true
+
 		}
 		return nil, 0, nil, false
 	}
@@ -98,19 +86,6 @@ func (a API) proposalRoute(r *http.Request, c identity.Credentials, requestID, p
 		}
 		out, err := a.Proposals.Merge(r.Context(), req, id, in)
 		return out, 200, err, true
-	case "reviews":
-		var in struct {
-			proposals.Expected
-			Round    int64  `json:"expected_review_round"`
-			Decision string `json:"decision"`
-			Body     string `json:"body"`
-		}
-		body, err := nullableDecode(r, &in, "expected_head_revision_id", "expected_proposal_revision_id", "expected_review_round", "decision", "body")
-		if err != nil {
-			return nil, 0, err, true
-		}
-		out, err := a.Proposals.Review(r.Context(), request(r, c, requestID, body), id, in.Expected, in.Round, in.Decision, in.Body)
-		return out, 201, err, true
 	case "state":
 		var in struct {
 			State   string `json:"state"`

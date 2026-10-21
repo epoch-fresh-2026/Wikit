@@ -1,9 +1,8 @@
-import { Component, Suspense, lazy, useEffect, useRef, type ReactNode } from 'react'
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router'
-import { BookOpen, Search, GitPullRequest, Plus, Settings } from 'lucide-react'
-import { api } from '@/lib/api'
-import { useAction } from '@/lib/hooks'
-import { ActionFeedback, Loading } from '@/components/shared'
+import { Component, Suspense, lazy, type ReactNode } from 'react'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router'
+import { SiteLayout, AdminLayout } from '@/components/layout'
+
+import { Loading } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/account/auth'
 import {
@@ -57,117 +56,63 @@ class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean 
 
 export function App() {
   const auth = useAuth(),
-    location = useLocation(),
-    navigate = useNavigate(),
-    action = useAction(),
-    main = useRef<HTMLElement>(null)
-  useEffect(() => {
-    main.current?.focus()
-    document.title = 'Wikit · 共建知识'
-  }, [location.pathname])
+    location = useLocation()
+  const Layout = location.pathname.startsWith('/admin') ? AdminLayout : SiteLayout
   return (
-    <div className="app">
-      <a className="skip-link" href="#main">
-        跳到主要内容
-      </a>
-      <header className="topbar">
-        <Link className="brand" to="/" aria-label="Wikit 首页">
-          <span className="brand-mark">
-            <BookOpen size={23} strokeWidth={1.8} aria-hidden />
-          </span>
-          Wikit<span className="brand-tagline">共建知识</span>
-        </Link>
-        <nav aria-label="主导航">
-          <NavLink to="/" end>
-            <Search size={16} aria-hidden /> 探索
-          </NavLink>
-          <NavLink to="/proposals">
-            <GitPullRequest size={16} aria-hidden /> 提案
-          </NavLink>
-        </nav>
-        <div className="account-nav">
-          {auth.account ? (
-            <>
-              <Link to="/account">{auth.account.display_name || auth.account.username}</Link>
-              {!api.csrf && <Link to="/login">重新登录</Link>}
-              {auth.account.role === 'admin' && (
-                <Link to="/admin" aria-label="站点管理">
-                  <Settings size={18} />
-                </Link>
-              )}
-              <Button
-                variant="ghost"
-                disabled={action.busy}
-                onClick={() =>
-                  void action.run(async () => {
-                    await api.send('auth/logout', {})
-                    auth.clear()
-                    navigate('/')
-                  })
+    <Layout>
+      <div key={`${auth.epoch}:${location.pathname}`}>
+        <PageBoundary>
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/" element={<PageScreen home />} />
+              <Route path="/pages" element={<ExploreScreen />} />
+              <Route path="/search" element={<ExploreScreen />} />
+              <Route path="/login" element={<LoginScreen />} />
+              <Route path="/register" element={<LoginScreen register />} />
+              <Route path="/account" element={<AccountScreen />} />
+              <Route path="/pages/new" element={<EditPageScreen create />} />
+              <Route path="/pages/:id" element={<PageScreen />} />
+              <Route path="/pages/:id/edit" element={<EditPageScreen />} />
+              <Route path="/pages/:id/history" element={<HistoryScreen />} />
+              <Route path="/pages/:id/revisions/:revisionID" element={<RevisionScreen />} />
+              <Route path="/pages/:id/policy" element={<PolicyScreen />} />
+              <Route path="/pages/:id/proposals" element={<ProposalListScreen />} />
+              <Route path="/proposals" element={<ProposalListScreen />} />
+              <Route path="/pages/:pageId/proposals/:id" element={<ProposalScreen />} />
+              <Route path="/pages/:pageId/proposals/:id/edit" element={<ProposalScreen edit />} />
+              <Route path="/pages/:id/issues" element={<IssueListScreen />} />
+              <Route
+                path="/pages/:pageId/issues/:id"
+                element={
+                  <IssueScreen
+                    governance={new URLSearchParams(location.search).get('governance') === '1'}
+                  />
                 }
-              >
-                退出
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link to="/login">登录</Link>
-              <Link className="button-link secondary" to="/register">
-                加入 Wikit
-              </Link>
-            </>
-          )}
-        </div>
-      </header>
-      <main id="main" ref={main} tabIndex={-1} className="main">
-        <ActionFeedback action={action} />
-        <div key={`${auth.epoch}:${location.pathname}:${location.search}`}>
-          <PageBoundary>
-            <Suspense fallback={<Loading />}>
-              <Routes>
-                <Route path="/" element={<ExploreScreen />} />
-                <Route path="/login" element={<LoginScreen />} />
-                <Route path="/register" element={<LoginScreen register />} />
-                <Route path="/account" element={<AccountScreen />} />
-                <Route path="/pages/new" element={<EditPageScreen create />} />
-                <Route path="/pages/:id" element={<PageScreen />} />
-                <Route path="/pages/:id/edit" element={<EditPageScreen />} />
-                <Route path="/pages/:id/history" element={<HistoryScreen />} />
-                <Route path="/pages/:id/revisions/:revisionID" element={<RevisionScreen />} />
-                <Route path="/pages/:id/policy" element={<PolicyScreen />} />
-                <Route path="/pages/:id/proposals" element={<ProposalListScreen />} />
-                <Route path="/proposals" element={<ProposalListScreen />} />
-                <Route path="/proposals/:id" element={<ProposalScreen />} />
-                <Route path="/pages/:id/issues" element={<IssueListScreen />} />
-                <Route
-                  path="/issues/:id"
-                  element={
-                    <IssueScreen
-                      governance={new URLSearchParams(location.search).get('governance') === '1'}
-                    />
-                  }
-                />
-                <Route path="/admin" element={<AdminScreen />} />
-                <Route
-                  path="*"
-                  element={
-                    <section>
-                      <h1>未找到此页面</h1>
-                      <Link to="/">返回首页</Link>
-                    </section>
-                  }
-                />
-              </Routes>
-            </Suspense>
-          </PageBoundary>
-        </div>
-      </main>
-      <footer className="footer">
-        <span>Wikit · 在协作中，让知识更好。</span>
-        <Link to="/pages/new">
-          <Plus size={14} aria-hidden /> 贡献一页知识
-        </Link>
-      </footer>
-    </div>
+              />
+              <Route path="/admin" element={<Navigate to="/admin/accounts" replace />} />
+              <Route
+                path="/admin/:section"
+                element={
+                  auth.account?.role === 'admin' ? (
+                    <AdminScreen />
+                  ) : (
+                    <p role="alert">需要管理员权限。</p>
+                  )
+                }
+              />
+              <Route
+                path="*"
+                element={
+                  <section>
+                    <h1>未找到此页面</h1>
+                    <Link to="/">返回首页</Link>
+                  </section>
+                }
+              />
+            </Routes>
+          </Suspense>
+        </PageBoundary>
+      </div>
+    </Layout>
   )
 }

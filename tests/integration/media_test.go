@@ -101,7 +101,7 @@ func TestMEDIA01UploadPublicationAndFixedDownloads(t *testing.T) {
 	s.binary(t, "PUT", u.Path, changed, c, nil, 409)
 	s.req(t, "GET", "uploads/"+u.ID, nil, c, "", 200)
 	snapshot := content.Snapshot{Type: "media", Title: "Original", Tags: []string{}, Description: ptr("Media"), BlobID: &blob.ID}
-	page := s.createPage(t, c, "restricted", snapshot, "uploaded-media-page")
+	page := s.createPageWithProposal(t, c, "restricted", snapshot, "uploaded-media-page")
 	candidateURL := "/api/v1/proposals/" + page.Proposal.ID + "/revisions/" + page.Proposal.CurrentRevision.ID + "/content"
 	raw, h := s.binary(t, "GET", candidateURL, nil, c, nil, 200)
 	if !bytes.Equal(raw, pngBody) || h.Get("Content-Type") != "image/png" || h.Get("X-Content-Type-Options") != "nosniff" || h.Get("Cache-Control") != "private, no-store" {
@@ -137,7 +137,7 @@ func TestMEDIA01UploadPublicationAndFixedDownloads(t *testing.T) {
 	next := s.createProposal(t, c, page.Page.ID, &rev.ID, snapshot, "replacement-media-proposal")
 	s.publish(t, admin, next, &rev.ID, "replacement-media-publish")
 	s.binary(t, "GET", "/api/v1/proposals/"+page.Proposal.ID+"/revisions/"+next.CurrentRevision.ID+"/content", nil, c, nil, 404)
-	doc := s.createPage(t, c, "public", document("Other page", "body"), "download-other-document")
+	doc := s.createPageWithProposal(t, c, "public", document("Other page", "body"), "download-other-document")
 	s.binary(t, "GET", "/api/v1/pages/"+doc.Page.ID+"/revisions/"+rev.ID+"/content", nil, c, nil, 404)
 	s.binary(t, "GET", "/api/v1/proposals/"+doc.Proposal.ID+"/revisions/"+doc.Proposal.CurrentRevision.ID+"/content", nil, c, nil, 422)
 	raw, _ = s.binary(t, "GET", url, nil, c, nil, 200)
@@ -150,7 +150,7 @@ func TestMEDIA01UploadPublicationAndFixedDownloads(t *testing.T) {
 	}
 	s.binary(t, "GET", url, nil, other, nil, 404)
 	s.binary(t, "GET", candidateURL, nil, other, map[string]string{"If-None-Match": `"` + blob.Digest + `"`}, 404)
-	if _, err := s.access.UpdateAccount(context.Background(), requestKey(admin, "disable-media-reader"), otherAccount.ID, "member", "disabled", 1); err != nil {
+	if _, err := s.access.UpdateAccount(context.Background(), requestKey(admin, "disable-media-reader"), otherAccount.ID, "member", "disabled", 1, false); err != nil {
 		t.Fatal(err)
 	}
 	s.binary(t, "GET", url, nil, other, nil, 401)
@@ -186,7 +186,7 @@ func TestMEDIA02LimitsMimeFailuresAndOriginalMissing(t *testing.T) {
 		t.Fatal("invalid streams created blobs", count, err)
 	}
 	second := s.uploadPNG(t, c, "missing-published-upload")
-	page := s.createPage(t, c, "public", content.Snapshot{Type: "media", Title: "Published then missing", Tags: []string{}, Description: ptr(""), BlobID: &second.ID}, "missing-published-page")
+	page := s.createPageWithProposal(t, c, "public", content.Snapshot{Type: "media", Title: "Published then missing", Tags: []string{}, Description: ptr(""), BlobID: &second.ID}, "missing-published-page")
 	rev := s.publish(t, admin, page.Proposal, nil, "missing-published-merge")
 	if err := os.Remove(filepath.Join(s.mediaRoot, "objects", second.ID)); err != nil {
 		t.Fatal(err)
@@ -217,7 +217,7 @@ func TestSupportedOriginalFormatsAndPDFDownload(t *testing.T) {
 		u := s.prepareUpload(t, c, tc.mime, len(tc.body), key+"-upload")
 		raw, _ := s.binary(t, "PUT", u.Path, tc.body, c, nil, 200)
 		b := decodeResult[media.Blob](t, raw)
-		p := s.createPage(t, c, "public", content.Snapshot{Type: "media", Title: "Format", Tags: []string{}, Description: ptr(""), BlobID: &b.ID}, key+"-page")
+		p := s.createPageWithProposal(t, c, "public", content.Snapshot{Type: "media", Title: "Format", Tags: []string{}, Description: ptr(""), BlobID: &b.ID}, key+"-page")
 		url := "/api/v1/proposals/" + p.Proposal.ID + "/revisions/" + p.Proposal.CurrentRevision.ID + "/content"
 		raw, h := s.binary(t, "GET", url, nil, identity.Credentials{}, nil, 200)
 		if !bytes.Equal(raw, tc.body) || h.Get("Content-Type") != tc.mime || h.Get("Content-Security-Policy") == "" {

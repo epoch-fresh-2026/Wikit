@@ -29,6 +29,7 @@ import (
 )
 
 type state struct {
+	Proposal                               proposals.Proposal
 	AdminToken, MemberToken, Session, CSRF string
 	Document, Private, Media               pages.Created
 	Revision, Head, MediaRevision          string
@@ -181,13 +182,10 @@ func initialize() {
 }
 func publish(token, admin, visibility string, snapshot map[string]any) (pages.Created, string) {
 	p := decode[pages.Created](request("POST", "/api/v1/pages", token, map[string]any{"visibility": visibility, "snapshot": snapshot}, 201))
-	revision := mergeCandidate(admin, p.Proposal, nil)
-	return p, revision.ID
+	return p, p.Revision.ID
 }
 func mergeCandidate(admin string, p proposals.Proposal, head *string) content.Published {
 	expected := map[string]any{"expected_head_revision_id": head, "expected_proposal_revision_id": p.CurrentRevision.ID}
-	review := map[string]any{"expected_head_revision_id": head, "expected_proposal_revision_id": p.CurrentRevision.ID, "expected_review_round": p.ReviewRound, "decision": "approve", "body": "isolated acceptance review"}
-	request("POST", "/api/v1/proposals/"+p.ID+"/reviews", admin, review, 201)
 	return decode[content.Published](request("POST", "/api/v1/proposals/"+p.ID+"/merge", admin, expected, 200))
 }
 
@@ -200,6 +198,8 @@ func smoke() {
 		Token string `json:"token"`
 	}](requestOriginRegister())
 	s.MemberToken = reg.Token
+	member := decode[identity.Account](request("GET", "/api/v1/auth/me", s.MemberToken, nil, 200))
+	request("PATCH", "/api/v1/admin/accounts/"+member.ID, s.AdminToken, map[string]any{"role": "moderator", "status": "active", "create_page": true, "expected_auth_version": 1}, 200)
 	s.Document, s.Revision = publish(s.MemberToken, s.AdminToken, "public", map[string]any{"type": "document", "title": "恢复验收 recovery marker", "tags": []string{"acceptance"}, "markdown": "历史正文 immutable history"})
 	s.Private, _ = publish(s.MemberToken, s.AdminToken, "restricted", map[string]any{"type": "document", "title": "restricted secret marker", "tags": []string{}, "markdown": "private body"})
 	u := decode[struct {
@@ -225,14 +225,15 @@ func smoke() {
 	for n := 1; n < 20; n++ {
 		text := fmt.Sprintf("历史正文 immutable history %d\n![原件](/api/v1/pages/%s/revisions/%s/content)", n, s.Media.Page.ID, s.MediaRevision)
 		candidate := decode[proposals.Proposal](request("POST", "/api/v1/pages/"+s.Document.Page.ID+"/proposals", s.MemberToken, map[string]any{"expected_head_revision_id": head, "snapshot": map[string]any{"type": "document", "title": "恢复验收 recovery marker", "tags": []string{"acceptance"}, "markdown": text}}, 201))
-		merged := mergeCandidate(s.AdminToken, candidate, &head)
+		s.Proposal = candidate
+		merged := mergeCandidate(s.MemberToken, candidate, &head)
 		head = merged.ID
 	}
 	s.Head = head
-	fmt.Println("20 immutable publication revisions with fixed media references created through REST review/merge")
+	fmt.Println("20 immutable publication revisions with fixed media references created through REST create/merge")
 	save(s)
 	verify(false)
-	fmt.Println("real REST create/review/merge/history/media and authentication smoke passed")
+	fmt.Println("real REST create/merge/history/media and authentication smoke passed")
 }
 func requestOriginRegister() []byte {
 	body, err := json.Marshal(map[string]string{"username": "acceptance_member", "password": os.Getenv("ACCEPTANCE_PASSWORD")})
@@ -296,8 +297,8 @@ func verify(restored bool) {
 	if !bytes.Contains(history, []byte(s.Revision)) {
 		panic("publication history lost")
 	}
-	proposal := request("GET", "/api/v1/proposals/"+s.Document.Proposal.ID, s.MemberToken, nil, 200)
-	if !bytes.Contains(proposal, []byte(`"state":"merged"`)) || !bytes.Contains(proposal, []byte(s.Document.Proposal.CurrentRevision.ID)) {
+	proposal := request("GET", "/api/v1/proposals/"+s.Proposal.ID, s.MemberToken, nil, 200)
+	if !bytes.Contains(proposal, []byte(`"state":"merged"`)) || !bytes.Contains(proposal, []byte(s.Proposal.CurrentRevision.ID)) {
 		panic("proposal state or candidate history lost")
 	}
 	request("GET", "/api/v1/pages/"+s.Private.Page.ID, "", nil, 404)
@@ -375,12 +376,10 @@ func seed() {
 		}
 	}()
 	// Offline fixture only. Every FK, immutability/seal and head constraint stays enabled.
-	_, err = tx.Exec(ctx, `CREATE TEMP TABLE fixture AS SELECT n,gen_random_uuid() p,gen_random_uuid() pr,gen_random_uuid() c,gen_random_uuid() r FROM generate_series(1,100000) n;
+	_, err = tx.Exec(ctx, `CREATE TEMP TABLE fixture AS SELECT n,nextval('wikit.page_ids') p,gen_random_uuid() r FROM generate_series(1,100000) n;
 INSERT INTO wikit.page_policies SELECT p,CASE WHEN n%5=0 THEN 'restricted' ELSE 'public' END,CASE WHEN n%10=0 THEN 'hidden' ELSE 'published' END,1 FROM fixture;
 INSERT INTO wikit.pages SELECT p,'document',NULL FROM fixture;
-INSERT INTO wikit.proposals SELECT pr,p,(SELECT id FROM wikit.users WHERE username='acceptance_member'),'merged',1,1,c FROM fixture;
-INSERT INTO wikit.proposal_revisions(id,proposal_id,page_id,type,snapshot,created_at,sealed) SELECT c,pr,p,'document',jsonb_build_object('type','document','title','benchmark knowledge 知识 '||n,'tags','[]'::jsonb,'markdown',repeat('knowledge 知识 recovery 基准 ',40)),now(),true FROM fixture;
-INSERT INTO wikit.revisions(id,page_id,type,source_proposal_id,snapshot,author_id,created_at,sealed) SELECT r,p,'document',pr,jsonb_build_object('type','document','title','benchmark knowledge 知识 '||n,'tags','[]'::jsonb,'markdown',repeat('knowledge 知识 recovery 基准 ',40)),(SELECT id FROM wikit.users WHERE username='acceptance_member'),now(),true FROM fixture;
+INSERT INTO wikit.revisions(id,page_id,type,source_kind,snapshot,author_id,publisher_id,created_at,sealed) SELECT r,p,'document','create',jsonb_build_object('type','document','title','benchmark knowledge 知识 '||n,'tags','[]'::jsonb,'markdown',repeat('knowledge 知识 recovery 基准 ',40)),(SELECT id FROM wikit.users WHERE username='acceptance_member'),(SELECT id FROM wikit.users WHERE username='acceptance_member'),now(),true FROM fixture;
 UPDATE wikit.pages p SET head_revision_id=f.r FROM fixture f WHERE p.id=f.p;`)
 	must(err)
 	must(tx.Commit(ctx))

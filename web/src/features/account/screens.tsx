@@ -4,6 +4,7 @@ import { api, type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
 import { ActionFeedback, Field, Loading, SectionTitle } from '@/components/shared'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from './auth'
 
 export function LoginScreen({ register = false }: { register?: boolean }) {
@@ -31,11 +32,10 @@ export function LoginScreen({ register = false }: { register?: boolean }) {
     )
   return (
     <section className="narrow panel">
-      <SectionTitle eyebrow="WIKIT ACCOUNT" title={register ? '一起共建知识' : '欢迎回来'} />
-      <p className="muted">
-        {register ? '创建账户后，你可以提交提案、参与讨论。' : '登录以继续编辑、审核和讨论。'}
-      </p>
+      <SectionTitle title={register ? '注册' : '登录'} />
+
       <form
+        className="stack"
         onSubmit={(e) => {
           e.preventDefault()
           void action.run(async () => {
@@ -82,9 +82,9 @@ export function LoginScreen({ register = false }: { register?: boolean }) {
 }
 function Secret({ value }: { value: string }) {
   return (
-    <div className="secret">
+    <div className="secret stack">
       <label htmlFor="issued-token">个人 Token（仅本次显示）</label>
-      <textarea
+      <Textarea
         id="issued-token"
         value={value}
         readOnly
@@ -133,14 +133,11 @@ export function AccountScreen() {
     })
   return (
     <section className="narrow">
-      <SectionTitle
-        eyebrow="YOUR ACCOUNT"
-        title={auth.account.display_name || auth.account.username}
-      />
+      <SectionTitle title={auth.account.display_name || auth.account.username} />
       <div className="panel stack">
         <p>
           用户名：{auth.account.username} · 角色：
-          {{ member: '成员', reviewer: '审核者', admin: '管理员' }[auth.account.role]}
+          {{ member: '成员', moderator: '版主', admin: '管理员' }[auth.account.role]}
         </p>
         <small className="id">账户 ID：{auth.account.id}</small>
         <h2>个人 Token</h2>

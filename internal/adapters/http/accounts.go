@@ -105,7 +105,7 @@ func failure(w http.ResponseWriter, err error, requestID string) {
 			status = 403
 		case fault.NotFound:
 			status = 404
-		case fault.Stale, fault.State, fault.Idempotency, fault.ReviewRequired, fault.MergeConflict:
+		case fault.Stale, fault.State, fault.Idempotency, fault.MergeConflict:
 			status = 409
 		case fault.Invalid:
 			status = 422
@@ -281,11 +281,12 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 		result, err = a.Access.List(r.Context(), c, strings.TrimPrefix(path, "admin/"), r.URL.Query().Get("cursor"), limit)
 	case r.Method == "PATCH" && strings.HasPrefix(path, "admin/accounts/"):
 		var input struct {
-			Role    string `json:"role"`
-			Status  string `json:"status"`
-			Version *int64 `json:"expected_auth_version"`
+			CreatePage bool   `json:"create_page"`
+			Role       string `json:"role"`
+			Status     string `json:"status"`
+			Version    *int64 `json:"expected_auth_version"`
 		}
-		body, err = decode(r, &input, "role", "status", "expected_auth_version")
+		body, err = decode(r, &input, "role", "status", "expected_auth_version", "create_page")
 		if err != nil {
 			break
 		}
@@ -293,14 +294,15 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 			err = fault.BadRequest
 			break
 		}
-		result, err = a.Access.UpdateAccount(r.Context(), request(r, c, id, body), strings.TrimPrefix(path, "admin/accounts/"), input.Role, input.Status, *input.Version)
+		result, err = a.Access.UpdateAccount(r.Context(), request(r, c, id, body), strings.TrimPrefix(path, "admin/accounts/"), input.Role, input.Status, *input.Version, input.CreatePage)
 	case (r.Method == "POST" && path == "admin/groups") || (r.Method == "PUT" && strings.HasPrefix(path, "admin/groups/")):
 		var input struct {
-			Name    string   `json:"name"`
-			Members []string `json:"member_ids"`
-			Version *int64   `json:"expected_version"`
+			CreatePage bool     `json:"create_page"`
+			Name       string   `json:"name"`
+			Members    []string `json:"member_ids"`
+			Version    *int64   `json:"expected_version"`
 		}
-		fields := []string{"name"}
+		fields := []string{"name", "create_page"}
 		if r.Method == "PUT" {
 			fields = append(fields, "member_ids", "expected_version")
 		}
@@ -324,10 +326,10 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 			}
 			status = 201
 		}
-		result, err = a.Access.SaveGroup(r.Context(), request(r, c, id, body), groupID, input.Name, input.Members, version)
+		result, err = a.Access.SaveGroup(r.Context(), request(r, c, id, body), groupID, input.Name, input.Members, version, input.CreatePage)
 	case (r.Method == "GET" || r.Method == "PUT") && strings.HasPrefix(path, "pages/") && strings.HasSuffix(path, "/policy"):
 		pageID := strings.TrimSuffix(strings.TrimPrefix(path, "pages/"), "/policy")
-		if !identity.ValidID(pageID) {
+		if !access.ValidPageID(pageID) {
 			err = fault.NotFound
 			break
 		}

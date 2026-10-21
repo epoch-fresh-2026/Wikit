@@ -408,8 +408,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 列出可读的提案审核队列
-         * @description 列出可读的提案审核队列。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * 列出可读的提案摘要
+         * @description 列出可读的提案摘要。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
          */
         get: operations["proposal_queue"];
         put?: never;
@@ -538,34 +538,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 三方合并至当前发布版本并使审核失效
-         * @description 三方合并至当前发布版本并使审核失效。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * 三方合并至当前发布版本并生成新候选
+         * @description 三方合并至当前发布版本并生成新候选。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
          */
         post: operations["proposal_rebase"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/proposals/{proposal_id}/reviews": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 列出审核记录
-         * @description 列出审核记录。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
-         */
-        get: operations["reviews_list"];
-        put?: never;
-        /**
-         * 对明确版本提交审核
-         * @description 对明确版本提交审核。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
-         */
-        post: operations["review_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -582,8 +558,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 原子合并经有效审核的提案
-         * @description 原子合并经有效审核的提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * 按当前合并权限与预期版本原子发布提案
+         * @description 按当前合并权限与预期版本原子发布提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
          */
         post: operations["proposal_merge"];
         delete?: never;
@@ -910,9 +886,11 @@ export interface components {
             username: string;
             display_name: string;
             /** @enum {string} */
-            role: "member" | "reviewer" | "admin";
+            role: "member" | "moderator" | "admin";
             /** @enum {string} */
             status: "active" | "disabled";
+            create_page: boolean;
+            can_create_page: boolean;
         };
         AccountAdmin: {
             account: components["schemas"]["Account"];
@@ -924,9 +902,10 @@ export interface components {
         };
         AccountUpdate: {
             /** @enum {string} */
-            role: "member" | "reviewer" | "admin";
+            role: "member" | "moderator" | "admin";
             /** @enum {string} */
             status: "active" | "disabled";
+            create_page: boolean;
             expected_auth_version: number;
         };
         AuditEvent: {
@@ -935,7 +914,6 @@ export interface components {
             /** Format: uuid */
             actor_id: string | null;
             action: string;
-            /** Format: uuid */
             target_id: string | null;
             request_id: string;
             /** Format: date-time */
@@ -984,7 +962,7 @@ export interface components {
         };
         CreatedPage: {
             page: components["schemas"]["Page"];
-            proposal: components["schemas"]["Proposal"];
+            revision: components["schemas"]["Revision"];
         };
         Diff: {
             /** Format: uuid */
@@ -1011,7 +989,7 @@ export interface components {
         Error: {
             error: {
                 /** @enum {string} */
-                code: "invalid_request" | "unauthenticated" | "forbidden" | "not_found" | "stale_revision" | "merge_conflict" | "invalid_state" | "review_required" | "idempotency_conflict" | "validation_failed" | "rate_limited" | "upload_too_large" | "unsupported_media" | "search_unavailable" | "storage_unavailable" | "internal_error";
+                code: "invalid_request" | "unauthenticated" | "forbidden" | "not_found" | "stale_revision" | "merge_conflict" | "invalid_state" | "idempotency_conflict" | "validation_failed" | "rate_limited" | "upload_too_large" | "unsupported_media" | "search_unavailable" | "storage_unavailable" | "internal_error";
                 message: string;
                 request_id: string;
                 conflicts?: {
@@ -1027,7 +1005,7 @@ export interface components {
             subject_type: "user" | "group";
             /** Format: uuid */
             subject_id: string;
-            capabilities: ("read" | "propose" | "discuss" | "review" | "manage")[];
+            capabilities: ("read" | "propose" | "discuss" | "merge" | "manage")[];
         };
         Group: {
             /** Format: uuid */
@@ -1035,8 +1013,10 @@ export interface components {
             name: string;
             version: number;
             member_ids: string[];
+            create_page: boolean;
         };
         GroupCreate: {
+            create_page: boolean;
             name: string;
         };
         GroupList: {
@@ -1044,6 +1024,7 @@ export interface components {
             next_cursor: string | null;
         };
         GroupUpdate: {
+            create_page: boolean;
             name: string;
             member_ids: string[];
             expected_version: number;
@@ -1051,7 +1032,6 @@ export interface components {
         Issue: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
             page_id: string;
             /** Format: uuid */
             author_id: string;
@@ -1102,20 +1082,20 @@ export interface components {
             expected_version: number;
         };
         Page: {
-            /** Format: uuid */
             id: string;
             /** @enum {string} */
             type: "document" | "media";
             /** @enum {string} */
             visibility: "public" | "restricted";
             /** @enum {string} */
-            status: "proposed" | "published" | "hidden";
+            status: "published" | "hidden";
             /** Format: uuid */
             head_revision_id: string | null;
             policy_version: number;
         };
         PageDetail: {
             page: components["schemas"]["Page"];
+            capabilities: ("read" | "propose" | "discuss" | "merge" | "manage")[];
             revision: components["schemas"]["Revision"] | null;
         };
         PageDetailList: {
@@ -1144,14 +1124,12 @@ export interface components {
         Proposal: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
             page_id: string;
             /** Format: uuid */
             author_id: string;
             /** @enum {string} */
             state: "open" | "merged" | "closed";
             version: number;
-            review_round: number;
             current_revision: components["schemas"]["ProposalRevision"];
         };
         ProposalList: {
@@ -1186,50 +1164,21 @@ export interface components {
             account: components["schemas"]["Account"];
             token: string;
         };
-        Review: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            actor_id: string;
-            /** Format: uuid */
-            proposal_revision_id: string;
-            /** Format: uuid */
-            base_revision_id: string | null;
-            round: number;
-            /** @enum {string} */
-            decision: "approve" | "request_changes" | "comment";
-            body: string;
-            /** Format: date-time */
-            created_at: string;
-        };
-        ReviewInput: {
-            /** Format: uuid */
-            expected_head_revision_id: string | null;
-            /** Format: uuid */
-            expected_proposal_revision_id: string;
-            expected_review_round: number;
-            /** @enum {string} */
-            decision: "approve" | "request_changes" | "comment";
-            body: string;
-        };
-        ReviewList: {
-            items: components["schemas"]["Review"][];
-            next_cursor: string | null;
-        };
         Revision: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
             page_id: string;
             /** Format: uuid */
             parent_id: string | null;
             /** Format: uuid */
-            source_proposal_id: string;
+            source_proposal_id: string | null;
+            /** @enum {string} */
+            source_kind: "bootstrap" | "create" | "merge";
             snapshot: components["schemas"]["Snapshot"];
             /** Format: date-time */
             created_at: string;
             /** Format: uuid */
-            author_id: string;
+            author_id: string | null;
             content_url: string | null;
         };
         RevisionList: {
@@ -1243,7 +1192,6 @@ export interface components {
             expected_head_revision_id: string;
         };
         SearchHit: {
-            /** Format: uuid */
             page_id: string;
             /** Format: uuid */
             revision_id: string;
@@ -2564,84 +2512,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Proposal"];
-                };
-            };
-            400: components["responses"]["BusinessError"];
-            401: components["responses"]["BusinessError"];
-            403: components["responses"]["BusinessError"];
-            404: components["responses"]["BusinessError"];
-            409: components["responses"]["BusinessError"];
-            413: components["responses"]["BusinessError"];
-            415: components["responses"]["BusinessError"];
-            422: components["responses"]["BusinessError"];
-            429: components["responses"]["BusinessError"];
-            500: components["responses"]["BusinessError"];
-            503: components["responses"]["BusinessError"];
-        };
-    };
-    reviews_list: {
-        parameters: {
-            query?: {
-                limit?: number;
-                cursor?: string;
-            };
-            header?: never;
-            path: {
-                proposal_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description 操作成功 */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReviewList"];
-                };
-            };
-            400: components["responses"]["BusinessError"];
-            401: components["responses"]["BusinessError"];
-            403: components["responses"]["BusinessError"];
-            404: components["responses"]["BusinessError"];
-            409: components["responses"]["BusinessError"];
-            413: components["responses"]["BusinessError"];
-            415: components["responses"]["BusinessError"];
-            422: components["responses"]["BusinessError"];
-            429: components["responses"]["BusinessError"];
-            500: components["responses"]["BusinessError"];
-            503: components["responses"]["BusinessError"];
-        };
-    };
-    review_create: {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description 同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。 */
-                "Idempotency-Key": string;
-                /** @description Cookie 会话变更请求必填；Bearer-only 请求不需要。 */
-                "X-CSRF-Token"?: string;
-            };
-            path: {
-                proposal_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReviewInput"];
-            };
-        };
-        responses: {
-            /** @description 操作成功 */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Review"];
                 };
             };
             400: components["responses"]["BusinessError"];

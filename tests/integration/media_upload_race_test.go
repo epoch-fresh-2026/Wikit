@@ -79,7 +79,7 @@ func TestMEDIA03ActiveUploadProtectedAndCompletionReauthorizes(t *testing.T) {
 	if _, err := s.media.Get(ctx, c, u.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.access.UpdateAccount(ctx, requestKey(admin, "disable-stream-account"), user.ID, "member", "disabled", 1); err != nil {
+	if _, err := s.access.UpdateAccount(ctx, requestKey(admin, "disable-stream-account"), user.ID, "member", "disabled", 1, false); err != nil {
 		t.Fatal(err)
 	}
 	close(release)

@@ -20,3 +20,4 @@
 - [0015 WebUI 状态与请求边界](0015-web-state.md)
 - [0016 内嵌前端、恢复与发布证据](0016-container-recovery.md)
 - [0017 契约生成器与应用编译器分离](0017-contract-generator-toolchain.md)
+- [0018 Wiki 页面、数字 ID 与直接发布](0018-wiki-publication-redesign.md)

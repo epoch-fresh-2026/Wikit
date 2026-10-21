@@ -9,7 +9,6 @@ const messages: Record<string, string> = {
   stale_revision: '版本已变化。你的草稿已保留，请对比最新内容后再提交。',
   merge_conflict: '修改存在冲突，请对比以下字段并在编辑器中解决。',
   invalid_state: '当前状态不允许此操作，请重新读取对象状态。',
-  review_required: '尚未满足有效审核条件，请先完成审核。',
   idempotency_conflict: '重试标识与请求内容不一致，请重新发起操作。',
   validation_failed: '内容未通过校验，请检查字段和长度。',
   rate_limited: '操作过于频繁，请稍后重试。',

@@ -15,7 +15,6 @@ const (
 	State              Error = "invalid_state"
 	Limited            Error = "rate_limited"
 	Idempotency        Error = "idempotency_conflict"
-	ReviewRequired     Error = "review_required"
 	MergeConflict      Error = "merge_conflict"
 	UploadTooLarge     Error = "upload_too_large"
 	UnsupportedMedia   Error = "unsupported_media"

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 )
 
-func capabilities() []string { return []string{"read", "propose", "discuss", "review", "manage"} }
+func capabilities() []string { return []string{"read", "propose", "discuss", "merge", "manage"} }
 
 type Grant struct {
 	SubjectType  string   `json:"subject_type"`
@@ -35,10 +36,11 @@ type Moderation struct {
 	Version                                   int64
 }
 type Group struct {
-	ID      string   `json:"id"`
-	Name    string   `json:"name"`
-	Version int64    `json:"version"`
-	Members []string `json:"member_ids"`
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	Version    int64    `json:"version"`
+	Members    []string `json:"member_ids"`
+	CreatePage bool     `json:"create_page"`
 }
 type AccountAdmin struct {
 	Account     identity.Account `json:"account"`
@@ -115,10 +117,14 @@ func effective(a identity.Actor, p Policy, groups []Group) map[string]bool {
 		if a.ID != "" {
 			caps["propose"] = true
 			caps["discuss"] = true
-			if a.Role == "reviewer" {
-				caps["review"] = true
+			if a.Role == "moderator" {
+				caps["merge"] = true
 			}
 		}
+	}
+	if p.PageID == "1" {
+		delete(caps, "merge")
+		delete(caps, "manage")
 	}
 	return caps
 }
@@ -211,10 +217,10 @@ func (s *Service) mutate(ctx context.Context, r Request, operation string, check
 	})
 	return out, err
 }
-func (s *Service) UpdateAccount(ctx context.Context, r Request, id, role, status string, version int64) ([]byte, error) {
+func (s *Service) UpdateAccount(ctx context.Context, r Request, id, role, status string, version int64, createPage bool) ([]byte, error) {
 	id = strings.ToLower(id)
 	r.Credentials.Write = true
-	if !identity.ValidID(id) || !slices.Contains([]string{"member", "reviewer", "admin"}, role) || !slices.Contains([]string{"active", "disabled"}, status) {
+	if !identity.ValidID(id) || !slices.Contains([]string{"member", "moderator", "admin"}, role) || !slices.Contains([]string{"active", "disabled"}, status) {
 		return nil, fault.Invalid
 	}
 	return s.mutate(ctx, r, "account.update:"+id, func(tx Tx) (identity.Actor, error) { return admin(ctx, tx, r.Credentials) }, func(tx Tx, a identity.Actor) (any, string, error) {
@@ -236,14 +242,20 @@ func (s *Service) UpdateAccount(ctx context.Context, r Request, id, role, status
 		}
 		u.Role = role
 		u.Status = status
+		u.CreatePage = createPage
 		u.AuthVersion++
 		if err := tx.SaveUser(ctx, u); err != nil {
 			return nil, "", err
 		}
+		groups, err := tx.Groups(ctx)
+		if err != nil {
+			return nil, "", err
+		}
+		u.CanCreatePage = CanCreate(identity.Actor{Record: u}, groups)
 		return AccountAdmin{u.Account, u.AuthVersion}, id, nil
 	})
 }
-func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, members []string, version int64) ([]byte, error) {
+func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, members []string, version int64, createPage bool) ([]byte, error) {
 	id = strings.ToLower(id)
 	members = append([]string(nil), members...)
 	for i := range members {
@@ -291,7 +303,7 @@ func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, mem
 			members = []string{}
 		}
 		slices.Sort(members)
-		g := Group{id, name, version + 1, members}
+		g := Group{id, name, version + 1, members, createPage}
 		if err := tx.SaveGroup(ctx, g); err != nil {
 			return nil, "", err
 		}
@@ -299,6 +311,9 @@ func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, mem
 	})
 }
 func validatePolicy(ctx context.Context, tx Tx, p Policy) error {
+	if p.PageID == "1" && p.Visibility != "public" {
+		return fault.Invalid
+	}
 	if !slices.Contains([]string{"public", "restricted"}, p.Visibility) || len(p.Grants) > 1000 {
 		return fault.Invalid
 	}
@@ -372,7 +387,7 @@ func (s *Service) UpdatePolicy(ctx context.Context, r Request, id string, propos
 		proposed.Grants[i].SubjectID = strings.ToLower(proposed.Grants[i].SubjectID)
 	}
 	r.Credentials.Write = true
-	if !identity.ValidID(id) {
+	if !ValidPageID(id) {
 		return nil, fault.Invalid
 	}
 	return s.mutate(ctx, r, "policy.update:"+id, func(tx Tx) (identity.Actor, error) {
@@ -467,7 +482,12 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, kind, cursor
 			if err != nil {
 				return err
 			}
+			groups, err := tx.Groups(ctx)
+			if err != nil {
+				return err
+			}
 			for _, v := range rows {
+				v.Account.CanCreatePage = CanCreate(identity.Actor{Record: identity.Record{Account: v.Account}}, groups)
 				if err := add(v); err != nil {
 					return err
 				}
@@ -520,4 +540,32 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, kind, cursor
 		return nil
 	})
 	return out, err
+}
+
+func ValidPageID(id string) bool {
+	n, err := strconv.ParseInt(id, 10, 64)
+	return err == nil && n > 0 && strconv.FormatInt(n, 10) == id
+}
+func CanCreate(a identity.Actor, groups []Group) bool {
+	if a.ID == "" || a.Status != "active" {
+		return false
+	}
+	if a.Role == "admin" || a.CreatePage {
+		return true
+	}
+	for _, g := range groups {
+		if g.CreatePage && slices.Contains(g.Members, a.ID) {
+			return true
+		}
+	}
+	return false
+}
+func Capabilities(a identity.Actor, p Policy, groups []Group) []string {
+	out := []string{}
+	for _, c := range capabilities() {
+		if CheckPolicy(a, p, groups, c, false) == nil {
+			out = append(out, c)
+		}
+	}
+	return out
 }

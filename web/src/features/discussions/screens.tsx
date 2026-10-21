@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
 import {
@@ -11,6 +11,9 @@ import {
   SectionTitle,
   SelectField,
 } from '@/components/shared'
+import { Checkbox } from '@/components/ui/checkbox'
+import { PageNavigation } from '@/components/layout'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Markdown } from '@/features/reading/markdown'
 import { Moderation } from '@/features/governance/moderation'
@@ -20,13 +23,17 @@ export function IssueListScreen() {
     navigate = useNavigate(),
     action = useAction()
   const [title, setTitle] = useState(''),
-    [body, setBody] = useState(''),
-    [state, setState] = useState('open'),
-    [hidden, setHidden] = useState(false)
+    [body, setBody] = useState('')
+  const [params, setParams] = useSearchParams(),
+    state = params.get('state') ?? 'open',
+    hidden = params.get('governance') === '1'
+  const setState = (state: string) => setParams({ state, governance: hidden ? '1' : '0' }),
+    setHidden = (hidden: boolean) => setParams({ state, governance: hidden ? '1' : '0' })
   const path = `pages/${id}/issues?state=${state}&include_hidden=${hidden}`
   return (
     <>
-      <SectionTitle title="页面讨论" />
+      <PageNavigation id={id} />
+      <SectionTitle title="讨论" />
       <Link to={`/pages/${id}`}>返回页面</Link>
       <div className="toolbar">
         <SelectField
@@ -39,7 +46,7 @@ export function IssueListScreen() {
           ]}
         />
         <label>
-          <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />{' '}
+          <Checkbox checked={hidden} onCheckedChange={(v) => setHidden(v === true)} />{' '}
           治理读取（包含隐藏内容）
         </label>
       </div>
@@ -48,7 +55,9 @@ export function IssueListScreen() {
           <div className="list-row" key={i.id}>
             <div>
               <h2>
-                <Link to={`/issues/${i.id}${hidden ? '?governance=1' : ''}`}>{i.title}</Link>
+                <Link to={`/pages/${id}/issues/${i.id}${hidden ? '?governance=1' : ''}`}>
+                  {i.title}
+                </Link>
               </h2>
               <small>
                 {i.state}
@@ -68,7 +77,7 @@ export function IssueListScreen() {
                 title,
                 body,
               })
-              navigate(`/issues/${issue.id}`)
+              navigate(`/pages/${id}/issues/${issue.id}`)
             })
           }}
         >
@@ -82,10 +91,11 @@ export function IssueListScreen() {
   )
 }
 export function IssueScreen({ governance = false }: { governance?: boolean }) {
-  const { id = '' } = useParams(),
+  const { id = '', pageId } = useParams(),
     [revision, setRevision] = useState(0),
     resource = useResource<Schema<'Issue'>>(`issues/${id}?include_hidden=${governance}`, revision)
   if (!resource.data) return <Loading error={resource.error} />
+  if (pageId && resource.data.page_id !== pageId) return <p role="alert">未找到此讨论。</p>
   return (
     <IssueDetail
       key={`${id}:${revision}`}
@@ -110,10 +120,13 @@ function IssueDetail({
     [proposal, setProposal] = useState('')
   return (
     <>
-      <SectionTitle
-        eyebrow={`DISCUSSION · ${issue.state === 'open' ? '进行中' : '已关闭'}${issue.hidden ? ' · 已隐藏' : ''}`}
-        title={issue.title}
-      />
+      <PageNavigation id={issue.page_id} />
+      <SectionTitle title={issue.title}>
+        <Badge variant="outline">
+          {issue.state === 'open' ? '进行中' : '已关闭'}
+          {issue.hidden ? ' · 已隐藏' : ''}
+        </Badge>
+      </SectionTitle>
       <Link to={`/pages/${issue.page_id}/issues`}>返回页面讨论</Link>
       <div className="panel">
         <Markdown text={issue.body} />
@@ -157,7 +170,7 @@ function IssueDetail({
         </form>
         <div className="stack">
           {issue.proposal_ids.map((id) => (
-            <Link className="id" key={id} to={`/proposals/${id}`}>
+            <Link className="id" key={id} to={`/pages/${issue.page_id}/proposals/${id}`}>
               关联提案 {id}
             </Link>
           ))}

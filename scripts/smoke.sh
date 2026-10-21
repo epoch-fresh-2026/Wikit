@@ -9,18 +9,26 @@ export WIKIT_BIND=127.0.0.1 WIKIT_PORT=8080
 export COMPOSE_PROJECT_NAME="wikit-ci-${GITHUB_RUN_ID:-$$}-${GITHUB_RUN_ATTEMPT:-1}"
 source_project=$COMPOSE_PROJECT_NAME
 restore_project="${source_project}-restore"
+previous_project="${source_project}-previous"
+previous_restore_project="${source_project}-previous-restore"
+state_project=$source_project
+current_image=$WIKIT_IMAGE
+acceptance_image=wikit:acceptance
 evidence=$(realpath -m .local/acceptance)
 mkdir -p "$evidence"
 exec > >(tee "$evidence/run.log") 2>&1
 cleanup() {
   COMPOSE_PROJECT_NAME=$source_project docker compose down -v --remove-orphans
   COMPOSE_PROJECT_NAME=$restore_project docker compose down -v --remove-orphans
+  COMPOSE_PROJECT_NAME=$previous_project docker compose down -v --remove-orphans
+  COMPOSE_PROJECT_NAME=$previous_restore_project docker compose down -v --remove-orphans
+  docker volume rm "${previous_project}-state" >/dev/null 2>&1 || true
   docker volume rm "${source_project}-state" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 driver() {
-  WIKIT_IMAGE=wikit:acceptance docker compose run --rm -T --no-deps \
-    -v "${source_project}-state:/state" \
+  WIKIT_IMAGE=$acceptance_image docker compose run --rm -T --no-deps \
+    -v "${state_project}-state:/state" \
     -e WIKIT_ACCEPTANCE=isolated -e ACCEPTANCE_PASSWORD=isolated_password_2026 \
     --entrypoint /acceptance wikit "$1"
 }
@@ -40,20 +48,39 @@ docker compose stop -t 45 wikit
 driver audit
 bash scripts/backup.sh "$evidence/backup"
 
-# First release: build the actual PR #25 backend as the previous version.
-baseline=e6f50d3318fe238758cf92c91451cff0acc3283d
+# The old UUID baseline must use its own image AND backup, never the new schema.
+baseline=f3e284fbf845d46903da0f33c29938a57ff2b98f
 mkdir "$evidence/baseline"
 git archive "$baseline" | tar -x -C "$evidence/baseline"
-cp scripts/Dockerfile.baseline "$evidence/baseline/Dockerfile"
 docker build -t wikit:previous "$evidence/baseline"
-docker image inspect wikit:previous --format 'Previous image={{.Id}}'
+docker build --target acceptance -t wikit:previous-acceptance "$evidence/baseline"
 printf 'Rollback baseline commit=%s\n' "$baseline"
-WIKIT_IMAGE=wikit:previous docker compose up -d --wait wikit
-driver verify-api
-docker compose stop -t 45 wikit
+export COMPOSE_PROJECT_NAME=$previous_project WIKIT_IMAGE=wikit:previous
+state_project=$previous_project
+acceptance_image=wikit:previous-acceptance
+docker compose up -d --wait postgres meilisearch
+docker compose run --rm -T wikit migrate
+driver init
 docker compose up -d --wait wikit
-driver verify
+driver smoke
 docker compose stop -t 45 wikit
+bash scripts/backup.sh "$evidence/previous-backup"
+if WIKIT_IMAGE=$current_image docker compose run --rm -T wikit migrate; then
+  echo 'New baseline unexpectedly accepted the old UUID database'; exit 1
+fi
+echo 'Old UUID schema rejected without modifying data'
+export COMPOSE_PROJECT_NAME=$previous_restore_project
+docker compose up -d --wait postgres meilisearch
+docker compose create wikit
+bash scripts/restore.sh "$evidence/previous-backup"
+driver audit
+docker compose run --rm -T wikit search-rebuild
+docker compose up -d --wait wikit
+driver restored
+docker compose stop -t 45 wikit
+export WIKIT_IMAGE=$current_image
+state_project=$source_project
+acceptance_image=wikit:acceptance
 
 # New target has new database, media and search volumes. Source remains stopped.
 export COMPOSE_PROJECT_NAME=$restore_project
@@ -87,4 +114,4 @@ printf '100k index rebuild seconds=%s\n' "$((SECONDS-start))"
 docker compose run --rm -T wikit search-status
 docker compose up -d --wait wikit
 driver bench
-printf 'Container, recovery, same-schema rollback and 100k/100-concurrency acceptance passed.\n'
+printf 'Container, recovery, old-image/old-backup rollback and 100k/100-concurrency acceptance passed.\n'

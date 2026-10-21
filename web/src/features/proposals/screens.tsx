@@ -1,269 +1,323 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
 import {
+  ActionFeedback,
   Collection,
   DateText,
-  Field,
   Loading,
   SectionTitle,
   SelectField,
-  ActionFeedback,
+  TagLinks,
 } from '@/components/shared'
+import { PageNavigation } from '@/components/layout'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SnapshotEditor } from '@/features/editing/editor'
 import { SnapshotView } from '@/features/reading/markdown'
+import { useAuth } from '@/features/account/auth'
 
-const stateLabel = { open: '待审核', merged: '已合并', closed: '已关闭' }
-const decisionLabel = { approve: '批准', request_changes: '要求修改', comment: '评论' }
-
+const stateLabel = { open: '待处理', merged: '已合并', closed: '已关闭' }
 export function ProposalListScreen() {
   const { id } = useParams(),
-    [state, setState] = useState('open')
+    [params, setParams] = useSearchParams(),
+    state = params.get('state') ?? 'open'
   const path = `${id ? `pages/${id}/proposals` : 'proposals'}?state=${state}`
   return (
     <>
-      <SectionTitle eyebrow="REVIEW TOGETHER" title="提案与审核" />
-      <div className="toolbar">
-        <SelectField
-          label="提案状态"
-          value={state}
-          onChange={setState}
-          options={[
-            ['open', '待处理'],
-            ['merged', '已合并'],
-            ['closed', '已关闭'],
-          ]}
-        />
-      </div>
+      {id && <PageNavigation id={id} />}
+      <SectionTitle title={id ? '页面提案' : '全站提案'} />
+      <SelectField
+        label="提案状态"
+        value={state}
+        onChange={(v) => setParams({ state: v })}
+        options={Object.entries(stateLabel)}
+      />
       <Collection<Schema<'Proposal'>> key={path} path={path}>
         {(p) => (
           <div className="list-row" key={p.id}>
             <div>
-              <h2>
-                <Link to={`/proposals/${p.id}`}>{p.current_revision.snapshot.title}</Link>
-              </h2>
+              <Link to={`/pages/${p.page_id}/proposals/${p.id}`}>
+                {p.current_revision.snapshot.title}
+              </Link>
               <p className="muted">
-                {stateLabel[p.state]} · 第 {p.review_round} 轮审核 ·{' '}
-                <DateText value={p.current_revision.created_at} />
+                页面 {p.page_id} · <DateText value={p.current_revision.created_at} />
               </p>
             </div>
-            <Link to={`/proposals/${p.id}`}>查看提案 →</Link>
+            <Badge variant="outline">{stateLabel[p.state]}</Badge>
           </div>
         )}
       </Collection>
     </>
   )
 }
-export function ProposalScreen() {
-  const { id = '' } = useParams(),
+export function ProposalScreen({ edit = false }: { edit?: boolean }) {
+  const { id = '', pageId = '' } = useParams(),
     [version, setVersion] = useState(0)
   const resource = useResource<Schema<'Proposal'>>(`proposals/${id}`, version)
   if (!resource.data) return <Loading error={resource.error} />
+  if (resource.data.page_id !== pageId) return <p role="alert">未找到此提案。</p>
   return (
     <ProposalDetail
       key={`${id}:${version}`}
       proposal={resource.data}
+      edit={edit}
       reload={() => setVersion((v) => v + 1)}
     />
   )
 }
 function ProposalDetail({
   proposal: p,
+  edit,
   reload,
 }: {
   proposal: Schema<'Proposal'>
+  edit: boolean
   reload: () => void
 }) {
   const page = useResource<Schema<'PageDetail'>>(`pages/${p.page_id}`),
     diff = useResource<Schema<'Diff'>>(`proposals/${p.id}/diff`)
-  const action = useAction(),
-    editAction = useAction(),
+  const stale =
+    !!page.data && p.current_revision.base_revision_id !== page.data.page.head_revision_id
+  const baseRevision = useResource<Schema<'Revision'>>(
+    edit && stale && p.current_revision.base_revision_id
+      ? `pages/${p.page_id}/revisions/${p.current_revision.base_revision_id}`
+      : null,
+  )
+  const [resolved, setResolved] = useState(false)
+  const auth = useAuth(),
+    action = useAction(),
     navigate = useNavigate(),
-    [decision, setDecision] = useState('approve'),
-    [body, setBody] = useState('')
+    [params, setParams] = useSearchParams()
+  const base = `/pages/${p.page_id}/proposals/${p.id}`,
+    caps = page.data?.capabilities ?? [],
+    view = params.get('view') ?? 'diff'
+  const canEdit =
+    (p.author_id === auth.account?.id || caps.includes('manage')) &&
+    caps.includes('propose') &&
+    p.state === 'open'
   const pair = {
     expected_head_revision_id: page.data?.page.head_revision_id ?? null,
     expected_proposal_revision_id: p.current_revision.id,
   }
-  const mutate = (op: string, input: unknown) =>
+  const mutate = (op: string, body: unknown) =>
     action.run(async () => {
-      const result = await action.write<Schema<'Revision'>>(`proposals/${p.id}/${op}`, input)
-      if (op === 'merge') navigate(`/pages/${p.page_id}/revisions/${result.id}`)
+      await action.write(`proposals/${p.id}/${op}`, body)
+      if (op === 'merge') navigate(`/pages/${p.page_id}`)
       else reload()
     })
   return (
-    <article>
-      <SectionTitle
-        eyebrow={`PROPOSAL · ${stateLabel[p.state]} · 第 ${p.review_round} 轮`}
-        title={p.current_revision.snapshot.title}
+    <>
+      <PageNavigation
+        id={p.page_id}
+        title={page.data?.revision?.snapshot.title}
+        capabilities={caps}
       />
-      <div className="actions">
-        <Link to={`/pages/${p.page_id}`}>返回页面</Link>
-        <Button variant="outline" onClick={reload}>
-          重新读取（清空本地草稿）
-        </Button>
-      </div>
-      <section className="panel">
-        <h2>当前候选</h2>
-        <SnapshotView
-          snapshot={p.current_revision.snapshot}
-          contentURL={
-            p.current_revision.snapshot.type === 'media'
-              ? `/api/v1/proposals/${p.id}/revisions/${p.current_revision.id}/content`
-              : null
-          }
-        />
-      </section>
-      <section className="panel stack">
-        <h2>变更对比</h2>
-        {diff.data ? (
+      <SectionTitle title={edit ? '编辑提案' : p.current_revision.snapshot.title}>
+        <Badge variant="outline">{stateLabel[p.state]}</Badge>
+      </SectionTitle>
+      {!page.data ? (
+        <Loading error={page.error} />
+      ) : edit ? (
+        canEdit ? (
           <>
-            {diff.data.stale && (
-              <p className="warning">
-                页面已有更新，请检查当前 head 并执行 rebase；旧批准可能已失效。
-              </p>
+            {stale && (
+              <section className="panel stack">
+                <h2>处理过期提案</h2>
+                <p>
+                  页面已有新版本。请对照基础与当前发布内容编辑候选，保留需要的修改；保存后提案将以当前发布版本为基础。
+                </p>
+                <div className="compare">
+                  <section aria-label="基础版本">
+                    <h3>基础版本</h3>
+                    {baseRevision.data ? (
+                      <>
+                        <h4>{baseRevision.data.snapshot.title}</h4>
+                        <TagLinks tags={baseRevision.data.snapshot.tags} />
+                        <SnapshotView
+                          snapshot={baseRevision.data.snapshot}
+                          contentURL={baseRevision.data.content_url}
+                        />
+                      </>
+                    ) : (
+                      <Loading error={baseRevision.error} />
+                    )}
+                  </section>
+                  <section aria-label="当前发布版本">
+                    <h3>当前发布版本</h3>
+                    {page.data.revision && (
+                      <>
+                        <h4>{page.data.revision.snapshot.title}</h4>
+                        <TagLinks tags={page.data.revision.snapshot.tags} />
+                        <SnapshotView
+                          snapshot={page.data.revision.snapshot}
+                          contentURL={page.data.revision.content_url}
+                        />
+                      </>
+                    )}
+                  </section>
+                </div>
+                <label className="check-label">
+                  <Checkbox
+                    checked={resolved}
+                    disabled={!baseRevision.data || !page.data.revision}
+                    onCheckedChange={(v) => setResolved(v === true)}
+                  />
+                  已结合当前发布内容解决冲突
+                </label>
+              </section>
             )}
-            {diff.data.fields.length ? (
-              diff.data.fields.map((f) => (
-                <details key={f.path} open>
-                  <summary>{f.path}</summary>
-                  {f.unified_diff ? (
-                    <pre className="diff">{f.unified_diff}</pre>
-                  ) : (
-                    <div className="compare">
-                      <pre>{f.before ?? '（无）'}</pre>
-                      <pre>{f.after ?? '（无）'}</pre>
-                    </div>
-                  )}
-                </details>
-              ))
-            ) : (
-              <p>没有内容差异。</p>
-            )}
+            <SnapshotEditor
+              initial={p.current_revision.snapshot}
+              action={action}
+              label="保存修订"
+              submitDisabled={stale && (!resolved || !baseRevision.data || !page.data.revision)}
+              submit={async (snapshot, published) => {
+                await action.write(`proposals/${p.id}/revisions`, { ...pair, snapshot })
+                published()
+                navigate(base)
+              }}
+            />
           </>
         ) : (
-          <Loading error={diff.error} />
-        )}
-      </section>
-      <section className="panel stack">
-        <h2>审核与发布</h2>
-        {!page.data && <Loading error={page.error} />}
-        <p>审核绑定当前候选和页面版本；批准、修改要求与发布资格由服务端校验。</p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            void mutate('reviews', {
-              ...pair,
-              expected_review_round: p.review_round,
-              decision,
-              body,
-            })
-          }}
-        >
-          <SelectField
-            label="审核意见"
-            value={decision}
-            onChange={setDecision}
-            options={[
-              ['approve', '批准'],
-              ['request_changes', '要求修改'],
-              ['comment', '仅评论'],
-            ]}
-          />
-          <Field label="审核说明" value={body} onChange={setBody} multiline />
-          <Button disabled={action.busy || !page.data || p.state !== 'open'}>提交审核</Button>
-        </form>
-        <div className="actions">
-          <Button
-            disabled={action.busy || !page.data || p.state !== 'open'}
-            onClick={() => void mutate('merge', pair)}
-          >
-            合并并发布
-          </Button>
-          <Button
-            variant="outline"
-            disabled={action.busy || !page.data || p.state !== 'open'}
-            onClick={() => void mutate('rebase', pair)}
-          >
-            基于当前发布重新合并
-          </Button>
-          {p.state !== 'merged' && (
-            <Button
-              variant="outline"
-              disabled={action.busy}
-              onClick={() =>
-                void mutate('state', {
-                  state: p.state === 'open' ? 'closed' : 'open',
-                  expected_proposal_version: p.version,
-                })
-              }
-            >
-              {p.state === 'open' ? '关闭提案' : '重开提案'}
-            </Button>
-          )}
-        </div>
-        <ActionFeedback action={action} />
-      </section>
-      {p.state === 'open' && page.data && (
-        <section className="panel stack">
-          <h2>修订候选</h2>
-          <p className="muted">
-            提交修订后旧审核失效。冲突时草稿保持在此处，请勿直接覆盖其他发布。
-          </p>
-          <SnapshotEditor
-            initial={p.current_revision.snapshot}
-            action={editAction}
-            label="提交候选修订"
-            submit={async (snapshot) => {
-              await editAction.write(`proposals/${p.id}/revisions`, { ...pair, snapshot })
-              reload()
-            }}
-          />
-        </section>
-      )}
-      <section className="panel">
-        <h2>审核记录</h2>
-        <Collection<Schema<'Review'>> path={`proposals/${p.id}/reviews`}>
-          {(r) => (
-            <div className="list-row" key={r.id}>
-              <div>
-                <strong>
-                  {decisionLabel[r.decision]} · 第 {r.round} 轮
-                </strong>
-                <p>{r.body || '（未附说明）'}</p>
-                <small className="id">
-                  审核者 {r.actor_id} · <DateText value={r.created_at} />
-                </small>
-              </div>
+          <p role="alert">没有编辑此提案的权限。</p>
+        )
+      ) : (
+        <>
+          <div className="toolbar">
+            {canEdit && (
+              <Button asChild variant="outline">
+                <Link to={base + '/edit'}>编辑提案</Link>
+              </Button>
+            )}
+            {caps.includes('merge') && p.state === 'open' && (
+              <Button
+                disabled={
+                  view !== 'diff' ||
+                  action.busy ||
+                  !diff.data ||
+                  diff.data.stale ||
+                  diff.data.proposal_revision_id !== p.current_revision.id ||
+                  diff.data.head_revision_id !== pair.expected_head_revision_id
+                }
+                title={view !== 'diff' ? '请先查看变更对比' : undefined}
+                onClick={() => void mutate('merge', pair)}
+              >
+                合并
+              </Button>
+            )}
+            {(p.author_id === auth.account?.id || caps.includes('manage')) &&
+              p.state !== 'merged' && (
+                <Button
+                  variant="ghost"
+                  disabled={action.busy || (p.state === 'closed' && !caps.includes('propose'))}
+                  onClick={() =>
+                    void mutate('state', {
+                      state: p.state === 'open' ? 'closed' : 'open',
+                      expected_proposal_version: p.version,
+                    })
+                  }
+                >
+                  {p.state === 'open' ? '关闭提案' : '重开提案'}
+                </Button>
+              )}
+          </div>
+          {diff.data?.stale && (
+            <div className="conflict">
+              <p>页面已有新版本。请更新提案基础并检查新的差异。</p>
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  disabled={action.busy}
+                  onClick={() => void mutate('rebase', pair)}
+                >
+                  更新基础版本
+                </Button>
+              )}
             </div>
           )}
-        </Collection>
-      </section>
-      <section className="panel">
-        <h2>候选历史</h2>
-        <Collection<Schema<'ProposalRevision'>> path={`proposals/${p.id}/revisions`}>
-          {(r) => (
-            <details key={r.id}>
-              <summary>
-                {r.snapshot.title} · <DateText value={r.created_at} />
-              </summary>
-              <small className="id">
-                候选 {r.id} · 基础发布 {r.base_revision_id ?? '首次发布'}
-              </small>
+          <Tabs value={view} onValueChange={(view) => setParams({ view })}>
+            <TabsList>
+              <TabsTrigger value="diff">变更对比</TabsTrigger>
+              <TabsTrigger value="preview">候选预览</TabsTrigger>
+              <TabsTrigger value="history">候选历史</TabsTrigger>
+            </TabsList>
+            <TabsContent value="diff">
+              {diff.data ? (
+                diff.data.fields.length ? (
+                  diff.data.fields.map((f) => (
+                    <section className="diff-field" key={f.path}>
+                      <h2>
+                        {{
+                          '/title': '标题',
+                          '/tags': '标签',
+                          '/markdown': '正文',
+                          '/description': '媒体描述',
+                          '/blob_id': '媒体原件',
+                        }[f.path] ?? f.path}
+                      </h2>
+                      {f.unified_diff ? (
+                        <pre className="diff">{f.unified_diff}</pre>
+                      ) : (
+                        <div className="compare">
+                          <div>
+                            <h3>修改前</h3>
+                            <pre>{f.before ?? '无'}</pre>
+                          </div>
+                          <div>
+                            <h3>修改后</h3>
+                            <pre>{f.after ?? '无'}</pre>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  ))
+                ) : (
+                  <p className="empty">没有内容差异。</p>
+                )
+              ) : (
+                <Loading error={diff.error} />
+              )}
+            </TabsContent>
+            <TabsContent value="preview">
               <SnapshotView
-                snapshot={r.snapshot}
+                snapshot={p.current_revision.snapshot}
                 contentURL={
-                  r.snapshot.type === 'media'
-                    ? `/api/v1/proposals/${p.id}/revisions/${r.id}/content`
+                  p.current_revision.snapshot.type === 'media'
+                    ? `/api/v1/proposals/${p.id}/revisions/${p.current_revision.id}/content`
                     : null
                 }
               />
-            </details>
+            </TabsContent>
+            <TabsContent value="history">
+              <Collection<Schema<'ProposalRevision'>> path={`proposals/${p.id}/revisions`}>
+                {(r) => (
+                  <section className="directory-row" key={r.id}>
+                    <DateText value={r.created_at} />
+                    <SnapshotView
+                      snapshot={r.snapshot}
+                      contentURL={
+                        r.snapshot.type === 'media'
+                          ? `/api/v1/proposals/${p.id}/revisions/${r.id}/content`
+                          : null
+                      }
+                    />
+                  </section>
+                )}
+              </Collection>
+            </TabsContent>
+          </Tabs>
+          <ActionFeedback action={action} />
+          {action.error && (
+            <Button variant="outline" onClick={reload}>
+              重新读取
+            </Button>
           )}
-        </Collection>
-      </section>
-    </article>
+        </>
+      )}
+    </>
   )
 }

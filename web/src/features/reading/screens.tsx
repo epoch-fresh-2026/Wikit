@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { BookOpen, ArrowUpRight, FilePlus2 } from 'lucide-react'
 import { type Schema, query } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
 import {
@@ -13,7 +12,17 @@ import {
   ActionFeedback,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { PageNavigation } from '@/components/layout'
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from '@/components/ui/sheet'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/features/account/auth'
 import { SnapshotEditor, emptySnapshot } from '@/features/editing/editor'
 import { SnapshotView } from './markdown'
@@ -21,169 +30,169 @@ import { SnapshotView } from './markdown'
 export function ExploreScreen() {
   const [params, setParams] = useSearchParams(),
     [q, setQ] = useState(params.get('q') ?? '')
-  const tag = params.get('tag') ?? '',
+  const auth = useAuth(),
+    tag = params.get('tag') ?? '',
     type = params.get('type') ?? '',
     search = params.get('q') ?? ''
+  useEffect(() => setQ(search), [search])
   const path = search ? 'search?' + query({ q: search, tag }) : 'pages?' + query({ tag, type })
   return (
     <>
-      <SectionTitle eyebrow="A SHARED PLACE FOR KNOWLEDGE" title="把知识，写在一起。">
-        <Link className="button-link" to="/pages/new">
-          <FilePlus2 size={16} aria-hidden /> 创建页面
-        </Link>
+      <SectionTitle title={search ? '搜索结果' : tag ? `标签：${tag}` : '全部页面'}>
+        {auth.account?.can_create_page && (
+          <Button asChild>
+            <Link to="/pages/new">创建页面</Link>
+          </Button>
+        )}
       </SectionTitle>
-      <p className="intro">从一个想法开始，通过讨论与审核，让知识不断生长。</p>
       <form
-        className="searchbar"
+        className="toolbar"
         onSubmit={(e) => {
           e.preventDefault()
           setParams(query({ q: q.trim(), tag, type }))
         }}
       >
-        <label className="sr-only" htmlFor="search">
-          搜索知识
-        </label>
-        <input
-          id="search"
-          type="search"
+        <Input
+          aria-label="搜索关键词"
+          placeholder="搜索页面"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="搜索页面、知识与灵感…"
         />
         <Button>搜索</Button>
       </form>
-      <div className="browse-grid">
-        <aside className="sidebar">
-          <h2>探索知识</h2>
-          <Link to="/" className={!tag && !search ? 'selected' : ''}>
-            <BookOpen size={16} aria-hidden /> 全部页面
-          </Link>
-          <Link to="/proposals">
-            待审提案 <ArrowUpRight size={15} aria-hidden />
-          </Link>
-          <hr />
-          <h2>标签</h2>
-          <Collection<Schema<'Tag'>> path="tags">
-            {(t) => (
-              <Link
-                key={t.key}
-                to={'/?' + query({ tag: t.key, q: search })}
-                className={tag === t.key ? 'selected' : ''}
-              >
-                # {t.key}
-              </Link>
-            )}
-          </Collection>
-        </aside>
-        <section aria-label="页面结果">
-          <div className="results-heading">
-            <h2>{search ? `“${search}”的搜索结果` : tag ? `标签 · ${tag}` : '发现与阅读'}</h2>
-            {!search && (
-              <SelectField
-                label="页面类型筛选"
-                value={type}
-                onChange={(v) => setParams(query({ tag, type: v }))}
-                options={[
-                  ['', '全部类型'],
-                  ['document', '文档'],
-                  ['media', '媒体'],
-                ]}
-              />
-            )}
-          </div>
-          {search ? (
-            <Collection<Schema<'SearchHit'>>
-              key={path}
-              path={path}
-              empty="未找到匹配页面，请尝试其他关键词。"
-            >
-              {(hit) => (
-                <Card className="page-card" key={hit.page_id}>
-                  <div className="kicker">{hit.type === 'document' ? '文档' : '媒体'}</div>
-                  <h3>
-                    <Link to={'/pages/' + hit.page_id}>{hit.title}</Link>
-                  </h3>
-                  <p>{hit.snippet}</p>
-                  <TagLinks tags={hit.tags} />
-                </Card>
-              )}
-            </Collection>
-          ) : (
-            <Collection<Schema<'PageDetail'>>
-              key={path}
-              path={path}
-              empty="这里还没有已发布页面。创建第一个提案，一起完善知识。"
-            >
-              {(item) => (
-                <Card className="page-card" key={item.page.id}>
-                  <div className="kicker">
-                    {item.page.type === 'document' ? '文档' : '媒体'} ·{' '}
-                    {item.page.visibility === 'public' ? '公开' : '受限'}
-                  </div>
-                  <h3>
-                    <Link to={'/pages/' + item.page.id}>
-                      {item.revision?.snapshot.title ?? '尚未发布'}
-                    </Link>
-                  </h3>
-                  {item.revision && (
-                    <>
-                      <p className="excerpt">
-                        {item.revision.snapshot.type === 'document'
-                          ? item.revision.snapshot.markdown.slice(0, 160)
-                          : item.revision.snapshot.description.slice(0, 160)}
-                      </p>
-                      <TagLinks tags={item.revision.snapshot.tags} />
-                      <small>
-                        更新于 <DateText value={item.revision.created_at} />
-                      </small>
-                    </>
-                  )}
-                </Card>
-              )}
-            </Collection>
-          )}
-        </section>
+      <div className="toolbar">
+        <Input
+          aria-label="标签筛选"
+          placeholder="标签"
+          value={tag}
+          onChange={(e) => setParams(query({ q: search, tag: e.target.value, type }))}
+        />
+        {!search && (
+          <SelectField
+            label="页面类型"
+            value={type}
+            onChange={(v) => setParams(query({ tag, type: v }))}
+            options={[
+              ['', '全部类型'],
+              ['document', '文档'],
+              ['media', '媒体'],
+            ]}
+          />
+        )}
       </div>
+      {search ? (
+        <Collection<Schema<'SearchHit'>> key={path} path={path} empty="未找到匹配页面。">
+          {(hit) => (
+            <article className="directory-row" key={hit.page_id}>
+              <h2>
+                <Link to={'/pages/' + hit.page_id}>{hit.title}</Link>
+              </h2>
+              <p>{hit.snippet}</p>
+              <TagLinks tags={hit.tags} />
+            </article>
+          )}
+        </Collection>
+      ) : (
+        <Collection<Schema<'PageDetail'>> key={path} path={path}>
+          {(item) => (
+            <article className="directory-row" key={item.page.id}>
+              <h2>
+                <Link to={'/pages/' + item.page.id}>{item.revision?.snapshot.title}</Link>
+              </h2>
+              <p className="muted">
+                {item.page.type === 'document' ? '文档' : '媒体'} · 页面 {item.page.id}
+              </p>
+              {item.revision && (
+                <>
+                  <TagLinks tags={item.revision.snapshot.tags} />
+                  <small>
+                    <DateText value={item.revision.created_at} />
+                  </small>
+                </>
+              )}
+            </article>
+          )}
+        </Collection>
+      )}
     </>
   )
 }
-
-export function PageScreen() {
-  const { id = '' } = useParams(),
-    resource = useResource<Schema<'PageDetail'>>(`pages/${id}`)
+export function PageScreen({ home = false }: { home?: boolean }) {
+  const { id: routeID = '' } = useParams(),
+    id = home ? '1' : routeID
+  const resource = useResource<Schema<'PageDetail'>>(`pages/${id}`)
+  const article = useRef<HTMLDivElement>(null),
+    [headings, setHeadings] = useState<{ id: string; text: string }[]>([])
+  useEffect(() => {
+    const nodes = article.current?.querySelectorAll('h1,h2,h3') ?? []
+    setHeadings(
+      Array.from(nodes).map((node, i) => {
+        const id = 'section-' + i
+        node.id = id
+        return { id, text: node.textContent ?? '' }
+      }),
+    )
+  }, [resource.data])
   if (!resource.data) return <Loading error={resource.error} />
-  const { page, revision } = resource.data
+  const { page, revision, capabilities } = resource.data
   return (
-    <article>
-      <SectionTitle
-        eyebrow={page.type === 'document' ? 'DOCUMENT' : 'MEDIA'}
-        title={revision?.snapshot.title ?? '页面尚未发布'}
-      />
-      <nav className="tabs" aria-label="页面操作">
-        <Link to={`/pages/${id}/edit`}>提出修改</Link>
-        <Link to={`/pages/${id}/history`}>发布历史</Link>
-        <Link to={`/pages/${id}/proposals`}>提案</Link>
-        <Link to={`/pages/${id}/issues`}>讨论</Link>
-        <Link to={`/pages/${id}/policy`}>权限与治理</Link>
-      </nav>
-      {revision ? (
-        <>
-          <TagLinks tags={revision.snapshot.tags} />
-          <p className="metadata">
-            {page.visibility === 'restricted' ? '受限页面' : '公开页面'} ·{' '}
-            <DateText value={revision.created_at} />
-          </p>
-          <div className="panel reading">
-            <SnapshotView snapshot={revision.snapshot} contentURL={revision.content_url} />
-          </div>
-        </>
-      ) : (
-        <div className="empty">
-          创建提案审核合并后，页面会出现在目录与搜索中。
-          <Link to={`/pages/${id}/proposals`}>查看创建提案</Link>
+    <>
+      <PageNavigation id={id} title={revision?.snapshot.title} capabilities={capabilities} />
+      <SectionTitle title={revision?.snapshot.title ?? '页面'} />
+      {headings.length > 0 && (
+        <div className="mobile-toc">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                文章目录
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>文章目录</SheetTitle>
+              </SheetHeader>
+              <nav className="toc-links">
+                {headings.map((h) => (
+                  <SheetClose asChild key={h.id}>
+                    <a href={'#' + h.id}>{h.text}</a>
+                  </SheetClose>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       )}
-    </article>
+      <div className="reading-grid">
+        <article>
+          <div className="reading-meta">
+            <TagLinks tags={revision?.snapshot.tags ?? []} />
+            {page.visibility === 'restricted' && <Badge variant="outline">受限</Badge>}
+          </div>
+          <div className="reading" ref={article}>
+            {revision && (
+              <SnapshotView snapshot={revision.snapshot} contentURL={revision.content_url} />
+            )}
+          </div>
+          {revision && (
+            <p className="metadata">
+              更新于 <DateText value={revision.created_at} />
+            </p>
+          )}
+        </article>
+        {headings.length > 0 && (
+          <aside className="article-toc">
+            <h2>目录</h2>
+            <nav aria-label="文章目录">
+              {headings.map((h) => (
+                <a key={h.id} href={'#' + h.id}>
+                  {h.text}
+                </a>
+              ))}
+            </nav>
+          </aside>
+        )}
+      </div>
+    </>
   )
 }
 export function EditPageScreen({ create = false }: { create?: boolean }) {
@@ -199,6 +208,7 @@ export function EditPageScreen({ create = false }: { create?: boolean }) {
         请先<Link to="/login">登录</Link>，再提交提案。
       </p>
     )
+  if (create && !auth.account.can_create_page) return <p role="alert">没有创建页面的权限。</p>
   if (!create && !resource.data) return <Loading error={resource.error} />
   if (!create && !resource.data?.revision)
     return (
@@ -208,8 +218,17 @@ export function EditPageScreen({ create = false }: { create?: boolean }) {
     )
   return (
     <section>
-      <SectionTitle eyebrow="CONTRIBUTE" title={create ? '创建知识页面' : '提出页面修改'} />
-      <p className="muted">内容先保存为提案，经有效审核与合并后发布。</p>
+      {!create && (
+        <PageNavigation
+          id={id}
+          title={resource.data?.revision?.snapshot.title}
+          capabilities={resource.data?.capabilities}
+        />
+      )}
+      <SectionTitle title={create ? '创建页面' : '提出修改'} />
+      <p className="muted">
+        {create ? '创建后立即发布首个版本。' : '提交提案，由有合并权限的人检查并发布。'}
+      </p>
       <div className="panel stack">
         {create && (
           <SelectField
@@ -225,20 +244,23 @@ export function EditPageScreen({ create = false }: { create?: boolean }) {
         <SnapshotEditor
           initial={resource.data?.revision?.snapshot ?? emptySnapshot}
           allowType={create}
+          label={create ? '创建并发布' : '提交提案'}
           action={action}
-          submit={async (snapshot) => {
+          submit={async (snapshot, published) => {
             if (create) {
               const created = await action.write<Schema<'CreatedPage'>>('pages', {
                 visibility,
                 snapshot,
               })
-              navigate('/proposals/' + created.proposal.id)
+              published()
+              navigate('/pages/' + created.page.id)
             } else {
               const proposal = await action.write<Schema<'Proposal'>>(`pages/${id}/proposals`, {
                 expected_head_revision_id: resource.data!.page.head_revision_id,
                 snapshot,
               })
-              navigate('/proposals/' + proposal.id)
+              published()
+              navigate(`/pages/${id}/proposals/${proposal.id}`)
             }
           }}
         />
@@ -248,11 +270,15 @@ export function EditPageScreen({ create = false }: { create?: boolean }) {
 }
 export function HistoryScreen() {
   const { id = '' } = useParams()
-  const [left, setLeft] = useState(''),
-    [right, setRight] = useState('')
+  const [params, setParams] = useSearchParams()
+  const left = params.get('from') ?? '',
+    right = params.get('to') ?? ''
+  const setLeft = (from: string) => setParams({ from, to: right }),
+    setRight = (to: string) => setParams({ from: left, to })
   return (
     <>
-      <SectionTitle title="发布历史与版本对比" />
+      <PageNavigation id={id} />
+      <SectionTitle title="发布历史" />
       <Link to={`/pages/${id}`}>返回页面</Link>
       <Collection<Schema<'Revision'>> path={`pages/${id}/revisions`}>
         {(r) => (
@@ -313,7 +339,8 @@ export function RevisionScreen() {
   const revision = resource.data
   return (
     <>
-      <SectionTitle eyebrow="IMMUTABLE REVISION" title={revision.snapshot.title} />
+      <PageNavigation id={id} />
+      <SectionTitle title={revision.snapshot.title} />
       <Link to={`/pages/${id}/history`}>返回历史</Link>
       <p className="metadata">
         <DateText value={revision.created_at} /> · 固定发布版本
@@ -321,34 +348,36 @@ export function RevisionScreen() {
       <div className="panel">
         <SnapshotView snapshot={revision.snapshot} contentURL={revision.content_url} />
       </div>
-      <section className="panel stack">
-        <h2>通过新提案回滚</h2>
-        <p>保留历史与当前权限。恢复会取此快照，撤销会反向应用此发布的修改。</p>
-        <SelectField
-          label="回滚方式"
-          value={kind}
-          onChange={setKind}
-          options={[
-            ['restore', '恢复到此版本'],
-            ['revert', '撤销此版本修改'],
-          ]}
-        />
-        <Button
-          disabled={action.busy || !page.data?.page.head_revision_id}
-          onClick={() =>
-            void action.run(async () => {
-              const out = await action.write<Schema<'Proposal'>>(`pages/${id}/${kind}`, {
-                revision_id: revisionID,
-                expected_head_revision_id: page.data!.page.head_revision_id,
+      {page.data?.capabilities.includes('propose') && (
+        <section className="panel stack">
+          <h2>通过新提案回滚</h2>
+          <p>保留历史与当前权限。恢复会取此快照，撤销会反向应用此发布的修改。</p>
+          <SelectField
+            label="回滚方式"
+            value={kind}
+            onChange={setKind}
+            options={[
+              ['restore', '恢复到此版本'],
+              ['revert', '撤销此版本修改'],
+            ]}
+          />
+          <Button
+            disabled={action.busy || !page.data?.page.head_revision_id}
+            onClick={() =>
+              void action.run(async () => {
+                const out = await action.write<Schema<'Proposal'>>(`pages/${id}/${kind}`, {
+                  revision_id: revisionID,
+                  expected_head_revision_id: page.data!.page.head_revision_id,
+                })
+                navigate(`/pages/${id}/proposals/${out.id}`)
               })
-              navigate('/proposals/' + out.id)
-            })
-          }
-        >
-          创建回滚提案
-        </Button>
-        <ActionFeedback action={action} />
-      </section>
+            }
+          >
+            创建回滚提案
+          </Button>
+          <ActionFeedback action={action} />
+        </section>
+      )}
     </>
   )
 }

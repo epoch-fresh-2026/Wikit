@@ -12,6 +12,16 @@ import {
   SelectField,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { PageNavigation } from '@/components/layout'
 import { Moderation } from './moderation'
 
 export function PolicyScreen() {
@@ -45,7 +55,8 @@ function PolicyEditor({
     setGrants((rows) => rows.map((g, i) => (i === index ? grant : g)))
   return (
     <>
-      <SectionTitle title="页面权限与治理" />
+      <PageNavigation id={id} />
+      <SectionTitle title="页面管理" />
       <Link to={`/pages/${id}`}>返回页面</Link>
       <section className="panel stack">
         <h2>访问策略</h2>
@@ -70,10 +81,14 @@ function PolicyEditor({
             label="页面可见性"
             value={visibility}
             onChange={(v) => setVisibility(v as typeof visibility)}
-            options={[
-              ['public', '公开'],
-              ['restricted', '受限'],
-            ]}
+            options={
+              id === '1'
+                ? [['public', '公开']]
+                : [
+                    ['public', '公开'],
+                    ['restricted', '受限'],
+                  ]
+            }
           />
           {grants.map((grant, i) => (
             <fieldset className="grant panel" key={i}>
@@ -94,17 +109,17 @@ function PolicyEditor({
                 required
               />
               <div className="actions">
-                {(['read', 'propose', 'discuss', 'review', 'manage'] as const).map((capability) => (
+                {(['read', 'propose', 'discuss', 'merge', 'manage'] as const).map((capability) => (
                   <label key={capability}>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={grant.capabilities.includes(capability)}
-                      onChange={(e) =>
+                      onCheckedChange={(checked) =>
                         updateGrant(i, {
                           ...grant,
-                          capabilities: e.target.checked
-                            ? [...grant.capabilities, capability]
-                            : grant.capabilities.filter((c) => c !== capability),
+                          capabilities:
+                            checked === true
+                              ? [...grant.capabilities, capability]
+                              : grant.capabilities.filter((c) => c !== capability),
                         })
                       }
                     />{' '}
@@ -113,7 +128,7 @@ function PolicyEditor({
                         read: '阅读',
                         propose: '提案',
                         discuss: '讨论',
-                        review: '审核',
+                        merge: '合并',
                         manage: '管理',
                       }[capability]
                     }
@@ -148,52 +163,43 @@ function PolicyEditor({
           重新读取策略（清空本地修改）
         </Button>
       </section>
-      <section className="panel stack">
-        <h2>页面治理</h2>
-        <p>隐藏会阻止普通读取，恢复保留既有历史及权限。请选择操作并填写理由。</p>
-        <SelectField
-          label="页面治理动作"
-          value={moderationMode}
-          onChange={setMode}
-          options={[
-            ['hide', '隐藏页面'],
-            ['restore', '恢复页面'],
-          ]}
-        />
-        <Moderation
-          path={`pages/${id}/moderation`}
-          hidden={moderationMode === 'restore'}
-          version={policy.policy_version}
-          done={reload}
-        />
-      </section>
+      {id !== '1' && (
+        <section className="panel stack">
+          <h2>页面治理</h2>
+          <p>隐藏会阻止普通读取，恢复保留既有历史及权限。请选择操作并填写理由。</p>
+          <SelectField
+            label="页面治理动作"
+            value={moderationMode}
+            onChange={setMode}
+            options={[
+              ['hide', '隐藏页面'],
+              ['restore', '恢复页面'],
+            ]}
+          />
+          <Moderation
+            path={`pages/${id}/moderation`}
+            hidden={moderationMode === 'restore'}
+            version={policy.policy_version}
+            done={reload}
+          />
+        </section>
+      )}
     </>
   )
 }
 
 export function AdminScreen() {
-  const [tab, setTab] = useState('accounts'),
-    [revision, setRevision] = useState(0),
+  const { section: tab = 'accounts' } = useParams()
+  const [revision, setRevision] = useState(0),
     [name, setName] = useState('')
   const action = useAction(),
     reload = () => setRevision((v) => v + 1)
   return (
     <>
-      <SectionTitle eyebrow="SITE GOVERNANCE" title="站点管理" />
+      <SectionTitle
+        title={{ accounts: '账户', groups: '用户组', audit: '审计' }[tab] ?? '未找到此页面'}
+      />
       <div className="toolbar">
-        <SelectField
-          label="管理范围"
-          value={tab}
-          onChange={(v) => {
-            setTab(v)
-            reload()
-          }}
-          options={[
-            ['accounts', '账户'],
-            ['groups', '用户组'],
-            ['audit', '审计'],
-          ]}
-        />
         <Button variant="outline" onClick={reload}>
           重新读取
         </Button>
@@ -211,10 +217,11 @@ export function AdminScreen() {
           <section className="panel">
             <h2>创建用户组</h2>
             <form
+              className="stack"
               onSubmit={(e) => {
                 e.preventDefault()
                 void action.run(async () => {
-                  await action.write('admin/groups', { name })
+                  await action.write('admin/groups', { name, create_page: false })
                   setName('')
                   reload()
                 })
@@ -228,19 +235,34 @@ export function AdminScreen() {
         </>
       )}
       {tab === 'audit' && (
-        <Collection<Schema<'AuditEvent'>> key={revision} path="admin/audit">
+        <Collection<Schema<'AuditEvent'>>
+          key={revision}
+          path="admin/audit"
+          renderItems={(rows) => (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>操作</TableHead>
+                  <TableHead>对象</TableHead>
+                  <TableHead>账户</TableHead>
+                  <TableHead>时间</TableHead>
+                  <TableHead>请求</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>{rows}</TableBody>
+            </Table>
+          )}
+        >
           {(event) => (
-            <div className="list-row" key={event.id}>
-              <div>
-                <strong>{event.action}</strong>
-                <p className="id">
-                  对象：{event.target_id ?? '—'} · 账户：{event.actor_id ?? '—'}
-                </p>
-                <small>
-                  <DateText value={event.created_at} /> · 请求 {event.request_id}
-                </small>
-              </div>
-            </div>
+            <TableRow key={event.id}>
+              <TableCell>{event.action}</TableCell>
+              <TableCell>{event.target_id ?? '—'}</TableCell>
+              <TableCell>{event.actor_id ?? '系统'}</TableCell>
+              <TableCell>
+                <DateText value={event.created_at} />
+              </TableCell>
+              <TableCell>{event.request_id}</TableCell>
+            </TableRow>
           )}
         </Collection>
       )}
@@ -250,18 +272,20 @@ export function AdminScreen() {
 function AccountRow({ item, done }: { item: Schema<'AccountAdmin'>; done: () => void }) {
   const [role, setRole] = useState(item.account.role),
     [status, setStatus] = useState(item.account.status),
+    [createPage, setCreatePage] = useState(item.account.create_page),
     action = useAction()
   return (
     <section className="panel">
       <h2>{item.account.username}</h2>
       <p className="id">{item.account.id}</p>
       <form
+        className="stack"
         onSubmit={(e) => {
           e.preventDefault()
           void action.run(async () => {
             await action.write(
               `admin/accounts/${item.account.id}`,
-              { role, status, expected_auth_version: item.auth_version },
+              { role, status, create_page: createPage, expected_auth_version: item.auth_version },
               'PATCH',
             )
             done()
@@ -275,7 +299,7 @@ function AccountRow({ item, done }: { item: Schema<'AccountAdmin'>; done: () => 
             onChange={(v) => setRole(v as typeof role)}
             options={[
               ['member', '成员'],
-              ['reviewer', '审核者'],
+              ['moderator', '版主'],
               ['admin', '管理员'],
             ]}
           />
@@ -289,6 +313,10 @@ function AccountRow({ item, done }: { item: Schema<'AccountAdmin'>; done: () => 
             ]}
           />
         </div>
+        <label className="check-label">
+          <Checkbox checked={createPage} onCheckedChange={(v) => setCreatePage(v === true)} />
+          创建页面
+        </label>
         <Button variant="outline" disabled={action.busy}>
           保存账户变更
         </Button>
@@ -299,13 +327,15 @@ function AccountRow({ item, done }: { item: Schema<'AccountAdmin'>; done: () => 
 }
 function GroupRow({ group, done }: { group: Schema<'Group'>; done: () => void }) {
   const [name, setName] = useState(group.name),
-    [members, setMembers] = useState(group.member_ids.join('\n')),
+    [members, setMembers] = useState(group.member_ids),
+    [createPage, setCreatePage] = useState(group.create_page),
     action = useAction()
   return (
     <section className="panel">
       <h2>{group.name}</h2>
       <p className="id">{group.id}</p>
       <form
+        className="stack"
         onSubmit={(e) => {
           e.preventDefault()
           void action.run(async () => {
@@ -313,7 +343,8 @@ function GroupRow({ group, done }: { group: Schema<'Group'>; done: () => void })
               `admin/groups/${group.id}`,
               {
                 name,
-                member_ids: members.split(/[\s,，]+/).filter(Boolean),
+                member_ids: members,
+                create_page: createPage,
                 expected_version: group.version,
               },
               'PUT',
@@ -323,13 +354,31 @@ function GroupRow({ group, done }: { group: Schema<'Group'>; done: () => void })
         }}
       >
         <Field label={`${group.name} 名称`} value={name} onChange={setName} required />
-        <Field
-          label={`${group.name} 成员账户 ID`}
-          value={members}
-          onChange={setMembers}
-          multiline
-          hint="每行一个账户 ID，也可用逗号分隔；留空移除所有成员。"
-        />
+        <fieldset className="stack">
+          <legend>成员</legend>
+          <Collection<Schema<'AccountAdmin'>> path="admin/accounts">
+            {({ account }) => (
+              <label className="check-label" key={account.id}>
+                <Checkbox
+                  checked={members.includes(account.id)}
+                  onCheckedChange={(v) =>
+                    setMembers((current) =>
+                      v === true
+                        ? [...current, account.id]
+                        : current.filter((id) => id !== account.id),
+                    )
+                  }
+                />
+                {account.display_name || account.username}{' '}
+                <span className="muted">{account.username}</span>
+              </label>
+            )}
+          </Collection>
+        </fieldset>
+        <label className="check-label">
+          <Checkbox checked={createPage} onCheckedChange={(v) => setCreatePage(v === true)} />
+          组成员可创建页面
+        </label>
         <Button variant="outline" disabled={action.busy}>
           保存用户组
         </Button>

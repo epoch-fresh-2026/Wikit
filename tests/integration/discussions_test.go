@@ -48,7 +48,7 @@ func TestDISC05CommentAndModerationCommitOrder(t *testing.T) {
 			s := newSuite(t)
 			ctx := context.Background()
 			admin := identity.Credentials{Bearer: s.adminToken}
-			p := s.createPage(t, admin, "public", document("Page", "text"), "race-discussion-page")
+			p := s.createPageWithProposal(t, admin, "public", document("Page", "text"), "race-discussion-page")
 			i := s.issue(t, admin, p.Page.ID, "race-discussion-issue")
 			normal := discussions.New(s.db.store, s.secrets, textadapter.Parser{})
 			done := make(chan error, 1)
@@ -126,7 +126,7 @@ func TestDISC06RateLimitsAndPublishedPageRestore(t *testing.T) {
 	s := newSuite(t)
 	_, c := s.reviewer(t, "discussion_rate_author")
 	admin := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, c, "public", document("Published", "text"), "rate-discussion-page")
+	p := s.createPageWithProposal(t, c, "public", document("Published", "text"), "rate-discussion-page")
 	revision := s.publish(t, c, p.Proposal, nil, "rate-publish")
 	i := s.issue(t, c, p.Page.ID, "rate-issue-key")
 	for n := 0; n < 10; n++ {
@@ -151,7 +151,7 @@ func TestDISC01LifecycleAssociationAndMerge(t *testing.T) {
 	_, token := s.register(t, "other_member")
 	other := identity.Credentials{Bearer: token}
 	admin := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, owner, "public", document("Page", "text"), "discussion-page")
+	p := s.createPageWithProposal(t, owner, "public", document("Page", "text"), "discussion-page")
 	i := s.issue(t, owner, p.Page.ID, "discussion-create")
 	again := s.issue(t, owner, p.Page.ID, "discussion-create")
 	if again.ID != i.ID {
@@ -168,7 +168,7 @@ func TestDISC01LifecycleAssociationAndMerge(t *testing.T) {
 	if decodeResult[discussions.Issue](t, raw).Version != 2 {
 		t.Fatal("duplicate advanced version")
 	}
-	p2 := s.createPage(t, owner, "public", document("Other", "text"), "discussion-other-page")
+	p2 := s.createPageWithProposal(t, owner, "public", document("Other", "text"), "discussion-other-page")
 	s.req(t, "POST", path+"/proposals", map[string]any{"proposal_id": p2.Proposal.ID, "expected_version": 2}, owner, "cross-page-link-key", 422)
 	_, err := s.db.conn.Exec(context.Background(), `INSERT INTO wikit.issue_proposals(issue_id,page_id,proposal_id) VALUES($1,$2,$3)`, i.ID, p.Page.ID, p2.Proposal.ID)
 	if pg, ok := err.(*pgconn.PgError); !ok || pg.Code != "23503" {
@@ -192,7 +192,7 @@ func TestDISC02ModerationVisibilityAndReplay(t *testing.T) {
 	_, token := s.register(t, "discussion_author")
 	owner := identity.Credentials{Bearer: token}
 	admin := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, owner, "public", document("Page", "text"), "moderation-page-key")
+	p := s.createPageWithProposal(t, owner, "public", document("Page", "text"), "moderation-page-key")
 	i := s.issue(t, owner, p.Page.ID, "moderation-issue-key")
 	path := "issues/" + i.ID
 	input := map[string]any{"body": "immutable comment"}
@@ -251,8 +251,8 @@ func TestDISC03CurrentCapabilitiesAndBoundCursors(t *testing.T) {
 	manager, mt := s.register(t, "discussion_manager")
 	mc := identity.Credentials{Bearer: mt}
 	admin := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, admin, "restricted", document("Private", "text"), "private-discussion-page")
-	policy := access.Policy{PageID: p.Page.ID, Visibility: "restricted", Status: "proposed", Version: 2, Grants: []access.Grant{{SubjectType: "user", SubjectID: author.ID, Capabilities: []string{"read", "discuss"}}, {SubjectType: "user", SubjectID: manager.ID, Capabilities: []string{"read", "manage"}}}}
+	p := s.createPageWithProposal(t, admin, "restricted", document("Private", "text"), "private-discussion-page")
+	policy := access.Policy{PageID: p.Page.ID, Visibility: "restricted", Status: "published", Version: 2, Grants: []access.Grant{{SubjectType: "user", SubjectID: author.ID, Capabilities: []string{"read", "discuss"}}, {SubjectType: "user", SubjectID: manager.ID, Capabilities: []string{"read", "manage"}}}}
 	s.seedPolicy(t, policy)
 	i := s.issue(t, owner, p.Page.ID, "private-issue-key")
 	s.issue(t, owner, p.Page.ID, "private-issue-two")
@@ -284,7 +284,7 @@ func TestDISC03CurrentCapabilitiesAndBoundCursors(t *testing.T) {
 func TestDISC04AtomicFailureAndInputLimits(t *testing.T) {
 	s := newSuite(t)
 	admin := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, admin, "public", document("Page", "text"), "failure-discussion-page")
+	p := s.createPageWithProposal(t, admin, "public", document("Page", "text"), "failure-discussion-page")
 	i := s.issue(t, admin, p.Page.ID, "failure-issue-key")
 	path := "issues/" + i.ID
 	execSQL(t, s.db.conn, `CREATE FUNCTION wikit.test_discussion_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='issue.moderate' THEN RAISE EXCEPTION 'injected'; END IF; RETURN NEW; END $$; CREATE TRIGGER fail_discussion_audit BEFORE INSERT ON wikit.audit_events FOR EACH ROW EXECUTE FUNCTION wikit.test_discussion_audit()`)
@@ -311,7 +311,7 @@ func TestDISC04AtomicFailureAndInputLimits(t *testing.T) {
 func TestDISC07ConcurrentStateAndIdempotencyConflict(t *testing.T) {
 	s := newSuite(t)
 	admin := identity.Credentials{Bearer: s.adminToken}
-	p := s.createPage(t, admin, "public", document("Page", "text"), "state-race-page")
+	p := s.createPageWithProposal(t, admin, "public", document("Page", "text"), "state-race-page")
 	i := s.issue(t, admin, p.Page.ID, "state-race-issue")
 	svc := discussions.New(s.db.store, s.secrets, textadapter.Parser{})
 	start := make(chan struct{})

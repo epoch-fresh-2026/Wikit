@@ -162,7 +162,7 @@ func New(s Services) (*Handler, error) {
 			raw := args.Body
 			maxBytes := 65536
 			switch tool.Operation {
-			case "page_create", "proposal_create", "proposal_update", "review_create", "proposal_merge", "proposal_rebase":
+			case "page_create", "proposal_create", "proposal_update", "proposal_merge", "proposal_rebase":
 				maxBytes = 5 << 20
 			case "issue_create", "comment_create":
 				maxBytes = 1 << 20

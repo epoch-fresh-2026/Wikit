@@ -12,11 +12,11 @@ func TestCapabilityMatrix(t *testing.T) {
 	}{
 		{"", "", "public", "published", []string{"read"}},
 		{"member", "active", "public", "published", []string{"read", "propose", "discuss"}},
-		{"reviewer", "active", "public", "published", []string{"read", "propose", "discuss", "review"}},
+		{"moderator", "active", "public", "published", []string{"read", "propose", "discuss", "merge"}},
 		{"admin", "active", "restricted", "published", capabilities()},
-		{"reviewer", "active", "restricted", "published", nil},
+		{"moderator", "active", "restricted", "published", nil},
 		{"member", "disabled", "public", "published", nil},
-		{"reviewer", "active", "public", "hidden", nil},
+		{"moderator", "active", "public", "hidden", nil},
 	} {
 		a := identity.Actor{Record: identity.Record{Account: identity.Account{Role: tc.role, Status: tc.status}}}
 		if tc.role != "" {
@@ -37,7 +37,7 @@ func TestManageDoesNotImplyReview(t *testing.T) {
 	a := identity.Actor{Record: identity.Record{Account: identity.Account{ID: "manager", Role: "member", Status: "active"}}}
 	p := Policy{Visibility: "restricted", Status: "hidden", Grants: []Grant{{"group", "group", []string{"read", "manage"}}}}
 	caps := effective(a, p, []Group{{ID: "group", Members: []string{"manager"}}})
-	if !caps["read"] || !caps["manage"] || caps["review"] {
+	if !caps["read"] || !caps["manage"] || caps["merge"] {
 		t.Fatal(caps)
 	}
 }

@@ -13,7 +13,7 @@ import (
 
 func (s *Service) Moderate(ctx context.Context, r access.Request, id string, hidden bool, reason string, version int64) (Page, error) {
 	id = strings.ToLower(id)
-	if !identity.ValidID(id) {
+	if !access.ValidPageID(id) {
 		return Page{}, fault.NotFound
 	}
 	if !utf8.ValidString(reason) || strings.ContainsRune(reason, 0) || strings.TrimSpace(reason) == "" || utf8.RuneCountInString(reason) > 2000 || version < 0 {
@@ -21,6 +21,9 @@ func (s *Service) Moderate(ctx context.Context, r access.Request, id string, hid
 	}
 	if len(r.Key) < 8 || len(r.Key) > 128 || r.Hash == "" || r.ID == "" {
 		return Page{}, fault.BadRequest
+	}
+	if id == "1" {
+		return Page{}, fault.Forbidden
 	}
 	r.Credentials.Write = true
 	reason = s.text.NFC(strings.TrimSpace(reason))
@@ -56,10 +59,7 @@ func (s *Service) Moderate(ctx context.Context, r access.Request, id string, hid
 		}
 		policy.Status = "hidden"
 		if !hidden {
-			policy.Status = "proposed"
-			if p.HeadRevisionID != nil {
-				policy.Status = "published"
-			}
+			policy.Status = "published"
 		}
 		policy.Version++
 		if err := tx.SavePolicy(ctx, policy); err != nil {

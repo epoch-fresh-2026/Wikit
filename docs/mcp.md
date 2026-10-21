@@ -1,5 +1,7 @@
 # MCP 工具契约
 
+当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
+
 端点 `/mcp`，Streamable HTTP。采用官方 Go MCP SDK；
 HTTP Bearer Token 由 Wikit 验证并映射为普通账户身份。
 所有 MCP 请求要求有效 Token，session ID 不是认证凭据。
@@ -47,7 +49,7 @@ JSON Schema inputSchema/outputSchema、annotations 和对应 REST operationId。
 | wikit_pages_list、wikit_page_get、wikit_revision_get | 阅读当前页面及历史 |
 | wikit_page_create、wikit_proposal_create、wikit_proposal_update | 创建页面与提案 |
 | wikit_proposal_diff、wikit_proposal_rebase | diff 与三方合并 |
-| wikit_review_create、wikit_proposal_merge、wikit_proposal_state | 审核、合并、关闭／重开 |
+| wikit_proposal_merge、wikit_proposal_state | 合并、关闭／重开 |
 | wikit_page_revert、wikit_page_restore | 撤销和恢复提案 |
 | wikit_issue_create、wikit_comment_create、wikit_issue_link_proposal | 页面讨论 |
 | wikit_upload_prepare、wikit_upload_get | 预约和确认媒体上传 |
@@ -58,13 +60,18 @@ JSON Schema inputSchema/outputSchema、annotations 和对应 REST operationId。
 完整工具名和字段以机器目录为准。注册、登录、密码和 Token 管理只通过 Web/REST，
 不暴露 MCP 凭证管理工具。Agent 内容包含指令也只作为内容保存，不作为系统指令执行。
 
-实现验收需用实际支持 Bearer 配置的客户端完成连接、读写、审核和冲突流程，
+实现验收需用实际支持 Bearer 配置的客户端完成连接、读写、合并和冲突流程，
 同时验证 HTTP 与 MCP 的业务结果一致。
 
-41 项工具由嵌入的机器目录注册；启动时编译全部输入/输出 schema，拒绝目录与分派不一致。
+39 项工具由嵌入的机器目录注册；启动时编译全部输入/输出 schema，拒绝目录与分派不一致。
 传输层只检查字段、类型、必填和关闭对象结构，值约束由共用 Core 校验，以保持 REST 的
 invalid_request/validation_failed/not_found/冲突语义。成功输出按完整 outputSchema 验证。
 错误不包含 schema 诊断、参数、Token、SQL 或底层错误，只有稳定类别和请求关联 ID。
 官方 Go SDK 的 StreamableClientTransport 配置自定义 HTTPClient 添加 Bearer Header 即可连接；
 无 OAuth handler，不把 Token 放入 endpoint、arguments、环境回显或 tools/list。
 参考：[Go SDK 协议支持](https://github.com/modelcontextprotocol/go-sdk/blob/main/docs/protocol.md)。
+
+Page ID 参数及返回值为十进制字符串。page_create 返回 page/revision 并直接发布，要求 create_page。
+账户和组管理配置 create_page；page_get 返回有效 capabilities。角色为 member/moderator/admin，
+页面能力为 read/propose/discuss/merge/manage。已删除 review_create、reviews_list 工具和审核轮次。
+首页规则与 REST 一致，由同一 Core 和数据库约束执行。

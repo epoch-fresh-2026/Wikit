@@ -1,10 +1,11 @@
 import MarkdownRenderer from 'react-markdown'
+import { Link } from 'react-router'
 import remarkGfm from 'remark-gfm'
 import { useEffect, useState } from 'react'
 import { api, type Schema } from '@/lib/api'
 
 const fixedContent =
-  /^\/api\/v1\/(?:pages\/[a-f\d-]{36}\/revisions\/[a-f\d-]{36}|proposals\/[a-f\d-]{36}\/revisions\/[a-f\d-]{36})\/content$/i
+  /^\/api\/v1\/(?:pages\/[1-9]\d*\/revisions\/[a-f\d-]{36}|proposals\/[a-f\d-]{36}\/revisions\/[a-f\d-]{36})\/content$/i
 export function safeURL(value: string): string {
   if (!value || /[\u0000-\u0020\\]/.test(value) || value.startsWith('//')) return ''
   if (value.startsWith('/') || value.startsWith('#')) return value
@@ -85,7 +86,9 @@ export function Markdown({ text }: { text: string }) {
         urlTransform={safeURL}
         components={{
           a: ({ href, children }) =>
-            href ? (
+            href?.startsWith('/') && !href.startsWith('/api/') ? (
+              <Link to={href}>{children}</Link>
+            ) : href ? (
               <a href={href} rel="noreferrer">
                 {children}
               </a>

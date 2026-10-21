@@ -19,19 +19,22 @@ import (
 type Page = content.Page
 type Revision = content.Published
 type Detail struct {
-	Page     Page      `json:"page"`
-	Revision *Revision `json:"revision"`
+	Page         Page      `json:"page"`
+	Revision     *Revision `json:"revision"`
+	Capabilities []string  `json:"capabilities"`
 }
 type Created struct {
-	Page     Page               `json:"page"`
-	Proposal proposals.Proposal `json:"proposal"`
+	Page     Page     `json:"page"`
+	Revision Revision `json:"revision"`
 }
 type Blob = content.Blob
 type Tx interface {
 	access.Authorization
 	SavePolicy(context.Context, access.Policy) error
 	InsertPage(context.Context, Page) error
-	InsertInitial(context.Context, proposals.Proposal, []content.MediaRef) error
+	NextPageID(context.Context) (string, error)
+	Publish(context.Context, content.Published, []content.MediaRef) error
+	Outbox(context.Context, content.Published) error
 	Page(context.Context, string) (Page, error)
 	PageCandidates(context.Context, string, string) ([]Page, error)
 	Policies(context.Context, []string) ([]access.Policy, error)
@@ -89,6 +92,13 @@ func (s *Service) Create(ctx context.Context, r access.Request, visibility strin
 		if err != nil {
 			return err
 		}
+		groups, err := tx.Groups(ctx)
+		if err != nil {
+			return err
+		}
+		if !access.CanCreate(a, groups) {
+			return fault.Forbidden
+		}
 		previous, err := tx.Replay(ctx, a.ID, "page.create", r.Key, r.Hash)
 		if err != nil {
 			return err
@@ -118,30 +128,34 @@ func (s *Service) Create(ctx context.Context, r access.Request, visibility strin
 		if err := content.CheckReferences(ctx, tx, r.Credentials, refs, s.files); err != nil {
 			return err
 		}
-		id, err := s.secrets.ID()
+		id, err := tx.NextPageID(ctx)
 		if err != nil {
 			return err
 		}
-		proposalID, err := s.secrets.ID()
+		revisionID, err := s.secrets.ID()
 		if err != nil {
 			return err
 		}
-		candidateID, err := s.secrets.ID()
-		if err != nil {
-			return err
-		}
-		out.Page = Page{ID: id, Type: snapshot.Type, Visibility: visibility, Status: "proposed", PolicyVersion: 1}
-		policy := access.Policy{PageID: id, Visibility: visibility, Status: "proposed", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: a.ID, Capabilities: []string{"read", "propose", "discuss"}}}}
+		out.Page = Page{ID: id, Type: snapshot.Type, Visibility: visibility, Status: "published", PolicyVersion: 1}
+		policy := access.Policy{PageID: id, Visibility: visibility, Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: a.ID, Capabilities: []string{"read", "propose", "discuss"}}}}
 		if err := tx.SavePolicy(ctx, policy); err != nil {
 			return err
 		}
 		if err := tx.InsertPage(ctx, out.Page); err != nil {
 			return err
 		}
-		out.Proposal = proposals.Initial(proposalID, id, a.ID, candidateID, snapshot, time.Now().UTC())
-		if err := tx.InsertInitial(ctx, out.Proposal, refs); err != nil {
+		out.Revision = Revision{PublisherID: &a.ID, ID: revisionID, PageID: id, Snapshot: snapshot, AuthorID: &a.ID, SourceKind: "create", CreatedAt: time.Now().UTC()}
+		if snapshot.Type == "media" {
+			url := "/api/v1/pages/" + id + "/revisions/" + revisionID + "/content"
+			out.Revision.ContentURL = &url
+		}
+		if err := tx.Publish(ctx, out.Revision, refs); err != nil {
 			return err
 		}
+		if err := tx.Outbox(ctx, out.Revision); err != nil {
+			return err
+		}
+		out.Page.HeadRevisionID = &revisionID
 		if err := tx.Audit(ctx, a, "page.create", id, r.ID); err != nil {
 			return err
 		}
@@ -158,7 +172,7 @@ func detail(ctx context.Context, tx Tx, id string) (Detail, error) {
 	if err != nil {
 		return Detail{}, err
 	}
-	out := Detail{Page: p}
+	out := Detail{Page: p, Capabilities: []string{}}
 	if p.HeadRevisionID != nil {
 		v, err := tx.Revision(ctx, id, *p.HeadRevisionID)
 		if err != nil {
@@ -171,19 +185,26 @@ func detail(ctx context.Context, tx Tx, id string) (Detail, error) {
 func (s *Service) Get(ctx context.Context, c identity.Credentials, id, revisionID string) (any, error) {
 	id = strings.ToLower(id)
 	revisionID = strings.ToLower(revisionID)
-	if !identity.ValidID(id) || (revisionID != "" && !identity.ValidID(revisionID)) {
+	if !access.ValidPageID(id) || (revisionID != "" && !identity.ValidID(revisionID)) {
 		return nil, fault.NotFound
 	}
 	var out any
 	err := s.repo.WithinPages(ctx, func(tx Tx) error {
-		if _, _, err := access.Authorize(ctx, tx, c, id, "read", false); err != nil {
+		actor, policy, err := access.Authorize(ctx, tx, c, id, "read", false)
+		if err != nil {
 			return err
 		}
-		var err error
+		groups, err := tx.Groups(ctx)
+		if err != nil {
+			return err
+		}
 		if revisionID != "" {
 			out, err = tx.Revision(ctx, id, revisionID)
 		} else {
-			out, err = detail(ctx, tx, id)
+			d, e := detail(ctx, tx, id)
+			err = e
+			d.Capabilities = access.Capabilities(actor, policy, groups)
+			out = d
 		}
 		return err
 	})
@@ -224,7 +245,7 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 	if q.Limit < 1 || q.Limit > 100 || !slices.Contains([]string{"pages", "revisions", "proposals", "candidates", "tags"}, q.Kind) || (q.Type != "" && q.Type != "document" && q.Type != "media") || (q.State != "" && !slices.Contains([]string{"open", "closed", "merged"}, q.State)) {
 		return List{}, fault.BadRequest
 	}
-	if q.PageID != "" && !identity.ValidID(q.PageID) || q.ProposalID != "" && !identity.ValidID(q.ProposalID) {
+	if q.PageID != "" && !access.ValidPageID(q.PageID) || q.ProposalID != "" && !identity.ValidID(q.ProposalID) {
 		return List{}, fault.NotFound
 	}
 	q.Tag = content.TagKey(s.text, q.Tag)
@@ -376,13 +397,21 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 			return fault.BadRequest
 		}
 		end := min(offset+q.Limit, len(ids))
+		if q.Kind == "pages" {
+			// Directory capabilities need the complete policy, including public ACLs.
+			if err := loadPolicies(ids[offset:end]); err != nil {
+				return err
+			}
+		}
 		out.Items = []json.RawMessage{}
 		for _, id := range ids[offset:end] {
 			var v any
 			var err error
 			switch q.Kind {
 			case "pages":
-				v, err = detail(ctx, tx, id)
+				d, readErr := detail(ctx, tx, id)
+				d.Capabilities = access.Capabilities(a, policies[id], groups)
+				v, err = d, readErr
 			case "revisions":
 				v, err = tx.Revision(ctx, q.PageID, id)
 			case "proposals":

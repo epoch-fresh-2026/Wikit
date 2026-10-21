@@ -20,13 +20,13 @@ func TestSnapshotNormalizationAndMarkdown(t *testing.T) {
 	if out.Title != "Café" || !slices.Equal(out.Tags, []string{"go", "strasse", "é"}) || len(refs) != 0 {
 		t.Fatal("incorrect canonical snapshot", out.Title, out.Tags, refs)
 	}
-	for _, markdown := range []string{"[x](javascript:alert%281%29)", "[x](javascript&#58;alert)", "[x](data:text/html,x)", "[x](/api/v1/pages/00000000-0000-4000-8000-000000000001/content)"} {
+	for _, markdown := range []string{"[x](javascript:alert%281%29)", "[x](javascript&#58;alert)", "[x](data:text/html,x)", "[x](/api/v1/pages/2/content)"} {
 		in.Markdown = &markdown
 		if _, _, err := content.Normalize(p, in); err != fault.Invalid {
 			t.Fatalf("unsafe/unfixed link accepted: %s", markdown)
 		}
 	}
-	link := "/api/v1/pages/00000000-0000-4000-8000-000000000001/revisions/00000000-0000-4000-8000-000000000002/content"
+	link := "/api/v1/pages/2/revisions/00000000-0000-4000-8000-000000000002/content"
 	for _, variant := range []string{
 		strings.Replace(link, "/v1/", "/v1/./", 1),
 		strings.Replace(link, "/v1/", "/v1//", 1),

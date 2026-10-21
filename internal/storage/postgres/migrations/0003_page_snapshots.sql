@@ -4,29 +4,29 @@ CREATE TABLE wikit.blobs (
  uploader uuid NOT NULL REFERENCES wikit.users(id), created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE wikit.pages (
- id uuid PRIMARY KEY REFERENCES wikit.page_policies(page_id),
+ id bigint PRIMARY KEY REFERENCES wikit.page_policies(page_id),
  type text NOT NULL CHECK(type IN ('document','media')), head_revision_id uuid,
  UNIQUE(id,type)
 );
 CREATE TABLE wikit.proposals (
- id uuid PRIMARY KEY, page_id uuid NOT NULL REFERENCES wikit.pages(id), author_id uuid NOT NULL REFERENCES wikit.users(id),
+ id uuid PRIMARY KEY, page_id bigint NOT NULL REFERENCES wikit.pages(id), author_id uuid NOT NULL REFERENCES wikit.users(id),
  state text NOT NULL CHECK(state IN ('open','closed','merged')), version bigint NOT NULL CHECK(version>0),
- review_round bigint NOT NULL CHECK(review_round>0), current_revision_id uuid NOT NULL, UNIQUE(id,page_id)
+ current_revision_id uuid NOT NULL, UNIQUE(id,page_id)
 );
 CREATE TABLE wikit.revisions (
- id uuid PRIMARY KEY, page_id uuid NOT NULL, type text NOT NULL, parent_id uuid,
- source_proposal_id uuid NOT NULL UNIQUE, snapshot jsonb NOT NULL,
- author_id uuid NOT NULL REFERENCES wikit.users(id), created_at timestamptz NOT NULL,
+ id uuid PRIMARY KEY, page_id bigint NOT NULL, type text NOT NULL, parent_id uuid,
+ source_proposal_id uuid UNIQUE, snapshot jsonb NOT NULL,
+ publisher_id uuid REFERENCES wikit.users(id), author_id uuid REFERENCES wikit.users(id), source_kind text NOT NULL CHECK(source_kind IN ('bootstrap','create','merge')), created_at timestamptz NOT NULL,
  sealed boolean NOT NULL DEFAULT false,
  blob_id uuid GENERATED ALWAYS AS ((snapshot->>'blob_id')::uuid) STORED REFERENCES wikit.blobs(id),
- CHECK(id IS DISTINCT FROM parent_id), CHECK(snapshot->>'type' IS NOT DISTINCT FROM type),
+ CHECK((source_kind='bootstrap') = (publisher_id IS NULL)), CHECK((source_kind='merge') = (parent_id IS NOT NULL)), CHECK((source_kind='merge') = (source_proposal_id IS NOT NULL)), CHECK((source_kind='bootstrap') = (author_id IS NULL)), CHECK(source_kind<>'bootstrap' OR page_id=1), CHECK(id IS DISTINCT FROM parent_id), CHECK(snapshot->>'type' IS NOT DISTINCT FROM type),
  UNIQUE(id,page_id), UNIQUE(id,page_id,type), UNIQUE NULLS NOT DISTINCT(page_id,parent_id),
  FOREIGN KEY(page_id,type) REFERENCES wikit.pages(id,type),
  FOREIGN KEY(parent_id,page_id) REFERENCES wikit.revisions(id,page_id),
  FOREIGN KEY(source_proposal_id,page_id) REFERENCES wikit.proposals(id,page_id)
 );
 CREATE TABLE wikit.proposal_revisions (
- id uuid PRIMARY KEY, proposal_id uuid NOT NULL, page_id uuid NOT NULL, type text NOT NULL,
+ id uuid PRIMARY KEY, proposal_id uuid NOT NULL, page_id bigint NOT NULL, type text NOT NULL,
  base_revision_id uuid, snapshot jsonb NOT NULL, created_at timestamptz NOT NULL,
  sealed boolean NOT NULL DEFAULT false,
  blob_id uuid GENERATED ALWAYS AS ((snapshot->>'blob_id')::uuid) STORED REFERENCES wikit.blobs(id),
@@ -44,12 +44,12 @@ CREATE TABLE wikit.tags (key text PRIMARY KEY);
 CREATE TABLE wikit.revision_tags (revision_id uuid REFERENCES wikit.revisions(id), tag_key text REFERENCES wikit.tags(key), PRIMARY KEY(revision_id,tag_key));
 CREATE TABLE wikit.proposal_revision_tags (revision_id uuid REFERENCES wikit.proposal_revisions(id), tag_key text REFERENCES wikit.tags(key), PRIMARY KEY(revision_id,tag_key));
 CREATE TABLE wikit.revision_media_refs (
- revision_id uuid REFERENCES wikit.revisions(id), target_page_id uuid, target_revision_id uuid,
+ revision_id uuid REFERENCES wikit.revisions(id), target_page_id bigint, target_revision_id uuid,
  target_type text NOT NULL DEFAULT 'media' CHECK(target_type='media'), PRIMARY KEY(revision_id,target_page_id,target_revision_id),
  FOREIGN KEY(target_revision_id,target_page_id,target_type) REFERENCES wikit.revisions(id,page_id,type)
 );
 CREATE TABLE wikit.proposal_revision_media_refs (
- revision_id uuid REFERENCES wikit.proposal_revisions(id), target_page_id uuid, target_revision_id uuid,
+ revision_id uuid REFERENCES wikit.proposal_revisions(id), target_page_id bigint, target_revision_id uuid,
  target_type text NOT NULL DEFAULT 'media' CHECK(target_type='media'), PRIMARY KEY(revision_id,target_page_id,target_revision_id),
  FOREIGN KEY(target_revision_id,target_page_id,target_type) REFERENCES wikit.revisions(id,page_id,type)
 );
@@ -124,3 +124,6 @@ CREATE TRIGGER immutable BEFORE UPDATE OR DELETE ON wikit.tags FOR EACH ROW EXEC
 CREATE INDEX ON wikit.revisions(page_id,created_at,id);
 CREATE INDEX ON wikit.proposals(page_id,state,id);
 CREATE INDEX ON wikit.proposal_revisions(proposal_id,created_at,id);
+
+CREATE TRIGGER page_delete BEFORE DELETE ON wikit.pages FOR EACH ROW EXECUTE FUNCTION wikit.immutable();
+CREATE TRIGGER page_truncate BEFORE TRUNCATE ON wikit.pages FOR EACH STATEMENT EXECUTE FUNCTION wikit.immutable();

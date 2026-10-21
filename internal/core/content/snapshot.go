@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 )
@@ -131,7 +132,7 @@ func Normalize(text Text, in Snapshot) (Snapshot, []MediaRef, error) {
 		cleanPath := path.Clean(strings.ReplaceAll(u.Path, "\\", "/"))
 		if strings.HasPrefix(cleanPath, "/api/v1/pages/") {
 			parts := strings.Split(u.Path, "/")
-			if u.Path != cleanPath || len(parts) != 8 || parts[5] != "revisions" || parts[7] != "content" || !identity.ValidID(parts[4]) || !identity.ValidID(parts[6]) || u.Host != "" || u.Scheme != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.RawPath != "" {
+			if u.Path != cleanPath || len(parts) != 8 || parts[5] != "revisions" || parts[7] != "content" || !access.ValidPageID(parts[4]) || !identity.ValidID(parts[6]) || u.Host != "" || u.Scheme != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.RawPath != "" {
 				return Snapshot{}, nil, fault.Invalid
 			}
 			ref := MediaRef{strings.ToLower(parts[4]), strings.ToLower(parts[6])}
