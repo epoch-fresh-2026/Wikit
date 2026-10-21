@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
 import {
@@ -23,9 +23,12 @@ export function IssueListScreen() {
     navigate = useNavigate(),
     action = useAction()
   const [title, setTitle] = useState(''),
-    [body, setBody] = useState(''),
-    [state, setState] = useState('open'),
-    [hidden, setHidden] = useState(false)
+    [body, setBody] = useState('')
+  const [params, setParams] = useSearchParams(),
+    state = params.get('state') ?? 'open',
+    hidden = params.get('governance') === '1'
+  const setState = (state: string) => setParams({ state, governance: hidden ? '1' : '0' }),
+    setHidden = (hidden: boolean) => setParams({ state, governance: hidden ? '1' : '0' })
   const path = `pages/${id}/issues?state=${state}&include_hidden=${hidden}`
   return (
     <>

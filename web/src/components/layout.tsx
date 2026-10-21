@@ -125,8 +125,10 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
     main = useRef<HTMLElement>(null)
   useEffect(() => {
     main.current?.focus()
+  }, [location.pathname])
+  useEffect(() => {
     setQuery(new URLSearchParams(location.search).get('q') ?? '')
-  }, [location.pathname, location.search])
+  }, [location.search])
   return (
     <SidebarProvider>
       <a className="skip-link" href="#main">
@@ -253,7 +255,7 @@ export function PageNavigation({
           ['/proposals', '提案'],
         ].map(([suffix, label]) => (
           <Button key={suffix} variant="ghost" size="sm" asChild>
-            <NavLink end to={`/pages/${id}${suffix}`}>
+            <NavLink end={!suffix} to={`/pages/${id}${suffix}`}>
               {label}
             </NavLink>
           </Button>

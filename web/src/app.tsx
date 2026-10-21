@@ -60,7 +60,7 @@ export function App() {
   const Layout = location.pathname.startsWith('/admin') ? AdminLayout : SiteLayout
   return (
     <Layout>
-      <div key={`${auth.epoch}:${location.pathname}:${location.search}`}>
+      <div key={`${auth.epoch}:${location.pathname}`}>
         <PageBoundary>
           <Suspense fallback={<Loading />}>
             <Routes>

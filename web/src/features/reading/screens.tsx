@@ -34,6 +34,7 @@ export function ExploreScreen() {
     tag = params.get('tag') ?? '',
     type = params.get('type') ?? '',
     search = params.get('q') ?? ''
+  useEffect(() => setQ(search), [search])
   const path = search ? 'search?' + query({ q: search, tag }) : 'pages?' + query({ tag, type })
   return (
     <>

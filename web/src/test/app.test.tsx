@@ -502,3 +502,14 @@ it('does not expose a proposal through another page route', async () => {
   expect(screen.queryByRole('button', { name: '合并' })).not.toBeInTheDocument()
   expect(screen.queryByText(proposal.current_revision.snapshot.title)).not.toBeInTheDocument()
 })
+
+it('keeps focus while typing a multi-character tag filter into the URL-backed directory', async () => {
+  const { user, fetcher } = mount('/pages')
+  const input = await screen.findByRole('textbox', { name: '标签筛选' })
+  await user.type(input, 'knowledge')
+  expect(input).toHaveValue('knowledge')
+  expect(input).toHaveFocus()
+  await waitFor(() =>
+    expect(fetcher.mock.calls.some(([url]) => url.includes('tag=knowledge'))).toBe(true),
+  )
+})
