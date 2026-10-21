@@ -2,14 +2,16 @@
 
 [English](README.md) · [设计文档](docs/README.md) · [贡献指南](CONTRIBUTING.md)
 
-Wikit 是面向公开社区的开源、自托管 Wiki。它借鉴 Git 的提案、diff 审核、
+Wikit 是面向公开社区的开源、自托管 Wiki。它借鉴 Git 的提案、差异比较、
 合并与版本历史；文档和媒体都是独立 Page，以标签组织。人和 Agent 通过
 REST 与 MCP 使用同一套账户权限。
 
-**当前状态：已实现账户/授权治理、不可变历史、审核与原子发布、三方 rebase、撤销/恢复提案和 PostgreSQL 测试；
-媒体上传、鉴权 Range 下载、本地安全 GC、页面议题与治理、中英文搜索及索引恢复已实现；官方 SDK 提供 41 个 MCP 工具，复用同一 Core。
-React WebUI 已提供阅读、编辑、审核、讨论和治理流程，frontend CI 已启用。
+**当前状态：已实现账户/授权治理、不可变历史、直接创建首版与提案原子发布、三方 rebase、撤销/恢复提案和 PostgreSQL 测试；
+媒体上传、鉴权 Range 下载、本地安全 GC、页面议题与治理、中英文搜索及索引恢复已实现；官方 SDK 提供 39 个 MCP 工具，复用同一 Core。
+React WebUI 已提供 Wiki SPA、独立提案页面、独立后台、标签输入和编辑离开提示，frontend CI 已启用。
 v0.1.0 GHCR 镜像已通过完整发布 CI 及按不可变 digest 拉取后的实际验收，生产部署仍由维护者手动执行。**
+本分支的 Issue #35 重设计使用数字 Page ID、固定首页和 create_page 权限，是不兼容的新部署基线，尚未包含在上述旧镜像中。旧库会被拒绝且不会自动清空；回退使用旧镜像与旧备份。验证见[重设计记录](docs/redesign-validation.md)。
+
 版本、digest、运行证据与拉取权限见[发布验收记录](docs/release-readiness.md)。
 后续工作见[开发路线](docs/roadmap.md)与
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues)。
@@ -22,7 +24,7 @@ PostgreSQL 保存权威业务状态，本地持久卷保存不可变媒体，
 Meilisearch 提供可重建的中英文检索。运行时不依赖 Git。
 
 v0.1 面向单机 Docker Compose，设计覆盖公开与受限页面、页面权限、
-单页面提案、固定版本媒体引用、审核、恢复与撤销提案、页面 Issue。
+单页面提案、固定版本媒体引用、合并、恢复与撤销提案、页面 Issue。
 原生 Git 接口、多租户、模板、实时协作、通知、语义搜索、S3 和高可用不在首版范围。
 
 ## 验证文档与契约

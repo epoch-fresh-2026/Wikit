@@ -18,6 +18,12 @@ production deployment remains manual.** See the [release evidence and registry a
 [implementation roadmap](docs/roadmap.md) and
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
 
+The Issue #35 redesign on this branch uses numeric Page IDs, a fixed home Page,
+explicit create_page grants, direct first publication, and a Wiki SPA with separate admin navigation.
+It is a fresh-deployment schema and is not included in the older image above. Existing UUID databases
+are rejected without deletion; rollback requires the matching old image and backup.
+See [redesign validation](docs/redesign-validation.md).
+
 ## Architecture
 
 React / TypeScript / Vite / shadcn/ui → REST; agents → MCP Streamable HTTP.
