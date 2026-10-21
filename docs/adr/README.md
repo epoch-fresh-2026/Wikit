@@ -1,6 +1,6 @@
 # 架构决策
 
-以下决策状态均为 accepted，确认日期 2026-10-20。变更通过 Issue 说明理由，
+以下决策状态均为 accepted，确认日期见各 ADR。变更通过 Issue 说明理由，
 新增 ADR supersede 原决策，不能悄悄覆盖历史取舍。
 
 - [0001 PostgreSQL 版本引擎](0001-postgres-version-engine.md)
@@ -19,3 +19,4 @@
 - [0014 MCP 传输与 Core 等价性](0014-mcp-core-parity.md)
 - [0015 WebUI 状态与请求边界](0015-web-state.md)
 - [0016 内嵌前端、恢复与发布证据](0016-container-recovery.md)
+- [0017 契约生成器与应用编译器分离](0017-contract-generator-toolchain.md)

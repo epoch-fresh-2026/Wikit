@@ -10,11 +10,11 @@ Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue 
 Issue #10 启用 frontend CI；Issue #11 的容器、恢复及基准验收已通过，启用 container
 和 release_ready。实际受控 tag/GHCR 产物与完整发布 CI 见 [发布验收记录](release-readiness.md)。
 
-WebUI 位于 web/，使用 React 19.3.1、TypeScript 5.9.3、Vite 8.3.4、Tailwind 4.3.3 与 shadcn/ui。
+WebUI 位于 web/，使用 React 19.3.1、TypeScript 7.0.2、Vite 8.3.4、Tailwind 4.3.3 与 shadcn/ui。
 源码组件由 shadcn CLI 4.22.1 导入，使用本地 cn 工具；运行依赖由 package-lock.json 锁定。
-API 类型由 openapi-typescript 7.13.0 生成，typecheck 先检查生成结果与契约一致。
-测试使用 Vitest 5.0.5、Testing Library、jsdom 29.1.1（兼容本地 Node 24.14）。
-命令：npm ci --prefix web、npm run typecheck --prefix web、npm run test:ci --prefix web、
+API 类型由根目录 openapi-typescript 7.13.0 与 TypeScript 5.9.3 生成，Web 编译使用 TypeScript 7.0.2。typecheck 先检查生成结果与契约一致；隔离原因见 [ADR 0017](adr/0017-contract-generator-toolchain.md)。
+测试使用 Vitest 5.0.5、Testing Library、jsdom 30.1.3（要求 Node 24.15.0 起，仍限 24 系列）。
+命令：先 npm ci，再 npm ci --prefix web、npm run typecheck --prefix web、npm run test:ci --prefix web、
 npm run build --prefix web；开发代理与后端 origin 见 [WebUI](web.md)。
 
 Issue #9 增加官方 Go MCP SDK v1.7.0 和 jsonschema-go v0.4.3，协议依赖只在适配器/组合根使用。

@@ -34,7 +34,7 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 
 ## 开发与验证
 
-`npm ci --prefix web` 后运行 `npm run dev --prefix web`。浏览器访问 127.0.0.1:5173；
+先 `npm ci` 安装根目录契约生成器，再 `npm ci --prefix web`，然后运行 `npm run dev --prefix web`。浏览器访问 127.0.0.1:5173；
 后端使用 WIKIT_PUBLIC_URL=http://127.0.0.1:5173、监听 127.0.0.1:8080，Vite 仅代理 /api 和 /health。
 代理保留浏览器 Origin，不通过改写 Origin 绕过 CSRF。生产 dist 的嵌入及 Compose 由 #11 完成。
 
@@ -42,3 +42,5 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 frontend CI 随实现启用。组件测试覆盖用户行为、
 契约请求、CSRF、错误/冲突与草稿保留、安全 Markdown、取消读取、身份隔离及键盘操作。
 模拟 API 的组件测试不算真实后端端到端 smoke；实际运行的范围在 Issue/PR 中单独记录。
+
+Issue #33 升级 jsdom 30 后，根目录与 Web 开发环境最低要求 Node 24.15.0（<25）；Docker 构建同步固定该版本。
