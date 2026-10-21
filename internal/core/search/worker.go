@@ -175,7 +175,7 @@ func (w *Worker) export(ctx context.Context, q Queue, target string, ids []strin
 			docs = append(docs, *doc)
 			batchBytes += len(raw) + 1
 		}
-		if len(docs)+len(deleted) >= 20 {
+		if len(docs)+len(deleted) >= 1000 {
 			if err := flush(); err != nil {
 				return err
 			}

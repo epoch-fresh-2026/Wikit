@@ -383,6 +383,22 @@ func benchmark() {
 	if pages < 100000 {
 		panic("benchmark dataset too small")
 	}
+	s := load()
+	published, _ := publish(s.MemberToken, s.AdminToken, "public", map[string]any{"type": "document", "title": "publicationlag marker", "tags": []string{}, "markdown": "规模库实际发布后的索引可见性"})
+	lagStart := time.Now()
+	visible := false
+	for time.Since(lagStart) < 30*time.Second {
+		result := request("GET", "/api/v1/search?q=publicationlag", "", nil, 200)
+		if bytes.Contains(result, []byte(published.Page.ID)) {
+			visible = true
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if !visible {
+		panic("publication did not become searchable within 30 seconds")
+	}
+	fmt.Printf("publication_to_search_visible_ms=%.3f poll_interval_ms=100 dataset_before_publication=%d\n", float64(time.Since(lagStart).Microseconds())/1000, pages)
 	public := map[string]bool{}
 	rows, err := conn.Query(ctx, "SELECT page_id::text FROM wikit.page_policies WHERE visibility='public' AND status='published'")
 	must(err)
@@ -428,8 +444,9 @@ func benchmark() {
 							}
 						}
 					}()
+					elapsed := float64(time.Since(begin).Microseconds()) / 1000
 					mu.Lock()
-					latencies = append(latencies, float64(time.Since(begin).Microseconds())/1000)
+					latencies = append(latencies, elapsed)
 					if bad {
 						failures++
 					}
