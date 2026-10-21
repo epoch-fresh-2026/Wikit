@@ -8,7 +8,7 @@ PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Iss
 Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue #7 增加页面议题、评论、
 同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。
 Issue #10 启用 frontend CI；Issue #11 的容器、恢复及基准验收已通过，启用 container
-和 release_ready。实际受控 tag/GHCR 发布待 PR 审查合并，见 [发布候选记录](release-readiness.md)。
+和 release_ready。实际受控 tag/GHCR 产物与完整发布 CI 见 [发布验收记录](release-readiness.md)。
 
 WebUI 位于 web/，使用 React 19.3.1、TypeScript 5.9.3、Vite 8.3.4、Tailwind 4.3.3 与 shadcn/ui。
 源码组件由 shadcn CLI 4.22.1 导入，使用本地 cn 工具；运行依赖由 package-lock.json 锁定。

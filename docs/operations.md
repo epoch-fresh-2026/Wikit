@@ -1,7 +1,7 @@
 # 单机部署、备份与恢复
 
 状态：Issue #11 的容器、Compose、恢复和规模验收已在真实 CI 中通过，见
-[发布候选记录](release-readiness.md)。正式 tag/GHCR 发行待 PR 审查合并后执行。
+[发布验收记录](release-readiness.md)。正式 tag、GHCR digest、CI 证据及拉取权限边界均在该记录登记。
 
 ## 容器交付约定
 
