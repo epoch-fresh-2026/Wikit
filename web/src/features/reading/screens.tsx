@@ -121,6 +121,7 @@ export function PageScreen({ home = false }: { home?: boolean }) {
   const { id: routeID = '' } = useParams(),
     id = home ? '1' : routeID
   const resource = useResource<Schema<'PageDetail'>>(`pages/${id}`)
+  const tocTarget = useRef<string | null>(null)
   const article = useRef<HTMLDivElement>(null),
     [headings, setHeadings] = useState<{ id: string; text: string }[]>([])
   useEffect(() => {
@@ -147,14 +148,32 @@ export function PageScreen({ home = false }: { home?: boolean }) {
                 文章目录
               </Button>
             </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
+            <SheetContent
+              aria-describedby={undefined}
+              onCloseAutoFocus={(event) => {
+                const target = tocTarget.current && document.getElementById(tocTarget.current)
+                tocTarget.current = null
+                if (!target) return
+                event.preventDefault()
+                target.tabIndex = -1
+                target.scrollIntoView({ block: 'start' })
+                target.focus({ preventScroll: true })
+              }}
+            >
+              <SheetHeader className="shrink-0">
                 <SheetTitle>文章目录</SheetTitle>
               </SheetHeader>
-              <nav className="toc-links">
+              <nav className="toc-links" aria-label="文章目录">
                 {headings.map((h) => (
                   <SheetClose asChild key={h.id}>
-                    <a href={'#' + h.id}>{h.text}</a>
+                    <a
+                      href={'#' + h.id}
+                      onClick={() => {
+                        tocTarget.current = h.id
+                      }}
+                    >
+                      {h.text}
+                    </a>
                   </SheetClose>
                 ))}
               </nav>

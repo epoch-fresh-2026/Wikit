@@ -27,8 +27,8 @@ export function TagInput({
       <Label htmlFor={id}>标签</Label>
       <div className="tag-editor">
         {tags.map((tag, index) => (
-          <Badge variant="secondary" key={`${tag}:${index}`}>
-            {tag}
+          <Badge variant="secondary" className="tag-chip" key={`${tag}:${index}`}>
+            <span className="min-w-0">{tag}</span>
             <Button
               type="button"
               variant="ghost"
