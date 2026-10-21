@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: wikit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      WIKIT_DATABASE_PASSWORD: ${WIKIT_DATABASE_PASSWORD:?Set WIKIT_DATABASE_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql
+      - ./scripts/init-database.sh:/docker-entrypoint-initdb.d/01-wikit.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U wikit -d wikit']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+  meilisearch:
+    image: getmeili/meilisearch:v1.55.0
+    environment:
+      MEILI_MASTER_KEY: ${WIKIT_MEILI_KEY:?Set WIKIT_MEILI_KEY}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: 'true'
+    volumes: [search:/meili_data]
+    restart: unless-stopped
+  wikit:
+    image: ${WIKIT_IMAGE:?Set WIKIT_IMAGE}
+    environment:
+      WIKIT_PUBLIC_URL: ${WIKIT_PUBLIC_URL:?Set WIKIT_PUBLIC_URL}
+      WIKIT_DATABASE_URL: postgres://wikit:${WIKIT_DATABASE_PASSWORD:?Set WIKIT_DATABASE_PASSWORD}@postgres:5432/wikit?sslmode=disable
+      WIKIT_MEILI_URL: http://meilisearch:7700
+      WIKIT_MEILI_KEY: ${WIKIT_MEILI_KEY:?Set WIKIT_MEILI_KEY}
+      WIKIT_MEDIA_ROOT: /var/lib/wikit/media
+      WIKIT_REGISTRATION_ENABLED: ${WIKIT_REGISTRATION_ENABLED:-true}
+    ports: ['${WIKIT_BIND:-127.0.0.1}:${WIKIT_PORT:-8080}:8080']
+    volumes: [media:/var/lib/wikit/media]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /wikit, healthcheck]
+      interval: 3s
+      timeout: 4s
+      retries: 30
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+    stop_grace_period: 45s
+    restart: unless-stopped
+volumes:
+  postgres:
+  media:
+  search:

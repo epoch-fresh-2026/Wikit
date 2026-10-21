@@ -17,6 +17,7 @@ import (
 
 	httpadapter "github.com/epoch-fresh-2026/Wikit/internal/adapters/http"
 	mcpadapter "github.com/epoch-fresh-2026/Wikit/internal/adapters/mcp"
+	"github.com/epoch-fresh-2026/Wikit/internal/adapters/webui"
 	"github.com/epoch-fresh-2026/Wikit/internal/config"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/discussions"
@@ -44,6 +45,20 @@ func main() {
 }
 
 func run(ctx context.Context, args []string) error {
+	if len(args) == 1 && args[0] == "healthcheck" {
+		client := http.Client{Timeout: 3 * time.Second}
+		response, err := client.Get("http://127.0.0.1:8080/health/ready")
+		if err != nil {
+			return errors.New("not ready")
+		}
+		if err := response.Body.Close(); err != nil {
+			return errors.New("not ready")
+		}
+		if response.StatusCode != http.StatusOK {
+			return errors.New("not ready")
+		}
+		return nil
+	}
 	if len(args) != 1 {
 		return errors.New("usage: wikit serve|migrate|create-admin|blob-gc|search-rebuild|search-retry|search-status")
 	}
@@ -168,7 +183,14 @@ func run(ctx context.Context, args []string) error {
 	}()
 	router := http.NewServeMux()
 	router.Handle("/mcp", mcpEndpoint)
-	router.Handle("/", (httpadapter.API{Search: searchService, Discussions: discussionService, Identity: accounts, Access: accessService, Pages: pageService, Proposals: proposalService, Media: mediaService, Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness)))
+	rest := (httpadapter.API{Search: searchService, Discussions: discussionService, Identity: accounts, Access: accessService, Pages: pageService, Proposals: proposalService, Media: mediaService, Secrets: secrets, PublicURL: cfg.PublicURL, SessionTTL: cfg.SessionTTL}).Handler(httpadapter.NewHandler(readiness))
+	router.Handle("/api/", rest)
+	router.Handle("/health/", rest)
+	ui, err := webui.Handler()
+	if err != nil {
+		return err
+	}
+	router.Handle("/", ui)
 	listener, err := net.Listen("tcp", cfg.ListenAddr)
 	if err != nil {
 		return errors.New("HTTP listener failed")
