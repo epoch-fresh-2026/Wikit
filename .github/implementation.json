@@ -2,6 +2,6 @@
   "backend": true,
   "frontend": true,
   "integration": true,
-  "container": false,
+  "container": true,
   "release_ready": false
 }
