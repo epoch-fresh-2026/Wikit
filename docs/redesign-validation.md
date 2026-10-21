@@ -11,7 +11,7 @@
 - 额外的超过 JS 安全整数范围 Page ID、创建与撤权提交顺序测试启用 race 通过（7.494s）。
 - 测试数据库由现有集成夹具逐例创建和清理；没有迁移或删除现有站点数据库。
 
-2026-10-21 远端完整 [CI 39600938541](https://github.com/epoch-fresh-2026/Wikit/actions/runs/39600938541) 通过，对应实现提交 `6dafc552fe6e2fac4b6d14142e97d66333a05235`。Documents and contracts、Go、WebUI、PostgreSQL integration、Container and Compose、CI gate 均成功，所有实现检查阶段保持启用。后续提交仅补充说明与此验收记录；最终 PR 检查仍需通过。
+2026-10-21 远端完整 [CI 39600938541](https://github.com/epoch-fresh-2026/Wikit/actions/runs/39600938541) 通过，对应实现提交 `6dafc552fe6e2fac4b6d14142e97d66333a05235`。Documents and contracts、Go、WebUI、PostgreSQL integration、Container and Compose、CI gate 均成功，所有实现检查阶段保持启用。最终提交的检查状态见 [PR #36](https://github.com/epoch-fresh-2026/Wikit/pull/36)；所有启用检查均须通过。
 
 [容器日志](https://github.com/epoch-fresh-2026/Wikit/actions/runs/39600938541/job/119226856842) 实际验证：
 

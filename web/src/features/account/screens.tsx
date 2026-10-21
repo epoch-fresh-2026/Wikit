@@ -4,6 +4,7 @@ import { api, type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
 import { ActionFeedback, Field, Loading, SectionTitle } from '@/components/shared'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from './auth'
 
 export function LoginScreen({ register = false }: { register?: boolean }) {
@@ -34,6 +35,7 @@ export function LoginScreen({ register = false }: { register?: boolean }) {
       <SectionTitle title={register ? '注册' : '登录'} />
 
       <form
+        className="stack"
         onSubmit={(e) => {
           e.preventDefault()
           void action.run(async () => {
@@ -80,9 +82,9 @@ export function LoginScreen({ register = false }: { register?: boolean }) {
 }
 function Secret({ value }: { value: string }) {
   return (
-    <div className="secret">
+    <div className="secret stack">
       <label htmlFor="issued-token">个人 Token（仅本次显示）</label>
-      <textarea
+      <Textarea
         id="issued-token"
         value={value}
         readOnly
