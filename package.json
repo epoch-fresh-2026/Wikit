@@ -5,7 +5,7 @@
   "description": "Wikit design contracts and repository checks; not the application",
   "type": "module",
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=24.15.0 <25"
   },
   "scripts": {
     "contracts:build": "node scripts/build-contracts.mjs",
