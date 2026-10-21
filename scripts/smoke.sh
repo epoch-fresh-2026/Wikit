@@ -46,6 +46,7 @@ mkdir "$evidence/baseline"
 git archive "$baseline" | tar -x -C "$evidence/baseline"
 cp scripts/Dockerfile.baseline "$evidence/baseline/Dockerfile"
 docker build -t wikit:previous "$evidence/baseline"
+docker image inspect wikit:previous --format 'Previous image={{.Id}}'
 printf 'Rollback baseline commit=%s\n' "$baseline"
 WIKIT_IMAGE=wikit:previous docker compose up -d --wait wikit
 driver verify-api

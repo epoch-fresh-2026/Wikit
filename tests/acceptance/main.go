@@ -21,6 +21,7 @@ import (
 	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/proposals"
 	"github.com/epoch-fresh-2026/Wikit/internal/security"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/blobfs"
 	"github.com/epoch-fresh-2026/Wikit/internal/storage/postgres"
@@ -180,11 +181,14 @@ func initialize() {
 }
 func publish(token, admin, visibility string, snapshot map[string]any) (pages.Created, string) {
 	p := decode[pages.Created](request("POST", "/api/v1/pages", token, map[string]any{"visibility": visibility, "snapshot": snapshot}, 201))
-	expected := map[string]any{"expected_head_revision_id": nil, "expected_proposal_revision_id": p.Proposal.CurrentRevision.ID}
-	review := map[string]any{"expected_head_revision_id": nil, "expected_proposal_revision_id": p.Proposal.CurrentRevision.ID, "expected_review_round": p.Proposal.ReviewRound, "decision": "approve", "body": "isolated acceptance review"}
-	request("POST", "/api/v1/proposals/"+p.Proposal.ID+"/reviews", admin, review, 201)
-	revision := decode[content.Published](request("POST", "/api/v1/proposals/"+p.Proposal.ID+"/merge", admin, expected, 200))
+	revision := mergeCandidate(admin, p.Proposal, nil)
 	return p, revision.ID
+}
+func mergeCandidate(admin string, p proposals.Proposal, head *string) content.Published {
+	expected := map[string]any{"expected_head_revision_id": head, "expected_proposal_revision_id": p.CurrentRevision.ID}
+	review := map[string]any{"expected_head_revision_id": head, "expected_proposal_revision_id": p.CurrentRevision.ID, "expected_review_round": p.ReviewRound, "decision": "approve", "body": "isolated acceptance review"}
+	request("POST", "/api/v1/proposals/"+p.ID+"/reviews", admin, review, 201)
+	return decode[content.Published](request("POST", "/api/v1/proposals/"+p.ID+"/merge", admin, expected, 200))
 }
 
 var png = []byte{137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 11, 73, 68, 65, 84, 120, 156, 99, 96, 0, 2, 0, 0, 5, 0, 1, 165, 246, 69, 64, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130}
@@ -217,6 +221,14 @@ func smoke() {
 		ID string `json:"id"`
 	}](b)
 	s.Media, s.MediaRevision = publish(s.MemberToken, s.AdminToken, "public", map[string]any{"type": "media", "title": "恢复原件", "tags": []string{}, "description": "original media", "blob_id": blob.ID})
+	head := s.Revision
+	for n := 1; n < 20; n++ {
+		text := fmt.Sprintf("历史正文 immutable history %d\n![原件](/api/v1/pages/%s/revisions/%s/content)", n, s.Media.Page.ID, s.MediaRevision)
+		candidate := decode[proposals.Proposal](request("POST", "/api/v1/pages/"+s.Document.Page.ID+"/proposals", s.MemberToken, map[string]any{"expected_head_revision_id": head, "snapshot": map[string]any{"type": "document", "title": "恢复验收 recovery marker", "tags": []string{"acceptance"}, "markdown": text}}, 201))
+		merged := mergeCandidate(s.AdminToken, candidate, &head)
+		head = merged.ID
+	}
+	fmt.Println("20 immutable publication revisions with fixed media references created through REST review/merge")
 	save(s)
 	verify(false)
 	fmt.Println("real REST create/review/merge/history/media and authentication smoke passed")
@@ -303,7 +315,11 @@ func verify(restored bool) {
 	if bytes.Contains(b, []byte("<html")) {
 		panic("API became SPA")
 	}
-	fmt.Println("public/restricted reads, fixed history, original bytes and embedded SPA passed")
+	if os.Args[1] == "verify-api" {
+		fmt.Println("previous backend API: public/restricted reads, fixed history, proposals and original bytes passed")
+	} else {
+		fmt.Println("public/restricted reads, fixed history, original bytes and embedded SPA passed")
+	}
 }
 func audit() {
 	conn, err := pgx.Connect(ctx, os.Getenv("WIKIT_DATABASE_URL"))
