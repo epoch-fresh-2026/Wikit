@@ -26,7 +26,7 @@ func TestTagFiltersRESTMCPParityAndPagination(t *testing.T) {
 	client, _ := s.connectMCP(t, s.adminToken)
 	special := `quote"slash\, OR type = media`
 	var ids []string
-	for i, tags := range [][]string{{"alpha", "beta"}, {"alpha"}, {"beta", "old"}, {"gamma"}, {special, "alpha"}, {"café"}} {
+	for i, tags := range [][]string{{"alpha", "beta"}, {"alpha"}, {"beta", "old"}, {"gamma"}, {special, "alpha"}, {"café"}, {"ǰ"}, {"ΐ"}} {
 		p := s.searchPage(t, admin, "public", content.Snapshot{Type: "document", Title: fmt.Sprintf("tagfilterneedle %d", i), Tags: tags, Markdown: ptr("tagfilterneedle body")}, fmt.Sprintf("tag-filter-page-%d", i))
 		ids = append(ids, p.Page.ID)
 	}
@@ -40,10 +40,13 @@ func TestTagFiltersRESTMCPParityAndPagination(t *testing.T) {
 		{"all", []string{" ALPHA ", "beta"}, nil, "all", ids[:1]},
 		{"any", []string{"alpha", "beta"}, nil, "any", []string{ids[0], ids[1], ids[2], ids[4]}},
 		{"combined", []string{"alpha", "beta"}, []string{"old"}, "any", []string{ids[0], ids[1], ids[4]}},
-		{"only exclude", nil, []string{"old"}, "all", []string{ids[0], ids[1], ids[3], ids[4], ids[5]}},
+		{"only exclude", nil, []string{"old"}, "all", []string{ids[0], ids[1], ids[3], ids[4], ids[5], ids[6], ids[7]}},
 		{"overlap", []string{"alpha", "beta"}, []string{"beta"}, "any", []string{ids[1], ids[4]}},
 		{"impossible overlap", []string{"alpha"}, []string{"alpha"}, "all", []string{}},
-		{"unicode", []string{"CAFE\u0301"}, nil, "all", ids[5:]},
+		{"unicode", []string{"CAFE\u0301"}, nil, "all", ids[5:6]},
+		{"fold recomposes latin", []string{"j\u030c", "ǰ"}, nil, "all", ids[6:7]},
+		{"fold recomposes greek", []string{"ΐ"}, nil, "all", ids[7:8]},
+		{"exclude recomposed", nil, []string{"j\u030c", "ΐ"}, "all", ids[:6]},
 		{"quoted", []string{special}, nil, "all", ids[4:5]},
 		{"missing", []string{"missing"}, nil, "any", []string{}},
 	} {

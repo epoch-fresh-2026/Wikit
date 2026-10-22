@@ -17,10 +17,7 @@ type TagFilter struct {
 	MatchSet    bool `json:"-"`
 }
 
-func (f TagFilter) Normalize(text interface {
-	NFC(string) string
-	Fold(string) string
-}, legacy string, legacySet bool) (TagFilter, error) {
+func (f TagFilter) Normalize(text TagText, legacy string, legacySet bool) (TagFilter, error) {
 	if (legacySet || legacy != "") && f.Tags != nil {
 		return TagFilter{}, fault.BadRequest
 	}
@@ -45,7 +42,7 @@ func (f TagFilter) Normalize(text interface {
 			if !utf8.ValidString(v) || strings.ContainsRune(v, 0) {
 				return nil, fault.BadRequest
 			}
-			v = text.Fold(text.NFC(strings.TrimSpace(v)))
+			v = TagKey(text, v)
 			if v == "" || !utf8.ValidString(v) || utf8.RuneCountInString(v) > 64 {
 				return nil, fault.BadRequest
 			}
