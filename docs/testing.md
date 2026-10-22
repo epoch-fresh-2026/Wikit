@@ -145,3 +145,11 @@ REST/MCP 超 JS 安全整数精度、非法格式及混合 ACL，旧 UUID 基线
 首次全量的既有 TestRateLimitAndRegistrationOff 曾失败；单独连续三次及最终全量均通过，
 未修改限流规则，不将首次失败记录为通过。文档契约、Web 类型/生产构建通过；独立于搜索界面 PR 的提交分支已复测 74 项前端测试全部通过。
 容器构建已尝试，但本机无 docker 命令，未执行镜像/Compose/恢复/容器规模验收；所有 CI 阶段保留。
+
+提交 `2d62f7be44a7fecfc10bebc4baaa48fcda88363c` 的 [PR #56 CI](https://github.com/epoch-fresh-2026/Wikit/actions/runs/39798528891)
+已实际通过文档契约、Go、WebUI、真实数据库集成和 Container and Compose。
+容器任务用时 4 分 51 秒，镜像构建、REST/认证/媒体 smoke、数据库与原件备份恢复、
+旧 UUID schema 拒绝且数据不变、旧镜像配套旧备份恢复、损坏备份和非空目标拒绝均通过。
+10 万页索引重建 115 秒，100 并发两轮各 2,000 请求均零错误；first-pass/warm
+P95 分别为 585.485/534.708 ms。该数据来自隔离 CI 夹具，不作为生产 SLO。
+完整日志包含 `Container, recovery, old-image/old-backup rollback and 100k/100-concurrency acceptance passed.`。
