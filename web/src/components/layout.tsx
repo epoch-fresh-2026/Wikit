@@ -9,13 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
 import { useAuth } from '@/features/account/auth'
 import { api, type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
@@ -147,62 +140,36 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
   )
 }
 
-export function PageNavigation({
-  id,
-  title,
-  capabilities,
-}: {
-  id: string
-  title?: string
-  capabilities?: string[]
-}) {
-  const context = useResource<Schema<'PageDetail'>>(!title || !capabilities ? `pages/${id}` : null)
+export function PageNavigation({ id, capabilities }: { id: string; capabilities?: string[] }) {
+  const context = useResource<Schema<'PageDetail'>>(
+    capabilities === undefined ? `pages/${id}` : null,
+  )
   const caps = capabilities ?? context.data?.capabilities ?? []
-  const pageTitle = title ?? context.data?.revision?.snapshot.title
   return (
-    <>
-      {id !== '1' && (
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">首页</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem className="min-w-0 max-w-full">
-              <BreadcrumbLink asChild className="min-w-0 [overflow-wrap:anywhere]">
-                <Link to={`/pages/${id}`}>{pageTitle || `页面 ${id}`}</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <nav className="page-tools" aria-label="页面操作">
+      {[
+        ['', '阅读'],
+        ['/issues', '讨论'],
+        ['/history', '历史'],
+        ['/proposals', '提案'],
+      ].map(([suffix, label]) => (
+        <Button key={suffix} variant="ghost" size="sm" asChild>
+          <NavLink end={!suffix} to={`/pages/${id}${suffix}`}>
+            {label}
+          </NavLink>
+        </Button>
+      ))}
+      {caps.includes('propose') && (
+        <Button size="sm" variant="outline" asChild>
+          <Link to={`/pages/${id}/edit`}>提出修改</Link>
+        </Button>
       )}
-      <nav className="page-tools" aria-label="页面操作">
-        {[
-          ['', '阅读'],
-          ['/issues', '讨论'],
-          ['/history', '历史'],
-          ['/proposals', '提案'],
-        ].map(([suffix, label]) => (
-          <Button key={suffix} variant="ghost" size="sm" asChild>
-            <NavLink end={!suffix} to={`/pages/${id}${suffix}`}>
-              {label}
-            </NavLink>
-          </Button>
-        ))}
-        {caps.includes('propose') && (
-          <Button size="sm" variant="outline" asChild>
-            <Link to={`/pages/${id}/edit`}>提出修改</Link>
-          </Button>
-        )}
-        {caps.includes('manage') && (
-          <Button size="sm" variant="ghost" asChild>
-            <Link to={`/pages/${id}/policy`}>页面管理</Link>
-          </Button>
-        )}
-      </nav>
-    </>
+      {caps.includes('manage') && (
+        <Button size="sm" variant="ghost" asChild>
+          <Link to={`/pages/${id}/policy`}>页面管理</Link>
+        </Button>
+      )}
+    </nav>
   )
 }
 

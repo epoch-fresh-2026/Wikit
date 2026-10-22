@@ -31,7 +31,8 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 
 `/admin` 默认进入账户管理。新建成功进入已发布页面；修改已有页面进入提案详情。
 `/pages` 与 `/proposals` 不再注册为前台路由，旧地址显示未找到页面；标签链接统一进入 `/search?tag=…`。
-普通页面面包屑从首页进入当前页面；Page 1 不显示重复的“首页 > 首页”。提案列表仅在具体 Page 下提供；REST/MCP 列表接口不变。
+Page 之间没有所属或父子层级；所有页面均不显示面包屑，首页通过顶栏站名访问（Issue #43）。
+提案列表仅在具体 Page 下提供；REST/MCP 列表接口不变。
 提案默认展示差异，候选预览和候选历史通过 Tabs 切换，编辑使用独立路由。
 有有效 merge 能力且正在展示匹配当前 head/候选的 diff 时可合并，无批准表单、审核记录或轮次。
 候选或 head 变化后必须重新读取；不会自动发布新的内容。恢复和撤销仍生成提案。
@@ -40,7 +41,7 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 页面工具按 Core 返回的 capabilities 展示操作；会话账户返回有效 can_create_page。
 
 官方 shadcn CLI 固定为 4.22.1，Radix/new-york/neutral 配置，组件源码和依赖锁提交仓库。
-复用 Sidebar、Breadcrumb、Button、Input、Textarea、Select、Checkbox、Badge、Tabs、
+复用 Button、Input、Textarea、Select、Checkbox、Badge、Tabs、
 Table、AlertDialog、DropdownMenu、Sheet、Alert、Skeleton 等组件。业务代码仅组合控件和内容排版。
 标签使用 Input、Badge、Button：Enter 形成标签、逐项删除，不按逗号或空格切分；
 中文 IME 确认不添加标签或提交表单。表单提交包括尚未确认的非空输入。
