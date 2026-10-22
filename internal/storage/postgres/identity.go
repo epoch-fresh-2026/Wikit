@@ -32,6 +32,13 @@ func storageError(err error) error {
 	return errors.New("security storage unavailable")
 }
 func (s *Store) withinSecurity(ctx context.Context, fn func(*securityTx) error) (result error) {
+	var held time.Time
+	m := measurements(ctx)
+	defer func() {
+		if m != nil && !held.IsZero() {
+			m.LockHeldNanos.Add(time.Since(held).Nanoseconds())
+		}
+	}()
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return storageError(err)
@@ -43,9 +50,15 @@ func (s *Store) withinSecurity(ctx context.Context, fn func(*securityTx) error) 
 			result = errors.Join(result, errors.New("security rollback failed"))
 		}
 	}()
-	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", SecurityLock); err != nil {
-		return storageError(err)
+	started := time.Now()
+	_, lockErr := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", SecurityLock)
+	if m != nil {
+		m.LockWaitNanos.Add(time.Since(started).Nanoseconds())
 	}
+	if lockErr != nil {
+		return storageError(lockErr)
+	}
+	held = time.Now()
 	if err := fn(&securityTx{tx}); err != nil {
 		return err
 	}

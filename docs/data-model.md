@@ -26,6 +26,9 @@ UTC timestamptz 对外输出 RFC 3339。页面关联、ACL、媒体引用、搜�
 | outbox_events / search_state | 顺序、任务 UID、目标索引、重试状态、active_index |
 | idempotency_records / list_cursors | 绑定当前账户、操作/查询与有效期 |
 
+Issue #49 的 0009 迁移为 list_cursors 增加可空 bigint page_anchor，页面目录保存最后消费
+候选的数值 ID，外部仍为随机不透明 token。其他列表继续使用 position；不改写既有迁移。
+
 source_kind 区分 bootstrap/create/merge。只有 merge 有 source_proposal_id 且要求 parent；
 bootstrap 只允许 Page 1、无用户作者和发布者；create/merge 必须有作者与发布者。
 记录提案作者和实际发布者是两件事，首页插入发布版本必须由当前活跃管理员发布。

@@ -17,6 +17,7 @@ func Open(ctx context.Context, databaseURL string) (*Store, error) {
 		return nil, errors.New("invalid database configuration")
 	}
 	cfg.ConnConfig.ConnectTimeout = 5 * time.Second
+	cfg.ConnConfig.Tracer = measurementTracer{}
 	cfg.MaxConns = 10
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

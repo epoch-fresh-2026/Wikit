@@ -22,3 +22,4 @@
 - [0017 契约生成器与应用编译器分离](0017-contract-generator-toolchain.md)
 - [0018 Wiki 页面、数字 ID 与直接发布](0018-wiki-publication-redesign.md)
 - [0020 会话写入凭证恢复](0020-session-csrf-recovery.md)
+- [0021 有界读取与性能测量](0021-bounded-read-paths.md)
