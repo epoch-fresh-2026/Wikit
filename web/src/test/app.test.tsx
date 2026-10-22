@@ -254,6 +254,7 @@ it('opens tag filters in search and keeps the keyword when changing type', async
   await screen.findByRole('heading', { name: '协作知识' })
   const tag = revision.snapshot.tags[0]
   await user.click(screen.getByRole('link', { name: tag }))
+  await user.click(await screen.findByRole('button', { name: '筛选' }))
   await screen.findByRole('textbox', { name: '包含标签' })
   expect(screen.getByRole('link', { name: tag })).toHaveAttribute(
     'href',
@@ -262,6 +263,7 @@ it('opens tag filters in search and keeps the keyword when changing type', async
   await user.type(screen.getByRole('textbox', { name: '搜索关键词' }), 'wiki')
   await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
   await screen.findByRole('heading', { name: '搜索结果' })
+  await user.click(screen.getByRole('button', { name: '筛选' }))
   await user.click(screen.getByLabelText('页面类型'))
   await user.click(screen.getByRole('option', { name: '媒体' }))
   await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
@@ -703,6 +705,7 @@ it('does not expose a proposal through another page route', async () => {
 
 it('keeps focus while typing a multi-character tag filter into URL-backed search', async () => {
   const { user, fetcher } = mount('/search')
+  await user.click(await screen.findByRole('button', { name: '筛选' }))
   const input = await screen.findByRole('textbox', { name: '包含标签' })
   await user.type(input, 'knowledge')
   expect(input).toHaveValue('knowledge')
@@ -718,6 +721,7 @@ it('submits tag groups together, restores navigation and clears the filters', as
   const { user, router, fetcher } = mount('/search?q=wiki&tag=legacy', (path) =>
     path.startsWith('/api/v1/search?') ? json(list([])) : undefined,
   )
+  await user.click(await screen.findByRole('button', { name: '筛选' }))
   await screen.findByRole('button', { name: '移除标签 legacy' })
   expect(screen.queryByRole('link', { name: '创建页面' })).not.toBeInTheDocument()
   const input = screen.getByRole('textbox', { name: '包含标签' })
@@ -732,6 +736,7 @@ it('submits tag groups together, restores navigation and clears the filters', as
   const applied = new URLSearchParams(router.state.location.search)
   expect(applied.getAll('tags')).toEqual(['legacy', 'database', 'with,comma'])
   expect(applied.get('tag_match')).toBe('any')
+  await user.click(screen.getByRole('button', { name: '筛选' }))
   await screen.findByRole('button', { name: '移除标签 old' })
   await user.click(screen.getByRole('button', { name: '移除标签 database' }))
   await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
@@ -744,6 +749,7 @@ it('submits tag groups together, restores navigation and clears the filters', as
   await act(async () => {
     await router.navigate(-1)
   })
+  await user.click(await screen.findByRole('button', { name: '筛选' }))
   await screen.findByRole('button', { name: '移除标签 database' })
   await user.click(screen.getByRole('button', { name: '清空筛选' }))
   await waitFor(() => expect(router.state.location.search).toBe(''))
@@ -757,7 +763,8 @@ it('keeps exclusion-only URL filters and does not offer page creation for them',
     path.startsWith('/api/v1/search?') ? json(list([])) : undefined,
   )
   await screen.findByText('未找到匹配页面。')
-  expect(screen.getByRole('button', { name: '移除标签 old' })).toBeInTheDocument()
+  expect(screen.getByText('已应用：排除 1 个标签')).toBeVisible()
+  expect(screen.queryByRole('button', { name: '移除标签 old' })).not.toBeInTheDocument()
   expect(screen.queryByRole('link', { name: '创建页面' })).not.toBeInTheDocument()
 })
 
@@ -878,4 +885,36 @@ it('moves focus to the selected article heading after closing the mobile content
   await user.keyboard('{Escape}')
   await waitFor(() => expect(trigger).toHaveFocus())
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+it('collapses filters by default and preserves drafts for a collapsed submission', async () => {
+  const { user, router } = mount('/search?tags=alpha&type=document')
+  const toggle = await screen.findByRole('button', { name: '筛选' })
+  expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  expect(screen.queryByRole('textbox', { name: '包含标签' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('combobox', { name: '页面类型' })).not.toBeInTheDocument()
+  expect(screen.getByText('已应用：包含 1 个标签（全部满足） · 文档')).toBeVisible()
+  toggle.focus()
+  await user.keyboard('{Enter}')
+  expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await user.type(screen.getByRole('textbox', { name: '包含标签' }), 'beta')
+  await user.type(screen.getByRole('textbox', { name: '排除标签' }), 'old')
+  await user.click(toggle)
+  expect(router.state.location.search).toBe('?tags=alpha&type=document')
+  await user.click(toggle)
+  expect(screen.getByRole('textbox', { name: '包含标签' })).toHaveValue('beta')
+  expect(screen.getByRole('textbox', { name: '排除标签' })).toHaveValue('old')
+  await user.click(toggle)
+  await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
+  await waitFor(() =>
+    expect(new URLSearchParams(router.state.location.search).getAll('tags')).toEqual([
+      'alpha',
+      'beta',
+    ]),
+  )
+  expect(new URLSearchParams(router.state.location.search).get('exclude_tags')).toBe('old')
+  expect(screen.getByRole('button', { name: '筛选' })).toHaveAttribute('aria-expanded', 'false')
+  await user.click(screen.getByRole('button', { name: '清空筛选' }))
+  await waitFor(() => expect(router.state.location.search).toBe(''))
+  expect(screen.queryByText(/已应用：/)).not.toBeInTheDocument()
 })
