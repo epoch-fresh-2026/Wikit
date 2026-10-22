@@ -116,7 +116,7 @@ func TestMigrationAndReadiness(t *testing.T) {
 	}
 	probe(200)
 	var count int
- if err := db.conn.QueryRow(ctx, "SELECT count(*) FROM public.wikit_schema_migrations").Scan(&count); err != nil || count != 9 {
+	if err := db.conn.QueryRow(ctx, "SELECT count(*) FROM public.wikit_schema_migrations").Scan(&count); err != nil || count != 9 {
 		t.Fatal("unexpected migration count", count, err)
 	}
 	execSQL(t, db.conn, "UPDATE public.wikit_schema_migrations SET checksum = repeat('0',64)")
@@ -151,7 +151,7 @@ func TestConcurrentMigrations(t *testing.T) {
 		}
 	}
 	var count int
- if err := db.conn.QueryRow(ctx, "SELECT count(*) FROM public.wikit_schema_migrations").Scan(&count); err != nil || count != 9 {
+	if err := db.conn.QueryRow(ctx, "SELECT count(*) FROM public.wikit_schema_migrations").Scan(&count); err != nil || count != 9 {
 		t.Fatal(count, err)
 	}
 }
@@ -177,8 +177,8 @@ func TestMigrationFailureRollsBack(t *testing.T) {
 
 func TestIncompatibleHistories(t *testing.T) {
 	for _, sql := range []string{
-  "INSERT INTO public.wikit_schema_migrations VALUES (10,'future',repeat('a',64),now())",
-  "UPDATE public.wikit_schema_migrations SET version=10 WHERE version=1",
+		"INSERT INTO public.wikit_schema_migrations VALUES (10,'future',repeat('a',64),now())",
+		"UPDATE public.wikit_schema_migrations SET version=10 WHERE version=1",
 		"UPDATE public.wikit_schema_migrations SET name='renamed' WHERE version=1",
 		"DELETE FROM public.wikit_schema_migrations",
 	} {

@@ -31,7 +31,7 @@ func TestMeasurementsAreOptInAndRequestLocal(t *testing.T) {
 	wg.Wait()
 	ctx := tracer.TraceQueryStart(second, nil, pgx.TraceQueryStartData{})
 	tracer.TraceQueryEnd(ctx, nil, pgx.TraceQueryEndData{})
- if a.Queries.Load() != 40 || b.Queries.Load() != 1 || b.PoolNanos.Load() != 0 {
+	if a.Queries.Load() != 40 || b.Queries.Load() != 1 || b.PoolNanos.Load() != 0 {
 		t.Fatal("cross-request or lost measurements")
 	}
 }
