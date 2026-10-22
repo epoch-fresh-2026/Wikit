@@ -180,6 +180,88 @@
         }
       }
     },
+    "/auth/session": {
+      "post": {
+        "operationId": "session_restore",
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "严格同源恢复有效会话的写入凭证，不延长会话",
+        "description": "严格同源恢复有效会话的写入凭证，不延长会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "description": "必须与站点公共 origin 完全相同；恢复不接受 Bearer。"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "401": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "403": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "404": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "409": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "413": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "415": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "429": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "500": {
+            "$ref": "#/components/responses/BusinessError"
+          },
+          "503": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionRestoreInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/logout": {
       "post": {
         "operationId": "logout",
@@ -6453,6 +6535,12 @@
             "maxLength": 256
           }
         }
+      },
+      "SessionRestoreInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {}
       },
       "Snapshot": {
         "oneOf": [

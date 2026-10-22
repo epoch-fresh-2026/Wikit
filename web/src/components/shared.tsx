@@ -103,9 +103,7 @@ export function ErrorNotice({ error }: { error?: ApiError }) {
       </AlertTitle>
       <AlertDescription className="min-w-0 [overflow-wrap:anywhere]">
         {error.requestID && <small>请求编号：{error.requestID}</small>}
-        {(error.code === 'csrf_missing' || error.code === 'unauthenticated') && (
-          <Link to="/login">重新登录</Link>
-        )}
+        {error.code === 'unauthenticated' && <Link to="/login">重新登录</Link>}
         {error.conflicts?.map((c, i) => (
           <section className="conflict w-full min-w-0" key={i}>
             <strong>{c.path}</strong>

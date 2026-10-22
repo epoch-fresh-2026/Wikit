@@ -21,7 +21,7 @@ Issue #8 实现 GET /search：q、tag、limit、cursor；拒绝其他查询参�
 - Cookie 会话或 Bearer Token 二选一；若两者同时提供且身份不同，返回
   `invalid_request`。匿名读取仅开放公开对象。
 - 变更会话请求校验 Origin 和 X-CSRF-Token；登录、注册校验 Origin，
-  会话建立后从登录响应获取 CSRF Token。
+  会话建立后从登录响应或同源恢复接口获取 CSRF Token。
 - 校验失败使用结构化错误：`error.code`、`message`、`request_id`，
   三方冲突可附 `conflicts`。无权限读取的对象返回 404。
 - `limit` 默认 20、最大 100；列表返回 `items` 和 `next_cursor`，
@@ -110,3 +110,13 @@ Bearer 通过每次读取当前状态即时生效。Token 管理返回创建时�
 页面策略采用整体替换，Core 校验调用者可授予范围，不能通过一个 PUT 扩大自身权限。
 提案列表、页面列表和讨论列表使用统一读权限过滤。
 缺少公开部署能力的管理命令不伪装成 HTTP 端点；见部署手册。
+
+
+### 会话写入凭证恢复（Issue #47）
+
+`POST /auth/session` 接受严格 JSON `{}`，仅有效 Cookie 会话可用，拒绝 Bearer（包括混用）。
+必须携带与公共 origin 完全相同的 Origin，无需旧 CSRF；不提供 CORS 或 MCP 入口。
+成功返回 Session（account/csrf_token），Cache-Control: no-store，不设置 Cookie、不延长期限。
+Core 在同一授权事务检查当前账户、会话及有效创建能力；失效、禁用、代次不符返回 401，
+缺少 Origin 返回 403。普通变更请求仍必须同时满足 Origin 与 CSRF。
+凭证按会话稳定派生，跨标签页恢复不互相失效；旧版本随机 CSRF 仍可用于原会话。

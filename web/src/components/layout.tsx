@@ -61,7 +61,6 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
             </form>
           )}
           <div className="site-account">
-            {auth.account && !api.csrf && <Link to="/login">重新登录</Link>}
             {auth.account ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

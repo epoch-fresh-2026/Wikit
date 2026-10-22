@@ -3,6 +3,7 @@ package identity
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
@@ -129,6 +130,20 @@ func Digest(value string) string {
 	sum := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(sum[:])
 }
+
+// sessionCSRF derives a stable, domain-separated nonce without exposing the
+// session secret or persisting recoverable credentials.
+func sessionCSRF(session string) string {
+	mac := hmac.New(sha256.New, []byte(session))
+	_, _ = mac.Write([]byte("wikit/session-csrf/v1")) // hash writes cannot fail.
+	return hex.EncodeToString(mac.Sum(nil))
+}
+func validCSRF(session, csrf, legacyDigest string) bool {
+	supplied := []byte(Digest(csrf))
+	legacy := subtle.ConstantTimeCompare([]byte(legacyDigest), supplied)
+	derived := subtle.ConstantTimeCompare([]byte(Digest(sessionCSRF(session))), supplied)
+	return legacy|derived == 1
+}
 func ValidID(id string) bool {
 	return regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).MatchString(strings.ToLower(id))
 }
@@ -159,7 +174,7 @@ func Resolve(ctx context.Context, tx Authentication, c Credentials) (Actor, erro
 		if u.Status != "active" || u.AuthVersion != s.AuthVersion {
 			return Actor{}, fault.Unauthenticated
 		}
-		if c.Write && (!c.OriginOK || subtle.ConstantTimeCompare([]byte(s.CSRFDigest), []byte(Digest(c.CSRF))) != 1) {
+		if c.Write && (!c.OriginOK || !validCSRF(c.Session, c.CSRF, s.CSRFDigest)) {
 			return Actor{}, fault.Forbidden
 		}
 		a = Actor{Record: u, Method: "session"}
@@ -219,6 +234,31 @@ func (s *Service) Current(ctx context.Context, c Credentials) (Account, error) {
 	})
 	return out, err
 }
+
+// SessionState contains only browser-safe authentication state.
+type SessionState struct {
+	Account Account
+	CSRF    string
+}
+
+// RestoreSession bootstraps CSRF only for an existing same-origin Cookie session.
+// It neither rotates credentials nor extends the session lifetime.
+func (s *Service) RestoreSession(ctx context.Context, c Credentials) (SessionState, error) {
+	if !c.OriginOK {
+		return SessionState{}, fault.Forbidden
+	}
+	if c.Bearer != "" {
+		return SessionState{}, fault.BadRequest
+	}
+	c.SessionOnly = true
+	c.Write = false // This use case has no mutation and intentionally needs no old nonce.
+	account, err := s.Current(ctx, c)
+	if err != nil {
+		return SessionState{}, err
+	}
+	return SessionState{account, sessionCSRF(c.Session)}, nil
+}
+
 func (s *Service) create(ctx context.Context, username, password, role, requestID string) (Account, string, error) {
 	if !validName(username) || !ValidPassword(password) {
 		return Account{}, "", fault.Invalid
@@ -300,10 +340,7 @@ func (s *Service) Login(ctx context.Context, username, password, ip, requestID s
 		if err != nil {
 			return err
 		}
-		csrf, err := s.secrets.Secret()
-		if err != nil {
-			return err
-		}
+		csrf := sessionCSRF(plain)
 		if err := tx.SaveSession(ctx, Session{Digest(plain), u.ID, Digest(csrf), u.AuthVersion, time.Now().Add(s.options.SessionTTL)}); err != nil {
 			return err
 		}

@@ -214,6 +214,17 @@ func (a API) handle(w http.ResponseWriter, r *http.Request) {
 				CSRF    string           `json:"csrf_token"`
 			}{login.Account, login.CSRF}
 		}
+	case r.Method == "POST" && path == "auth/session":
+		_, err = decode(r, &struct{}{})
+		if err != nil {
+			break
+		}
+		var session identity.SessionState
+		session, err = a.Identity.RestoreSession(r.Context(), c)
+		result = struct {
+			Account identity.Account `json:"account"`
+			CSRF    string           `json:"csrf_token"`
+		}{session.Account, session.CSRF}
 	case r.Method == "GET" && path == "auth/me":
 		result, err = a.Identity.Current(r.Context(), c)
 	case r.Method == "POST" && path == "auth/logout":

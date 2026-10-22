@@ -41,6 +41,7 @@ const schemas = {
     current_password: { ...string(128), writeOnly: true },
     new_password: { ...string(128), minLength: 12, writeOnly: true },
   }),
+  SessionRestoreInput: object({}),
   Session: object({ account: ref('Account'), csrf_token: string(256) }),
   Registration: object({ account: ref('Account'), token: string(256) }),
   Token: object({ token: string(256), generation: integer, created_at: date }),
@@ -171,7 +172,7 @@ for (const name of [
 
 const operations = [];
 const implementedRest = new Set([
-  'register', 'login', 'logout', 'account_me', 'password_change', 'token_status',
+  'register', 'login', 'session_restore', 'logout', 'account_me', 'password_change', 'token_status',
   'token_rotate', 'token_revoke', 'accounts_list', 'account_update', 'groups_list',
   'group_create', 'group_update', 'audit_list', 'page_policy_get', 'page_policy_update',
   'page_create', 'pages_list', 'page_get', 'revisions_list', 'revision_get',
@@ -189,6 +190,7 @@ const anonymous = { anonymous: true, mcp: false, sensitive: true };
 const sessionOnly = { sessionOnly: true, mcp: false, sensitive: true };
 op('post', '/auth/register', 'register', 'Accounts', '注册账户并显示一次 Token', 'Registration', 'RegisterInput', { ...anonymous, status: 201 });
 op('post', '/auth/login', 'login', 'Accounts', '登录并建立安全会话', 'Session', 'LoginInput', anonymous);
+op('post', '/auth/session', 'session_restore', 'Accounts', '严格同源恢复有效会话的写入凭证，不延长会话', 'Session', 'SessionRestoreInput', { ...sessionOnly, csrfBootstrap: true });
 op('post', '/auth/logout', 'logout', 'Accounts', '注销当前会话', null, null, sessionOnly);
 op('get', '/auth/me', 'account_me', 'Accounts', '获取当前账户', 'Account', null, { mcp: false });
 op('post', '/auth/password', 'password_change', 'Accounts', '修改密码并撤销会话', null, 'PasswordChange', sessionOnly);
@@ -282,7 +284,11 @@ export function buildContracts() {
       description: '同账户和操作下 24 小时内保留；相同 key 不同请求返回 409。',
       schema: { type: 'string', minLength: 8, maxLength: 128 },
     });
-    if (mutating && !o.anonymous) parameters.push({
+    if (o.csrfBootstrap) parameters.push({
+      name: 'Origin', in: 'header', required: true,
+      schema: string(2048), description: '必须与站点公共 origin 完全相同；恢复不接受 Bearer。',
+    });
+    if (mutating && !o.anonymous && !o.csrfBootstrap) parameters.push({
       name: 'X-CSRF-Token', in: 'header', required: false,
       description: 'Cookie 会话变更请求必填；Bearer-only 请求不需要。',
       schema: string(256),
