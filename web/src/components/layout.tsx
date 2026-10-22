@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
-import { BookOpen, Plus, Search } from 'lucide-react'
+import { BookOpen, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -66,14 +66,6 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
                 <Search />
               </Button>
             </form>
-          )}
-          {!admin && auth.account?.can_create_page && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/pages/new">
-                <Plus />
-                创建页面
-              </Link>
-            </Button>
           )}
           <div className="site-account">
             {auth.account && !api.csrf && <Link to="/login">重新登录</Link>}
@@ -169,21 +161,23 @@ export function PageNavigation({
   const pageTitle = title ?? context.data?.revision?.snapshot.title
   return (
     <>
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/">首页</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem className="min-w-0 max-w-full">
-            <BreadcrumbLink asChild className="min-w-0 [overflow-wrap:anywhere]">
-              <Link to={`/pages/${id}`}>{pageTitle || `页面 ${id}`}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      {id !== '1' && (
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/">首页</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem className="min-w-0 max-w-full">
+              <BreadcrumbLink asChild className="min-w-0 [overflow-wrap:anywhere]">
+                <Link to={`/pages/${id}`}>{pageTitle || `页面 ${id}`}</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
       <nav className="page-tools" aria-label="页面操作">
         {[
           ['', '阅读'],
