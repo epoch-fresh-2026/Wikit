@@ -25,8 +25,10 @@ function mount(route = '/', handler?: Handler, anonymous = false) {
     const path = String(input),
       overridden = handler?.(path, init)
     if (overridden) return overridden
-    if (path.endsWith('/auth/me'))
-      return anonymous ? failure('unauthenticated', 401) : json(account)
+    if (path.endsWith('/auth/session'))
+      return anonymous
+        ? failure('unauthenticated', 401)
+        : json({ account, csrf_token: 'browser-csrf' })
     if (path.includes('/auth/token'))
       return json({ active: true, generation: 1, created_at: revision.created_at })
     if (path === '/api/v1/pages/1' || path === `/api/v1/pages/${pageID}`) return json(detail)
@@ -209,8 +211,11 @@ it.each([
     mount(
       route,
       (path) => {
-        if (path.endsWith('/auth/me') && !anonymous)
-          return json({ ...account, can_create_page: canCreate })
+        if (path.endsWith('/auth/session') && !anonymous)
+          return json({
+            account: { ...account, can_create_page: canCreate },
+            csrf_token: 'browser-csrf',
+          })
         if (path.startsWith('/api/v1/search?'))
           return json(
             list(
@@ -400,11 +405,11 @@ it('merges directly with the displayed candidate and head and no review request'
   expect(fetcher.mock.calls.some(([path]) => path.includes('/reviews'))).toBe(false)
 })
 it('clears content and editor subtrees immediately when a request loses authentication', async () => {
-  const { user } = mount(`/pages/${pageID}/proposals/${proposalID}/edit`, (path, init) =>
-    init.method === 'POST' && path.endsWith('/revisions')
-      ? failure('unauthenticated', 401)
-      : undefined,
-  )
+  let revoked = false
+  const { user } = mount(`/pages/${pageID}/proposals/${proposalID}/edit`, (path, init) => {
+    if (init.method === 'POST' && path.endsWith('/revisions')) revoked = true
+    if (revoked) return failure('unauthenticated', 401)
+  })
   const editor = await screen.findByLabelText('Markdown 正文')
   await user.clear(editor)
   await user.type(editor, 'confidential draft')
@@ -489,12 +494,34 @@ it('supports a keyboard-only login form and presents an understandable error', a
   await screen.findByRole('alert')
   expect(screen.queryByText('private server diagnostics must not be shown')).not.toBeInTheDocument()
 })
-it('offers reauthentication when a fresh tab has a valid Cookie but no CSRF nonce', async () => {
-  api.setCSRF('')
-  const { user } = mount('/account')
+it.each(['', 'stale-nonce'])(
+  'restores writing credentials without asking for login: %s',
+  async (oldNonce) => {
+    api.setCSRF(oldNonce)
+    const { fetcher } = mount('/account')
+    await screen.findByRole('heading', { name: '个人 Token' })
+    expect(screen.queryByRole('link', { name: '重新登录' })).not.toBeInTheDocument()
+    expect(api.csrf).toBe('browser-csrf')
+    expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/auth/session'))).toHaveLength(1)
+  },
+)
+it('keeps the account and current-password input after an incorrect password', async () => {
+  const { user, fetcher } = mount('/account', (path, init) =>
+    path.endsWith('/auth/token') && init.method === 'POST'
+      ? failure('unauthenticated', 401)
+      : undefined,
+  )
   await screen.findByRole('heading', { name: '个人 Token' })
-  await user.click(screen.getByRole('link', { name: '重新登录' }))
-  await screen.findByRole('heading', { name: '登录' })
+  await user.type(screen.getByLabelText('当前密码'), 'wrong-password')
+  await user.click(screen.getByRole('button', { name: '轮换 Token' }))
+  await screen.findByText('验证未通过，请检查输入后重试。')
+  expect(screen.getByLabelText('当前密码')).toHaveValue('wrong-password')
+  expect(api.csrf).toBe('browser-csrf')
+  expect(
+    fetcher.mock.calls.filter(
+      ([path, init]) => path.endsWith('/auth/token') && init.method === 'POST',
+    ),
+  ).toHaveLength(1)
 })
 it('rotates and clears a one-time Token without putting it in storage', async () => {
   const { user, fetcher } = mount('/account', (path, init) =>
@@ -759,14 +786,20 @@ it('requires reading and acknowledging the current head before saving a stale ca
   expect(screen.getByRole('region', { name: '当前发布版本' })).toHaveTextContent('当前发布的新内容')
   expect(screen.getByRole('button', { name: '保存修订' })).toBeDisabled()
   fireEvent.submit(editor.closest('form')!)
-  expect(fetcher.mock.calls.some(([, init]) => init.method === 'POST')).toBe(false)
+  expect(
+    fetcher.mock.calls.some(
+      ([path, init]) => init.method === 'POST' && !path.endsWith('/auth/session'),
+    ),
+  ).toBe(false)
   await user.clear(editor)
   await user.type(editor, '已保留两边修改')
   await user.click(screen.getByRole('checkbox', { name: '已结合当前发布内容解决冲突' }))
   await user.click(screen.getByRole('button', { name: '保存修订' }))
   await screen.findByText(/版本已变化/)
   expect(editor).toHaveValue('已保留两边修改')
-  const [, init] = fetcher.mock.calls.find(([, init]) => init.method === 'POST')!
+  const [, init] = fetcher.mock.calls.find(
+    ([path, init]) => init.method === 'POST' && !path.endsWith('/auth/session'),
+  )!
   expect(JSON.parse(String(init.body))).toMatchObject({
     expected_head_revision_id: head.id,
     expected_proposal_revision_id: candidateID,

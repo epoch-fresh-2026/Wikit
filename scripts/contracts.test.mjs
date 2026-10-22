@@ -42,3 +42,16 @@ test('MCP has no password/token-management tool and every mapping exists', () =>
     assert(!/password|token_rotate|token_revoke|login|register/.test(tool.name));
   }
 });
+
+
+test('session recovery requires Origin and Cookie but no prior CSRF or MCP tool', () => {
+  const operation = openapi.paths['/auth/session'].post;
+  assert.deepEqual(operation.security, [{ session: [] }]);
+  assert(operation.parameters.some((p) => p.name === 'Origin' && p.required));
+  assert(!operation.parameters.some((p) => p.name === 'X-CSRF-Token'));
+  assert(!mcp.tools.some((t) => t['x-rest-operation'] === operation.operationId));
+  const validate = ajv.compile(openapi.components.schemas.SessionRestoreInput);
+  assert(validate({}));
+  assert(!validate({ csrf_token: 'untrusted' }));
+  assert(!validate(null));
+});

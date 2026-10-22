@@ -18,7 +18,9 @@ const messages: Record<string, string> = {
   storage_unavailable: '媒体存储暂时不可用。',
   internal_error: '服务暂时不可用，请保留草稿后重试。',
   network_error: '网络中断或请求超时，请保留草稿并重试。',
-  csrf_missing: '请先重新登录，以建立此标签页的安全写入凭证。',
+  authentication_failed: '验证未通过，请检查输入后重试。',
+  session_changed: '登录账户已变化，请在当前账户下重新操作。',
+  write_credentials_restored: '写入凭证已恢复，草稿已保留，请重新提交。',
 }
 export class ApiError extends Error {
   constructor(
@@ -46,9 +48,52 @@ function storedCSRF(value?: string): string {
 export class Client {
   csrf = storedCSRF()
   onUnauthorized: () => void = () => {}
+  onSessionRestored: (session: Schema<'Session'>) => boolean = () => true
+  private generation = 0
+  private recovery?: { generation: number; promise: Promise<void> }
   setCSRF(value: string) {
+    this.generation++
     this.csrf = value
     storedCSRF(value)
+  }
+
+  // Startup owns cancellation and installation so an unmounted provider cannot
+  // revive old credentials. This endpoint never mutates the session.
+  session(signal?: AbortSignal) {
+    return this.request<Schema<'Session'>>(
+      '/api/v1/auth/session',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+        signal,
+      },
+      false,
+    )
+  }
+
+  private restore(): Promise<void> {
+    const generation = this.generation
+    if (this.recovery?.generation === generation) return this.recovery.promise
+    const promise = this.session()
+      .then((session) => {
+        if (this.generation !== generation) throw new ApiError('session_changed')
+        this.setCSRF(session.csrf_token)
+        if (!this.onSessionRestored(session)) throw new ApiError('session_changed')
+      })
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.code === 'unauthenticated') {
+          if (this.generation !== generation) throw new ApiError('session_changed')
+          this.setCSRF('')
+          this.onUnauthorized()
+        }
+        throw error
+      })
+      .finally(() => {
+        if (this.recovery?.promise === promise) this.recovery = undefined
+      })
+    this.recovery = { generation, promise }
+    return promise
   }
 
   private async response(
@@ -59,7 +104,8 @@ export class Client {
     if (!path.startsWith('/api/v1/') || path.includes('\\')) throw new ApiError('invalid_request')
     const headers = new Headers(init.headers)
     const write = !['GET', 'HEAD'].includes(init.method ?? 'GET')
-    if (write && authenticatedWrite && !this.csrf) throw new ApiError('csrf_missing')
+    if (write && authenticatedWrite && !this.csrf) await this.restore()
+    const generation = this.generation
     if (write && this.csrf) headers.set('X-CSRF-Token', this.csrf)
     let response: Response
     try {
@@ -75,17 +121,27 @@ export class Client {
       throw new ApiError('network_error')
     }
     if (!response.ok) {
-      if (response.status === 401 && authenticatedWrite) {
-        this.setCSRF('')
-        this.onUnauthorized()
-      }
       let error: Schema<'Error'>['error'] | undefined
       try {
         error = ((await response.json()) as Schema<'Error'>).error
       } catch {
         /* No server diagnostics are shown. */
       }
-      throw new ApiError(error?.code ?? 'internal_error', error?.request_id, error?.conflicts)
+      if (authenticatedWrite && (response.status === 401 || (response.status === 403 && write))) {
+        if (generation !== this.generation) throw new ApiError('session_changed')
+        const previousCSRF = this.csrf
+        await this.restore()
+        // Never replay a mutation. A valid session means this 401 was an
+        // operation's credential check, e.g. current password, not logout.
+        if (response.status === 401) throw new ApiError('authentication_failed', error?.request_id)
+        if (previousCSRF !== this.csrf)
+          throw new ApiError('write_credentials_restored', error?.request_id)
+      }
+      throw new ApiError(
+        error?.code ?? (response.status === 401 ? 'unauthenticated' : 'internal_error'),
+        error?.request_id,
+        error?.conflicts,
+      )
     }
     return response
   }

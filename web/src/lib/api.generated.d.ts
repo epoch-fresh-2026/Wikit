@@ -44,6 +44,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 严格同源恢复有效会话的写入凭证，不延长会话
+         * @description 严格同源恢复有效会话的写入凭证，不延长会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         */
+        post: operations["session_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/logout": {
         parameters: {
             query?: never;
@@ -1209,6 +1229,7 @@ export interface components {
             account: components["schemas"]["Account"];
             csrf_token: string;
         };
+        SessionRestoreInput: Record<string, never>;
         Snapshot: components["schemas"]["DocumentSnapshot"] | components["schemas"]["MediaSnapshot"];
         Tag: {
             key: string;
@@ -1323,6 +1344,44 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginInput"];
+            };
+        };
+        responses: {
+            /** @description 操作成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            400: components["responses"]["BusinessError"];
+            401: components["responses"]["BusinessError"];
+            403: components["responses"]["BusinessError"];
+            404: components["responses"]["BusinessError"];
+            409: components["responses"]["BusinessError"];
+            413: components["responses"]["BusinessError"];
+            415: components["responses"]["BusinessError"];
+            422: components["responses"]["BusinessError"];
+            429: components["responses"]["BusinessError"];
+            500: components["responses"]["BusinessError"];
+            503: components["responses"]["BusinessError"];
+        };
+    };
+    session_restore: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 必须与站点公共 origin 完全相同；恢复不接受 Bearer。 */
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionRestoreInput"];
             };
         };
         responses: {

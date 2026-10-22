@@ -28,16 +28,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true
     const controller = new AbortController()
     api.onUnauthorized = clear
+    api.onSessionRestored = (session) => {
+      if (!active) return false
+      const sameIdentity = identity.current?.id === session.account.id
+      identity.current = session.account
+      setAccount(session.account)
+      if (!sameIdentity) setEpoch((e) => e + 1)
+      return sameIdentity
+    }
     api
-      .get<Schema<'Account'>>('auth/me', controller.signal)
+      .session(controller.signal)
       .then((value) => {
         if (active) {
-          identity.current = value
-          setAccount(value)
+          api.setCSRF(value.csrf_token)
+          identity.current = value.account
+          setAccount(value.account)
         }
       })
       .catch((error: ApiError) => {
-        if (active && error.code !== 'unauthenticated') setFailure(error)
+        if (active) {
+          if (error.code === 'unauthenticated') clear()
+          else setFailure(error)
+        }
       })
       .finally(() => {
         if (active) setReady(true)
@@ -45,7 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false
       controller.abort()
+      api.setCSRF('')
       api.onUnauthorized = () => {}
+      api.onSessionRestored = () => true
     }
   }, [])
   if (!ready)
