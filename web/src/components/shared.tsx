@@ -184,7 +184,7 @@ export function Collection<T>({
   path: string
   children: (item: T) => ReactNode
   renderItems?: (rows: ReactNode[]) => ReactNode
-  empty?: string
+  empty?: ReactNode
 }) {
   const [cursors, setCursors] = useState<string[]>([''])
   const [revision, setRevision] = useState(0)

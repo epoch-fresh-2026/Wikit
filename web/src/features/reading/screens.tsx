@@ -28,11 +28,12 @@ import { SnapshotEditor, emptySnapshot } from '@/features/editing/editor'
 import { SnapshotView } from './markdown'
 
 export function SearchScreen() {
+  const auth = useAuth()
   const [params, setParams] = useSearchParams(),
     [q, setQ] = useState(params.get('q') ?? '')
   const tag = params.get('tag') ?? '',
     type = params.get('type') ?? '',
-    search = params.get('q') ?? ''
+    search = (params.get('q') ?? '').trim()
   useEffect(() => setQ(search), [search])
   const path = search
     ? 'search?' + query({ q: search, tag, type })
@@ -74,7 +75,20 @@ export function SearchScreen() {
         />
       </div>
       {search ? (
-        <Collection<Schema<'SearchHit'>> key={path} path={path} empty="未找到匹配页面。">
+        <Collection<Schema<'SearchHit'>>
+          key={path}
+          path={path}
+          empty={
+            <>
+              未找到匹配页面。
+              {!tag && !type && auth.account?.can_create_page && (
+                <Button variant="link" asChild>
+                  <Link to={`/pages/new?${query({ title: search })}`}>创建页面</Link>
+                </Button>
+              )}
+            </>
+          }
+        >
           {(hit) => (
             <article className="directory-row" key={hit.page_id}>
               <h2>
@@ -209,6 +223,7 @@ export function PageScreen({ home = false }: { home?: boolean }) {
 }
 export function EditPageScreen({ create = false }: { create?: boolean }) {
   const { id = '' } = useParams(),
+    [params] = useSearchParams(),
     auth = useAuth(),
     navigate = useNavigate(),
     action = useAction()
@@ -254,7 +269,12 @@ export function EditPageScreen({ create = false }: { create?: boolean }) {
           />
         )}
         <SnapshotEditor
-          initial={resource.data?.revision?.snapshot ?? emptySnapshot}
+          initial={
+            resource.data?.revision?.snapshot ?? {
+              ...emptySnapshot,
+              title: create ? (params.get('title') ?? '').trim() : '',
+            }
+          }
           allowType={create}
           label={create ? '创建并发布' : '提交提案'}
           action={action}

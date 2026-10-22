@@ -125,12 +125,12 @@ it.each(['/pages', '/proposals'])(
     )
   },
 )
-it('keeps creation in the header and page-specific navigation accessible', async () => {
+it('keeps page-specific navigation accessible without a global create link', async () => {
   const { user } = mount(`/pages/${pageID}`)
   await screen.findByRole('heading', { name: '协作知识' })
   expect(
-    within(screen.getByRole('banner', { name: '站点' })).getByRole('link', { name: '创建页面' }),
-  ).toHaveAttribute('href', '/pages/new')
+    within(screen.getByRole('banner', { name: '站点' })).queryByRole('link', { name: '创建页面' }),
+  ).not.toBeInTheDocument()
   const tools = within(screen.getByRole('navigation', { name: '页面操作' }))
   expect(tools.getByRole('link', { name: '阅读' })).toHaveAttribute('aria-current', 'page')
   await user.click(tools.getByRole('link', { name: '提案' }))
@@ -140,6 +140,95 @@ it('keeps creation in the header and page-specific navigation accessible', async
       .getAllByRole('link', { name: proposal.current_revision.snapshot.title })
       .map((link) => link.getAttribute('href')),
   ).toContain(`/pages/${pageID}/proposals/${proposalID}`)
+})
+it.each(['/', '/pages/1'])('omits the repeated home breadcrumb at %s', async (route) => {
+  mount(route)
+  await screen.findByRole('heading', { name: '协作知识' })
+  expect(screen.queryByRole('navigation', { name: 'breadcrumb' })).not.toBeInTheDocument()
+  expect(screen.getByRole('navigation', { name: '页面操作' })).toBeInTheDocument()
+})
+it('keeps the home-to-page breadcrumb for ordinary pages', async () => {
+  mount(`/pages/${pageID}`)
+  await screen.findByRole('heading', { name: '协作知识' })
+  const breadcrumb = within(screen.getByRole('navigation', { name: 'breadcrumb' }))
+  expect(breadcrumb.getByRole('link', { name: '首页' })).toHaveAttribute('href', '/')
+  expect(breadcrumb.getByRole('link', { name: '协作知识' })).toHaveAttribute(
+    'href',
+    `/pages/${pageID}`,
+  )
+})
+it('offers creation after a completed empty search and prefills its term', async () => {
+  let respond!: (response: Response) => void
+  const pending = new Promise<Response>((resolve) => {
+    respond = resolve
+  })
+  const term = '新词条 & wiki'
+  const { user } = mount(`/search?q=${encodeURIComponent(term)}`, (path) =>
+    path.startsWith('/api/v1/search?') ? pending : undefined,
+  )
+  await screen.findByRole('heading', { name: '搜索结果' })
+  expect(screen.queryByRole('link', { name: '创建页面' })).not.toBeInTheDocument()
+  respond(json(list([])))
+  const create = await screen.findByRole('link', { name: '创建页面' })
+  expect(new URL(create.getAttribute('href')!, 'http://localhost').searchParams.get('title')).toBe(
+    term,
+  )
+  await user.click(create)
+  expect(await screen.findByRole('textbox', { name: '标题' })).toHaveValue(term)
+  expect(
+    within(screen.getByRole('banner', { name: '站点' })).queryByRole('link', { name: '创建页面' }),
+  ).not.toBeInTheDocument()
+})
+it.each([
+  { route: '/search?q=wiki', results: true, anonymous: false, canCreate: true },
+  { route: '/search?q=wiki&tag=knowledge', results: false, anonymous: false, canCreate: true },
+  { route: '/search?q=wiki&type=media', results: false, anonymous: false, canCreate: true },
+  { route: '/search', results: false, anonymous: false, canCreate: true },
+  { route: '/search?q=%20%20', results: false, anonymous: false, canCreate: true },
+  { route: '/search?tag=knowledge', results: false, anonymous: false, canCreate: true },
+  { route: '/search?q=wiki', results: false, anonymous: true, canCreate: false },
+  { route: '/search?q=wiki', results: false, anonymous: false, canCreate: false },
+])(
+  'does not offer creation outside an eligible empty search: $route, results=$results, anonymous=$anonymous, canCreate=$canCreate',
+  async ({ route, results, anonymous, canCreate }) => {
+    mount(
+      route,
+      (path) => {
+        if (path.endsWith('/auth/me') && !anonymous)
+          return json({ ...account, can_create_page: canCreate })
+        if (path.startsWith('/api/v1/search?'))
+          return json(
+            list(
+              results
+                ? [
+                    {
+                      page_id: pageID,
+                      revision_id: revisionID,
+                      title: '已有词条',
+                      type: 'document',
+                      tags: [],
+                      snippet: 'wiki',
+                    },
+                  ]
+                : [],
+            ),
+          )
+        if (path.startsWith('/api/v1/pages?')) return json(list([]))
+      },
+      anonymous,
+    )
+    await screen.findByText(
+      results ? '已有词条' : route.includes('q=wiki') ? '未找到匹配页面。' : '暂无内容。',
+    )
+    expect(screen.queryByRole('link', { name: '创建页面' })).not.toBeInTheDocument()
+  },
+)
+it('does not mistake a failed search for a missing page', async () => {
+  mount('/search?q=wiki', (path) =>
+    path.startsWith('/api/v1/search?') ? failure('unavailable', 503) : undefined,
+  )
+  await screen.findByRole('button', { name: '重新读取列表' })
+  expect(screen.queryByRole('link', { name: '创建页面' })).not.toBeInTheDocument()
 })
 it('opens tag filters in search and keeps the keyword when changing type', async () => {
   const { user, fetcher } = mount(`/pages/${pageID}`, (path) =>
