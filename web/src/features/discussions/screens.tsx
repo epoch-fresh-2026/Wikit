@@ -8,11 +8,10 @@ import {
   DateText,
   Field,
   Loading,
-  SectionTitle,
   SelectField,
 } from '@/components/shared'
 import { Checkbox } from '@/components/ui/checkbox'
-import { PageNavigation } from '@/components/layout'
+import { PageHeader } from '@/components/layout'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Markdown } from '@/features/reading/markdown'
@@ -32,8 +31,7 @@ export function IssueListScreen() {
   const path = `pages/${id}/issues?state=${state}&include_hidden=${hidden}`
   return (
     <>
-      <PageNavigation id={id} />
-      <SectionTitle title="讨论" />
+      <PageHeader id={id} title="讨论" />
       <Link to={`/pages/${id}`}>返回页面</Link>
       <div className="toolbar">
         <SelectField
@@ -120,13 +118,12 @@ function IssueDetail({
     [proposal, setProposal] = useState('')
   return (
     <>
-      <PageNavigation id={issue.page_id} />
-      <SectionTitle title={issue.title}>
+      <PageHeader id={issue.page_id} title={issue.title}>
         <Badge variant="outline">
           {issue.state === 'open' ? '进行中' : '已关闭'}
           {issue.hidden ? ' · 已隐藏' : ''}
         </Badge>
-      </SectionTitle>
+      </PageHeader>
       <Link to={`/pages/${issue.page_id}/issues`}>返回页面讨论</Link>
       <div className="panel">
         <Markdown text={issue.body} />

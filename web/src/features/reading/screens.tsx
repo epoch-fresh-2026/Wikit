@@ -13,7 +13,7 @@ import {
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PageNavigation } from '@/components/layout'
+import { PageHeader } from '@/components/layout'
 import {
   Sheet,
   SheetTrigger,
@@ -145,8 +145,7 @@ export function PageScreen({ home = false }: { home?: boolean }) {
   const { page, revision, capabilities } = resource.data
   return (
     <>
-      <PageNavigation id={id} capabilities={capabilities} />
-      <SectionTitle title={revision?.snapshot.title ?? '页面'} />
+      <PageHeader id={id} title={revision?.snapshot.title ?? '页面'} capabilities={capabilities} />
       {headings.length > 0 && (
         <div className="mobile-toc">
           <Sheet>
@@ -245,8 +244,11 @@ export function EditPageScreen({ create = false }: { create?: boolean }) {
     )
   return (
     <section>
-      {!create && <PageNavigation id={id} capabilities={resource.data?.capabilities} />}
-      <SectionTitle title={create ? '创建页面' : '提出修改'} />
+      {create ? (
+        <SectionTitle title="创建页面" />
+      ) : (
+        <PageHeader id={id} title="提出修改" capabilities={resource.data?.capabilities} />
+      )}
       <p className="muted">
         {create ? '创建后立即发布首个版本。' : '提交提案，由有合并权限的人检查并发布。'}
       </p>
@@ -303,8 +305,7 @@ export function HistoryScreen() {
     setRight = (to: string) => setParams({ from: left, to })
   return (
     <>
-      <PageNavigation id={id} />
-      <SectionTitle title="发布历史" />
+      <PageHeader id={id} title="发布历史" />
       <Link to={`/pages/${id}`}>返回页面</Link>
       <Collection<Schema<'Revision'>> path={`pages/${id}/revisions`}>
         {(r) => (
@@ -365,8 +366,7 @@ export function RevisionScreen() {
   const revision = resource.data
   return (
     <>
-      <PageNavigation id={id} />
-      <SectionTitle title={revision.snapshot.title} />
+      <PageHeader id={id} title={revision.snapshot.title} />
       <Link to={`/pages/${id}/history`}>返回历史</Link>
       <p className="metadata">
         <DateText value={revision.created_at} /> · 固定发布版本

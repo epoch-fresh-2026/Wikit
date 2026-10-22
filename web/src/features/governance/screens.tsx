@@ -21,7 +21,7 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
-import { PageNavigation } from '@/components/layout'
+import { PageHeader } from '@/components/layout'
 import { Moderation } from './moderation'
 
 export function PolicyScreen() {
@@ -55,8 +55,7 @@ function PolicyEditor({
     setGrants((rows) => rows.map((g, i) => (i === index ? grant : g)))
   return (
     <>
-      <PageNavigation id={id} />
-      <SectionTitle title="页面管理" />
+      <PageHeader id={id} title="页面管理" />
       <Link to={`/pages/${id}`}>返回页面</Link>
       <section className="panel stack">
         <h2>访问策略</h2>
