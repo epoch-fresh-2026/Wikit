@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -79,114 +78,153 @@ func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (
 	if err != nil {
 		return Result{}, err
 	}
-	// No business authorization lock is held during the external search request.
-	candidates := []Candidate{}
-	more := false
-	position := offset
-	for len(candidates) < 1000 {
-		n := min(100, 1000-len(candidates))
+
+	// Network requests remain outside the authorization transaction. Carry only
+	// selected candidates between batches, never their authority or content.
+	type positioned struct {
+		Candidate
+		Position int
+	}
+	selected := []positioned{}
+	position, fetched := offset, 0
+	for fetched < 1000 {
+		n := min(100, max(q.Limit, fetched), 1000-fetched)
 		batch, err := s.index.Search(ctx, index, q.Q, filter, position, n)
 		if err != nil {
 			return Result{}, fault.SearchUnavailable
 		}
-		candidates = append(candidates, batch.Hits...)
-		position += len(batch.Hits)
-		more = batch.More
-		if !batch.More || len(batch.Hits) == 0 {
-			break
+		if len(batch.Hits) > n {
+			return Result{}, fault.SearchUnavailable
 		}
-		// Revalidate in one current transaction below; fetch enough to survive ACL filtering.
-	}
-	out := Result{Items: []Hit{}}
-	err = s.repo.WithinSearch(ctx, func(tx Tx) error {
-		a, err := identity.Resolve(ctx, tx, c)
-		if err != nil {
-			return err
+		candidates := append([]positioned{}, selected...)
+		for _, candidate := range batch.Hits {
+			position++
+			candidates = append(candidates, positioned{candidate, position})
 		}
-		if a.ID != actorID {
-			return fault.BadRequest
-		}
-		current, err := tx.ActiveIndex(ctx)
-		if err != nil {
-			return err
-		}
-		if current != index {
-			return fault.BadRequest
-		}
-		groups, err := tx.Groups(ctx)
-		if err != nil {
-			return err
-		}
-		consumed := 0
-		seen := map[string]bool{}
-		for _, candidate := range candidates {
-			consumed++
-			if !access.ValidPageID(candidate.ID) || !identity.ValidID(candidate.Revision) {
-				continue
-			}
-			source, err := tx.SearchSource(ctx, candidate.ID)
-			if errors.Is(err, fault.NotFound) {
-				continue
-			}
+		fetched += len(batch.Hits)
+		more := batch.More && len(batch.Hits) > 0
+		out := Result{Items: []Hit{}}
+		selected = nil
+		err = s.repo.WithinSearch(ctx, func(tx Tx) error {
+			a, err := identity.Resolve(ctx, tx, c)
 			if err != nil {
 				return err
 			}
-			if source.Page.HeadRevisionID == nil || source.Page.Status != "published" {
-				if err := tx.Repair(ctx, candidate.ID); err != nil {
+			if a.ID != actorID {
+				return fault.BadRequest
+			}
+			current, err := tx.ActiveIndex(ctx)
+			if err != nil {
+				return err
+			}
+			if current != index {
+				return fault.BadRequest
+			}
+			groups, err := tx.Groups(ctx)
+			if err != nil {
+				return err
+			}
+			ids := []string{}
+			unique := map[string]bool{}
+			for _, candidate := range candidates {
+				if access.ValidPageID(candidate.ID) && identity.ValidID(candidate.Revision) && !unique[candidate.ID] {
+					ids = append(ids, candidate.ID)
+					unique[candidate.ID] = true
+				}
+			}
+			sources, err := tx.SearchSources(ctx, ids)
+			if err != nil {
+				return err
+			}
+			byID := map[string]Source{}
+			for _, source := range sources {
+				byID[source.Page.ID] = source
+			}
+			consumed := position
+			seen := map[string]bool{}
+			repairs := map[string]bool{}
+			repair := func(id string) error {
+				if repairs[id] {
+					return nil
+				}
+				repairs[id] = true
+				return tx.Repair(ctx, id)
+			}
+			for _, candidate := range candidates {
+				if !access.ValidPageID(candidate.ID) || !identity.ValidID(candidate.Revision) {
+					continue
+				}
+				source, ok := byID[candidate.ID]
+				if !ok {
+					continue
+				}
+				if source.Page.HeadRevisionID == nil || source.Page.Status != "published" {
+					if err := repair(candidate.ID); err != nil {
+						return err
+					}
+					continue
+				}
+				if access.CheckPolicy(a, source.Policy, groups, "read", false) != nil {
+					continue
+				}
+				if *source.Page.HeadRevisionID != candidate.Revision || source.Policy.Version != candidate.PolicyVersion {
+					if err := repair(candidate.ID); err != nil {
+						return err
+					}
+					continue
+				}
+				if q.Tag != "" && !slices.Contains(source.Snapshot.Tags, q.Tag) {
+					continue
+				}
+				if seen[candidate.ID] {
+					continue
+				}
+				seen[candidate.ID] = true
+				selected = append(selected, candidate)
+				if len(selected) == q.Limit {
+					consumed = candidate.Position
+					break
+				}
+			}
+			// Incomplete batches only carry candidate identifiers to the next iteration.
+			// This transaction is the final authority whenever a response is returned.
+			if len(selected) < q.Limit && more && fetched < 1000 {
+				return nil
+			}
+			for _, candidate := range selected {
+				doc, err := project(byID[candidate.ID], s.text)
+				if err != nil {
 					return err
 				}
-				continue
+				snippet := []rune(doc.Body)
+				if len(snippet) > 2000 {
+					snippet = snippet[:2000]
+				}
+				out.Items = append(out.Items, Hit{doc.ID, doc.Revision, doc.Type, doc.Title, doc.Tags, string(snippet)})
 			}
-			if access.CheckPolicy(a, source.Policy, groups, "read", false) != nil {
-				continue
-			}
-			if *source.Page.HeadRevisionID != candidate.Revision || source.Policy.Version != candidate.PolicyVersion {
-				if err := tx.Repair(ctx, candidate.ID); err != nil {
+			if consumed < position || more {
+				plain, err := s.secrets.Secret()
+				if err != nil {
 					return err
 				}
-				continue
+				next, err := tx.NewCursor(ctx, plain, a.ID, binding, consumed, q.Limit)
+				if err != nil {
+					return err
+				}
+				out.Next = &next
 			}
-			if q.Tag != "" && !slices.Contains(source.Snapshot.Tags, q.Tag) {
-				continue
-			}
-			if seen[candidate.ID] {
-				continue
-			}
-			seen[candidate.ID] = true
-			doc, err := project(source, s.text)
-			if err != nil {
-				return err
-			}
-			if doc == nil {
-				continue
-			}
-			snippet := []rune(doc.Body)
-			if len(snippet) > 2000 {
-				snippet = snippet[:2000]
-			}
-			out.Items = append(out.Items, Hit{doc.ID, doc.Revision, doc.Type, doc.Title, doc.Tags, string(snippet)})
-			if len(out.Items) == q.Limit {
-				break
-			}
+			return nil
+		})
+		if err != nil {
+			return Result{}, err
 		}
-		if consumed < len(candidates) || more {
-			plain, err := s.secrets.Secret()
-			if err != nil {
-				return err
-			}
-			next, err := tx.NewCursor(ctx, plain, a.ID, binding, offset+consumed, q.Limit)
-			if err != nil {
-				return err
-			}
-			out.Next = &next
+		if len(selected) == q.Limit || !more || fetched >= 1000 {
+			return out, nil
 		}
-		return nil
-	})
-	if err != nil {
-		return Result{}, err
 	}
-	return out, nil
+	return Result{}, fault.SearchUnavailable
 }
+
 func project(s Source, text Text) (*Document, error) {
 	if s.Page.HeadRevisionID == nil || s.Page.Status != "published" {
 		return nil, nil

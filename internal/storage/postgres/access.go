@@ -158,6 +158,6 @@ func (t *securityTx) Cursor(ctx context.Context, plain, actor, kind string, limi
 	return offset, storageError(err)
 }
 func (t *securityTx) NewCursor(ctx context.Context, plain, actor, kind string, position, limit int) (string, error) {
-	_, err := t.Exec(ctx, "INSERT INTO wikit.list_cursors VALUES($1,nullif($2,'')::uuid,$3,$4,$5,$6)", identity.Digest(plain), actor, kind, limit, position, time.Now().Add(10*time.Minute))
+	_, err := t.Exec(ctx, "INSERT INTO wikit.list_cursors(digest,actor_id,kind,page_size,position,expires_at) VALUES($1,nullif($2,'')::uuid,$3,$4,$5,$6)", identity.Digest(plain), actor, kind, limit, position, time.Now().Add(10*time.Minute))
 	return plain, storageError(err)
 }

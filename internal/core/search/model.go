@@ -57,7 +57,7 @@ type Text interface {
 type Tx interface {
 	access.Authorization
 	ActiveIndex(context.Context) (string, error)
-	SearchSource(context.Context, string) (Source, error)
+	SearchSources(context.Context, []string) ([]Source, error)
 	Repair(context.Context, string) error
 	Cursor(context.Context, string, string, string, int) (int, error)
 	NewCursor(context.Context, string, string, string, int, int) (string, error)

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/search"
 	"github.com/jackc/pgx/v5"
@@ -39,6 +40,54 @@ func (t *securityTx) SearchSource(ctx context.Context, id string) (search.Source
 func (t *securityTx) Repair(ctx context.Context, id string) error {
 	_, err := t.Exec(ctx, `INSERT INTO wikit.outbox_events(id,page_id,kind,created_at) VALUES(gen_random_uuid(),$1,'page.repair',now()) ON CONFLICT(page_id) WHERE kind='page.repair' AND completed_at IS NULL DO NOTHING`, id)
 	return storageError(err)
+}
+
+// SearchSources uses two bounded queries regardless of the number of candidates.
+// Authorization remains in Core; the adapter returns complete current policies.
+func (t *securityTx) SearchSources(ctx context.Context, ids []string) ([]search.Source, error) {
+	if len(ids) == 0 {
+		return []search.Source{}, nil
+	}
+	rows, err := t.Query(ctx, `SELECT p.id::text,p.type,a.visibility,a.status,p.head_revision_id::text,a.policy_version,r.snapshot
+ FROM wikit.pages p JOIN wikit.page_policies a ON a.page_id=p.id
+ LEFT JOIN wikit.revisions r ON r.id=p.head_revision_id AND r.page_id=p.id AND r.sealed
+ WHERE p.id=ANY($1::bigint[])`, ids)
+	if err != nil {
+		return nil, storageError(err)
+	}
+	out := []search.Source{}
+	for rows.Next() {
+		var v search.Source
+		var raw []byte
+		if err := rows.Scan(&v.Page.ID, &v.Page.Type, &v.Page.Visibility, &v.Page.Status, &v.Page.HeadRevisionID, &v.Page.PolicyVersion, &raw); err != nil {
+			rows.Close()
+			return nil, storageError(err)
+		}
+		if raw != nil {
+			if err := json.Unmarshal(raw, &v.Snapshot); err != nil {
+				rows.Close()
+				return nil, storageError(err)
+			}
+		}
+		out = append(out, v)
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, storageError(err)
+	}
+	policies, err := t.Policies(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	byID := map[string]access.Policy{}
+	for _, p := range policies {
+		byID[p.PageID] = p
+	}
+	for i := range out {
+		out[i].Policy = byID[out[i].Page.ID]
+	}
+	return out, nil
 }
 
 // A dedicated pooled session owns this lock until all remote work/checkpoints end.

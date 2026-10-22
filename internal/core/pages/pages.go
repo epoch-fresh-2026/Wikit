@@ -37,6 +37,10 @@ type Tx interface {
 	Outbox(context.Context, content.Published) error
 	Page(context.Context, string) (Page, error)
 	PageCandidates(context.Context, string, string) ([]Page, error)
+	PageBatch(context.Context, string, string, string, int) ([]Page, error)
+	PageDetails(context.Context, []string) ([]Detail, error)
+	PageAnchor(context.Context, string, string, string, int) (string, error)
+	NewPageCursor(context.Context, string, string, string, string, int) (string, error)
 	Policies(context.Context, []string) ([]access.Policy, error)
 	Revision(context.Context, string, string) (Revision, error)
 	RevisionIDs(context.Context, string) ([]string, error)
@@ -279,6 +283,10 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 			return err
 		}
 		binding := "content:" + identity.Digest(string(bindingBytes))
+		if q.Kind == "pages" {
+			out, err = s.directory(ctx, tx, a, groups, q, binding)
+			return err
+		}
 		offset := 0
 		if q.Cursor != "" {
 			offset, err = tx.Cursor(ctx, q.Cursor, a.ID, binding, q.Limit)
@@ -317,7 +325,7 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 			return err == nil, err
 		}
 		switch q.Kind {
-		case "pages", "tags":
+		case "tags":
 			rows, err := tx.PageCandidates(ctx, q.Tag, q.Type)
 			if err != nil {
 				return err
@@ -343,17 +351,11 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 				if !ok {
 					continue
 				}
-				if q.Kind == "pages" {
-					ids = append(ids, p.ID)
-				} else {
-					heads = append(heads, *p.HeadRevisionID)
-				}
+				heads = append(heads, *p.HeadRevisionID)
 			}
-			if q.Kind == "tags" {
-				ids, err = tx.PublishedTags(ctx, heads)
-				if err != nil {
-					return err
-				}
+			ids, err = tx.PublishedTags(ctx, heads)
+			if err != nil {
+				return err
 			}
 		case "revisions":
 			if q.PageID == "" {
@@ -397,21 +399,11 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 			return fault.BadRequest
 		}
 		end := min(offset+q.Limit, len(ids))
-		if q.Kind == "pages" {
-			// Directory capabilities need the complete policy, including public ACLs.
-			if err := loadPolicies(ids[offset:end]); err != nil {
-				return err
-			}
-		}
 		out.Items = []json.RawMessage{}
 		for _, id := range ids[offset:end] {
 			var v any
 			var err error
 			switch q.Kind {
-			case "pages":
-				d, readErr := detail(ctx, tx, id)
-				d.Capabilities = access.Capabilities(a, policies[id], groups)
-				v, err = d, readErr
 			case "revisions":
 				v, err = tx.Revision(ctx, q.PageID, id)
 			case "proposals":

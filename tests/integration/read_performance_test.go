@@ -106,6 +106,8 @@ func TestReadPerformance(t *testing.T) {
 		for _, phase := range []string{"first-pass", "warm"} {
 			durations := make([]float64, requests)
 			var failures atomic.Int64
+			var statuses [600]atomic.Int64
+			var leaks atomic.Int64
 			var next atomic.Int64
 			var wg sync.WaitGroup
 			start := time.Now()
@@ -126,6 +128,9 @@ func TestReadPerformance(t *testing.T) {
 							continue
 						}
 						data, readErr := io.ReadAll(res.Body)
+						if res.StatusCode >= 0 && res.StatusCode < len(statuses) {
+							statuses[res.StatusCode].Add(1)
+						}
 						closeErr := res.Body.Close()
 						var out struct {
 							Items []struct {
@@ -144,6 +149,7 @@ func TestReadPerformance(t *testing.T) {
 							}
 							if !allowed[id] {
 								bad = true
+								leaks.Add(1)
 							}
 						}
 						if bad {
@@ -169,14 +175,22 @@ func TestReadPerformance(t *testing.T) {
 				}
 			}
 			sort.Float64s(durations)
+			codes := map[int]int64{}
+			for code := range statuses {
+				if n := statuses[code].Load(); n != 0 {
+					codes[code] = n
+				}
+			}
 			result := map[string]any{"path": path, "phase": phase, "requests": requests, "concurrency": concurrency, "errors": failures.Load(), "p50_ms": durations[99], "p95_ms": durations[189], "p99_ms": durations[197], "rps": requests / elapsed, "sql_per_request": total.SQL / requests, "pool_ms_per_request": total.Pool / requests, "lock_wait_ms_per_request": total.Wait / requests, "lock_held_ms_per_request": total.Held / requests, "batches_per_request": total.Batches / requests}
+			result["status_codes"] = codes
+			result["unauthorized_items"] = leaks.Load()
 			encoded, err := json.Marshal(result)
 			if err != nil {
 				t.Fatal(err)
 			}
 			t.Log(string(encoded))
 			if failures.Load() != 0 {
-				t.Fatal("load errors or authorization mismatch")
+				t.Error("load errors or authorization mismatch")
 			}
 		}
 	}
