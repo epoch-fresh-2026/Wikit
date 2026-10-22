@@ -147,15 +147,30 @@ it.each(['/', '/pages/1'])('omits the repeated home breadcrumb at %s', async (ro
   expect(screen.queryByRole('navigation', { name: 'breadcrumb' })).not.toBeInTheDocument()
   expect(screen.getByRole('navigation', { name: '页面操作' })).toBeInTheDocument()
 })
-it('keeps the home-to-page breadcrumb for ordinary pages', async () => {
-  mount(`/pages/${pageID}`)
-  await screen.findByRole('heading', { name: '协作知识' })
-  const breadcrumb = within(screen.getByRole('navigation', { name: 'breadcrumb' }))
-  expect(breadcrumb.getByRole('link', { name: '首页' })).toHaveAttribute('href', '/')
-  expect(breadcrumb.getByRole('link', { name: '协作知识' })).toHaveAttribute(
+it.each([
+  [`/pages/${pageID}`, '协作知识'],
+  [`/pages/${pageID}/edit`, '提出修改'],
+  [`/pages/${pageID}/history`, '发布历史'],
+  [`/pages/${pageID}/revisions/${revisionID}`, '协作知识'],
+  [`/pages/${pageID}/proposals`, '页面提案'],
+  [`/pages/${pageID}/proposals/${proposalID}`, '协作知识'],
+  [`/pages/${pageID}/issues`, '讨论'],
+  [`/pages/${pageID}/policy`, '页面管理'],
+])('omits hierarchical navigation at %s while preserving page actions', async (route, title) => {
+  mount(route, (path) => {
+    if (path.endsWith('/policy'))
+      return json({ visibility: 'public', policy_version: 1, grants: [] })
+    if (path.includes('/issues?')) return json(list([]))
+  })
+  await screen.findByRole('heading', { name: title, level: 1 })
+  expect(screen.queryByRole('navigation', { name: 'breadcrumb' })).not.toBeInTheDocument()
+  const tools = within(screen.getByRole('navigation', { name: '页面操作' }))
+  expect(tools.getByRole('link', { name: '阅读' })).toHaveAttribute('href', `/pages/${pageID}`)
+  expect(tools.getByRole('link', { name: '提案' })).toHaveAttribute(
     'href',
-    `/pages/${pageID}`,
+    `/pages/${pageID}/proposals`,
   )
+  expect(screen.getByRole('link', { name: 'Wikit 首页' })).toHaveAttribute('href', '/')
 })
 it('offers creation after a completed empty search and prefills its term', async () => {
   let respond!: (response: Response) => void

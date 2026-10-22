@@ -145,7 +145,7 @@ export function PageScreen({ home = false }: { home?: boolean }) {
   const { page, revision, capabilities } = resource.data
   return (
     <>
-      <PageNavigation id={id} title={revision?.snapshot.title} capabilities={capabilities} />
+      <PageNavigation id={id} capabilities={capabilities} />
       <SectionTitle title={revision?.snapshot.title ?? '页面'} />
       {headings.length > 0 && (
         <div className="mobile-toc">
@@ -245,13 +245,7 @@ export function EditPageScreen({ create = false }: { create?: boolean }) {
     )
   return (
     <section>
-      {!create && (
-        <PageNavigation
-          id={id}
-          title={resource.data?.revision?.snapshot.title}
-          capabilities={resource.data?.capabilities}
-        />
-      )}
+      {!create && <PageNavigation id={id} capabilities={resource.data?.capabilities} />}
       <SectionTitle title={create ? '创建页面' : '提出修改'} />
       <p className="muted">
         {create ? '创建后立即发布首个版本。' : '提交提案，由有合并权限的人检查并发布。'}

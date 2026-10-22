@@ -111,11 +111,7 @@ function ProposalDetail({
     })
   return (
     <>
-      <PageNavigation
-        id={p.page_id}
-        title={page.data?.revision?.snapshot.title}
-        capabilities={caps}
-      />
+      <PageNavigation id={p.page_id} capabilities={caps} />
       <SectionTitle title={edit ? '编辑提案' : p.current_revision.snapshot.title}>
         <Badge variant="outline">{stateLabel[p.state]}</Badge>
       </SectionTitle>
