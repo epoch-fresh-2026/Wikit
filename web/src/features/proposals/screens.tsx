@@ -7,11 +7,10 @@ import {
   Collection,
   DateText,
   Loading,
-  SectionTitle,
   SelectField,
   TagLinks,
 } from '@/components/shared'
-import { PageNavigation } from '@/components/layout'
+import { PageHeader } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -28,8 +27,7 @@ export function ProposalListScreen() {
   const path = `pages/${id}/proposals?state=${state}`
   return (
     <>
-      <PageNavigation id={id} />
-      <SectionTitle title="页面提案" />
+      <PageHeader id={id} title="页面提案" />
       <SelectField
         label="提案状态"
         value={state}
@@ -111,10 +109,13 @@ function ProposalDetail({
     })
   return (
     <>
-      <PageNavigation id={p.page_id} capabilities={caps} />
-      <SectionTitle title={edit ? '编辑提案' : p.current_revision.snapshot.title}>
+      <PageHeader
+        id={p.page_id}
+        capabilities={caps}
+        title={edit ? '编辑提案' : p.current_revision.snapshot.title}
+      >
         <Badge variant="outline">{stateLabel[p.state]}</Badge>
-      </SectionTitle>
+      </PageHeader>
       {!page.data ? (
         <Loading error={page.error} />
       ) : edit ? (

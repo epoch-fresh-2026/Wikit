@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/features/account/auth'
 import { api, type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
-import { ActionFeedback } from '@/components/shared'
+import { ActionFeedback, SectionTitle } from '@/components/shared'
 
 export function SiteLayout({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const auth = useAuth(),
@@ -140,7 +140,26 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
   )
 }
 
-export function PageNavigation({ id, capabilities }: { id: string; capabilities?: string[] }) {
+export function PageHeader({
+  id,
+  title,
+  capabilities,
+  children,
+}: {
+  id: string
+  title: string
+  capabilities?: string[]
+  children?: ReactNode
+}) {
+  return (
+    <SectionTitle title={title}>
+      {children}
+      <PageNavigation id={id} capabilities={capabilities} />
+    </SectionTitle>
+  )
+}
+
+function PageNavigation({ id, capabilities }: { id: string; capabilities?: string[] }) {
   const context = useResource<Schema<'PageDetail'>>(
     capabilities === undefined ? `pages/${id}` : null,
   )
