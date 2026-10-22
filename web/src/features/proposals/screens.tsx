@@ -22,14 +22,14 @@ import { useAuth } from '@/features/account/auth'
 
 const stateLabel = { open: '待处理', merged: '已合并', closed: '已关闭' }
 export function ProposalListScreen() {
-  const { id } = useParams(),
+  const { id = '' } = useParams(),
     [params, setParams] = useSearchParams(),
     state = params.get('state') ?? 'open'
-  const path = `${id ? `pages/${id}/proposals` : 'proposals'}?state=${state}`
+  const path = `pages/${id}/proposals?state=${state}`
   return (
     <>
-      {id && <PageNavigation id={id} />}
-      <SectionTitle title={id ? '页面提案' : '全站提案'} />
+      <PageNavigation id={id} />
+      <SectionTitle title="页面提案" />
       <SelectField
         label="提案状态"
         value={state}

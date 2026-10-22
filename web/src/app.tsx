@@ -6,7 +6,7 @@ import { Loading } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/account/auth'
 import {
-  ExploreScreen,
+  SearchScreen,
   PageScreen,
   EditPageScreen,
   HistoryScreen,
@@ -65,8 +65,7 @@ export function App() {
           <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/" element={<PageScreen home />} />
-              <Route path="/pages" element={<ExploreScreen />} />
-              <Route path="/search" element={<ExploreScreen />} />
+              <Route path="/search" element={<SearchScreen />} />
               <Route path="/login" element={<LoginScreen />} />
               <Route path="/register" element={<LoginScreen register />} />
               <Route path="/account" element={<AccountScreen />} />
@@ -77,7 +76,6 @@ export function App() {
               <Route path="/pages/:id/revisions/:revisionID" element={<RevisionScreen />} />
               <Route path="/pages/:id/policy" element={<PolicyScreen />} />
               <Route path="/pages/:id/proposals" element={<ProposalListScreen />} />
-              <Route path="/proposals" element={<ProposalListScreen />} />
               <Route path="/pages/:pageId/proposals/:id" element={<ProposalScreen />} />
               <Route path="/pages/:pageId/proposals/:id/edit" element={<ProposalScreen edit />} />
               <Route path="/pages/:id/issues" element={<IssueListScreen />} />
