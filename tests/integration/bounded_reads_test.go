@@ -73,7 +73,7 @@ func TestSearchBatchStopsWhenFullAndUsesConstantSQL(t *testing.T) {
 }
 
 func TestSearchRevalidatesSelectedCandidatesBetweenBatches(t *testing.T) {
-	for _, change := range []string{"hidden", "policy", "revoked", "revision", "disabled", "index"} {
+	for _, change := range []string{"hidden", "policy", "revoked", "group", "revision", "disabled", "index"} {
 		t.Run(change, func(t *testing.T) {
 			s := newSuite(t)
 			actor, token := s.register(t, "batch_reader")
@@ -96,6 +96,19 @@ func TestSearchRevalidatesSelectedCandidatesBetweenBatches(t *testing.T) {
 				}
 			}
 			var survivor identity.Account
+			var group access.Group
+			if change == "group" {
+				raw, err := s.access.SaveGroup(context.Background(), requestKey(admin, "batch-create-group"), "", "Batch readers", []string{actor.ID}, 0, false)
+				if err != nil {
+					t.Fatal(err)
+				}
+				group = decodeResult[access.Group](t, raw)
+				_, err = s.access.UpdatePolicy(context.Background(), requestKey(admin, "batch-group-policy"), fixtures[0].Page.ID, access.Policy{Visibility: "restricted", Grants: []access.Grant{{SubjectType: "group", SubjectID: group.ID, Capabilities: []string{"read"}}, {SubjectType: "user", SubjectID: s.admin.ID, Capabilities: []string{"read"}}}}, 1)
+				if err != nil {
+					t.Fatal(err)
+				}
+				i.hits[0].PolicyVersion = 2
+			}
 			if change == "revoked" {
 				survivor, _ = s.register(t, "batch_survivor")
 				_, err := s.access.UpdatePolicy(context.Background(), requestKey(admin, "batch-initial-restriction"), fixtures[0].Page.ID, access.Policy{Visibility: "restricted", Grants: []access.Grant{{SubjectType: "user", SubjectID: actor.ID, Capabilities: []string{"read"}}, {SubjectType: "user", SubjectID: survivor.ID, Capabilities: []string{"read"}}}}, 1)
@@ -119,6 +132,10 @@ func TestSearchRevalidatesSelectedCandidatesBetweenBatches(t *testing.T) {
 			awaitBarrier(t, i.entered)
 			p := fixtures[0]
 			switch change {
+			case "group":
+				if _, err := s.access.SaveGroup(context.Background(), requestKey(admin, "batch-remove-group-member"), group.ID, group.Name, []string{}, 1, false); err != nil {
+					t.Fatal(err)
+				}
 			case "revoked":
 				_, err := s.access.UpdatePolicy(context.Background(), requestKey(admin, "batch-revoke-reader"), p.Page.ID, access.Policy{Visibility: "restricted", Grants: []access.Grant{{SubjectType: "user", SubjectID: survivor.ID, Capabilities: []string{"read"}}}}, 2)
 				if err != nil {
