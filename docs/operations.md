@@ -2,6 +2,10 @@
 
 当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
 
+Issue #49 增加 schema 0009（页面目录游标锚点）。升级前备份，在维护窗口运行 migrate 后
+启动新镜像；旧目录游标返回 invalid_request，客户端从第一页重读。其他游标格式不变。
+旧二进制会因严格迁移历史检查拒绝 0009；回退需恢复升级前匹配数据库和原件备份。
+
 状态：Issue #11 的容器、Compose、恢复和规模验收已在真实 CI 中通过，见
 [发布验收记录](release-readiness.md)。正式 tag、GHCR digest、CI 证据及拉取权限边界均在该记录登记。
 

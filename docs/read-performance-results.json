@@ -1,0 +1,174 @@
+{
+  "date": "2026-10-22",
+  "baseline_source": "149e3a6",
+  "optimized_source": "191c494",
+  "harness_source": "191c494",
+  "pages": 100001,
+  "fixture_pages": 100000,
+  "baseline": [
+    {
+      "batches_per_request": 10,
+      "concurrency": 100,
+      "errors": 0,
+      "lock_held_ms_per_request": 18.308926500000005,
+      "lock_wait_ms_per_request": 152.1806765,
+      "p50_ms": 1783.5906,
+      "p95_ms": 2126.0586,
+      "p99_ms": 2208.1517,
+      "path": "search?q=knowledge&limit=20",
+      "phase": "first-pass",
+      "pool_ms_per_request": 815.9258705000003,
+      "requests": 200,
+      "rps": 50.42375874732458,
+      "sql_per_request": 71,
+      "status_codes": {
+        "200": 200
+      },
+      "unauthorized_items": 0
+    },
+    {
+      "batches_per_request": 10,
+      "concurrency": 100,
+      "errors": 0,
+      "lock_held_ms_per_request": 16.82988100000001,
+      "lock_wait_ms_per_request": 142.91845,
+      "p50_ms": 1804.1271,
+      "p95_ms": 2087.8668,
+      "p99_ms": 2184.9817,
+      "path": "search?q=knowledge&limit=20",
+      "phase": "warm",
+      "pool_ms_per_request": 700.5195570000002,
+      "requests": 200,
+      "rps": 51.21113174322257,
+      "sql_per_request": 71,
+      "status_codes": {
+        "200": 200
+      },
+      "unauthorized_items": 0
+    },
+    {
+      "batches_per_request": 0,
+      "concurrency": 100,
+      "errors": 71,
+      "lock_held_ms_per_request": 99.07123900000002,
+      "lock_wait_ms_per_request": 894.6632020000001,
+      "p50_ms": 9312.1977,
+      "p95_ms": 10014.356,
+      "p99_ms": 10017.7584,
+      "path": "pages?limit=20",
+      "phase": "first-pass",
+      "pool_ms_per_request": 7254.769907999998,
+      "requests": 200,
+      "rps": 9.989522389546499,
+      "sql_per_request": 31.21,
+      "status_codes": {
+        "200": 129,
+        "500": 71
+      },
+      "unauthorized_items": 0
+    },
+    {
+      "batches_per_request": 0,
+      "concurrency": 100,
+      "errors": 64,
+      "lock_held_ms_per_request": 98.47193500000003,
+      "lock_wait_ms_per_request": 890.7714909999994,
+      "p50_ms": 9367.9302,
+      "p95_ms": 10014.3547,
+      "p99_ms": 10018.0013,
+      "path": "pages?limit=20",
+      "phase": "warm",
+      "pool_ms_per_request": 7195.566691500003,
+      "requests": 200,
+      "rps": 9.98692092861347,
+      "sql_per_request": 32.89,
+      "status_codes": {
+        "200": 136,
+        "500": 64
+      },
+      "unauthorized_items": 0
+    }
+  ],
+  "optimized": [
+    {
+      "batches_per_request": 1,
+      "concurrency": 100,
+      "errors": 0,
+      "lock_held_ms_per_request": 4.750852499999999,
+      "lock_wait_ms_per_request": 40.09029100000001,
+      "p50_ms": 400.1803,
+      "p95_ms": 557.7515,
+      "p99_ms": 583.7786,
+      "path": "search?q=knowledge&limit=20",
+      "phase": "first-pass",
+      "pool_ms_per_request": 350.70979699999987,
+      "requests": 200,
+      "rps": 203.63950634932706,
+      "sql_per_request": 13,
+      "status_codes": {
+        "200": 200
+      },
+      "unauthorized_items": 0
+    },
+    {
+      "batches_per_request": 1,
+      "concurrency": 100,
+      "errors": 0,
+      "lock_held_ms_per_request": 3.6816430000000016,
+      "lock_wait_ms_per_request": 32.75431849999999,
+      "p50_ms": 363.6773,
+      "p95_ms": 375.0563,
+      "p99_ms": 383.5571,
+      "path": "search?q=knowledge&limit=20",
+      "phase": "warm",
+      "pool_ms_per_request": 248.79056650000018,
+      "requests": 200,
+      "rps": 266.220445703608,
+      "sql_per_request": 13,
+      "status_codes": {
+        "200": 200
+      },
+      "unauthorized_items": 0
+    },
+    {
+      "batches_per_request": 0,
+      "concurrency": 100,
+      "errors": 0,
+      "lock_held_ms_per_request": 2.3740650000000008,
+      "lock_wait_ms_per_request": 21.099831499999986,
+      "p50_ms": 213.842,
+      "p95_ms": 251.6542,
+      "p99_ms": 268.0904,
+      "path": "pages?limit=20",
+      "phase": "first-pass",
+      "pool_ms_per_request": 161.7321425,
+      "requests": 200,
+      "rps": 411.738330409305,
+      "sql_per_request": 8,
+      "status_codes": {
+        "200": 200
+      },
+      "unauthorized_items": 0
+    },
+    {
+      "batches_per_request": 0,
+      "concurrency": 100,
+      "errors": 0,
+      "lock_held_ms_per_request": 2.0666354999999994,
+      "lock_wait_ms_per_request": 18.171545499999993,
+      "p50_ms": 203.4222,
+      "p95_ms": 208.076,
+      "p99_ms": 214.5993,
+      "path": "pages?limit=20",
+      "phase": "warm",
+      "pool_ms_per_request": 133.6614205,
+      "requests": 200,
+      "rps": 474.75614743931965,
+      "sql_per_request": 8,
+      "status_codes": {
+        "200": 200
+      },
+      "unauthorized_items": 0
+    }
+  ]
+}
