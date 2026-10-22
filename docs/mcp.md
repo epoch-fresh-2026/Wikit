@@ -81,3 +81,5 @@ Page ID 参数及返回值为十进制字符串。page_create 返回 page/revisi
 账户和组管理配置 create_page；page_get 返回有效 capabilities。角色为 member/moderator/admin，
 页面能力为 read/propose/discuss/merge/manage。已删除 review_create、reviews_list 工具和审核轮次。
 首页规则与 REST 一致，由同一 Core 和数据库约束执行。
+
+Issue #55：Account ID 及作者/审计主体/组成员均为规范十进制字符串（1–9223372036854775807）；组 ID 仍为 UUID，Grant 按 subject_type 区分。账户编号不改变 Token 认证规则；破坏性新部署基线不支持旧 UUID 账户或数据库。

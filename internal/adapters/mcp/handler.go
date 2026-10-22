@@ -280,7 +280,7 @@ func shapeSchema(raw []byte) (*jsonschema.Resolved, error) {
 	prune = func(v any) {
 		switch x := v.(type) {
 		case map[string]any:
-			for _, key := range []string{"enum", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "minLength", "maxLength", "minItems", "maxItems", "uniqueItems", "pattern", "format", "default"} {
+			for _, key := range []string{"enum", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "minLength", "maxLength", "minItems", "maxItems", "uniqueItems", "pattern", "format", "default", "not"} {
 				delete(x, key)
 			}
 			for _, child := range x {

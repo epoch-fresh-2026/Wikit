@@ -131,3 +131,17 @@ API/SPA 路由隔离、创建/提案/发布/历史、媒体原件与搜索。维
 完整 CI、20 次发布历史/固定媒体恢复、旧源码镜像配套备份回退与规模数据记录见
 [发布验收记录](release-readiness.md)；实际 tag/GHCR 发布与发布后镜像验收分别记录，不以推送成功代替运行验证。
 
+
+## 账户数字 ID 验收（Issue #55）
+
+用户确认破坏性新部署基线，不做旧数据转换。覆盖新库建表、账户引用与混合 ACL、认证与审计，注册与本地管理员从数据库分配递增唯一 ID，失败允许序列间隙；验证非法格式、int64 边界及超过 JS 安全整数的 REST/MCP 精度。旧库历史校验和不同必须拒绝，不能自动清空。实际执行结果另行记录，不以规格充当通过证据。
+
+2026-10-22 本地验证：Go 1.25.0 / Windows amd64，Node.js 24.15.0，真实 PostgreSQL / Meilisearch。
+数字 ID 专项覆盖注册/管理员分配、失败插入的序列间隙、成员数值排序、Cookie/Bearer、
+REST/MCP 超 JS 安全整数精度、非法格式及混合 ACL，旧 UUID 基线被拒绝且数据未改。
+最终 `go vet ./...`、`go test -race -count=1 ./...` 和真实数据库
+`go test -race -count=1 -tags=integration ./tests/integration/...` 通过；后者 163.263 秒，
+86 个主测试通过、包含子测试共 152 项通过，可选 TestReadPerformance 未启用，不能计为规模验收。
+首次全量的既有 TestRateLimitAndRegistrationOff 曾失败；单独连续三次及最终全量均通过，
+未修改限流规则，不将首次失败记录为通过。文档契约、Web 类型/生产构建通过；独立于搜索界面 PR 的提交分支已复测 74 项前端测试全部通过。
+容器构建已尝试，但本机无 docker 命令，未执行镜像/Compose/恢复/容器规模验收；所有 CI 阶段保留。

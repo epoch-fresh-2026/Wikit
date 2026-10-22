@@ -901,7 +901,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         Account: {
-            /** Format: uuid */
+            /** @description 规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。 */
             id: string;
             username: string;
             display_name: string;
@@ -931,7 +931,7 @@ export interface components {
         AuditEvent: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
+            /** @description 规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。 */
             actor_id: string | null;
             action: string;
             target_id: string | null;
@@ -955,7 +955,7 @@ export interface components {
             id: string;
             /** Format: uuid */
             issue_id: string;
-            /** Format: uuid */
+            /** @description 规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。 */
             author_id: string;
             body: string;
             hidden: boolean;
@@ -1021,8 +1021,14 @@ export interface components {
             };
         };
         Grant: {
-            /** @enum {string} */
-            subject_type: "user" | "group";
+            /** @constant */
+            subject_type: "user";
+            /** @description 规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。 */
+            subject_id: string;
+            capabilities: ("read" | "propose" | "discuss" | "merge" | "manage")[];
+        } | {
+            /** @constant */
+            subject_type: "group";
             /** Format: uuid */
             subject_id: string;
             capabilities: ("read" | "propose" | "discuss" | "merge" | "manage")[];
@@ -1053,7 +1059,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             page_id: string;
-            /** Format: uuid */
+            /** @description 规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。 */
             author_id: string;
             title: string;
             body: string;
@@ -1145,7 +1151,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             page_id: string;
-            /** Format: uuid */
+            /** @description 规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。 */
             author_id: string;
             /** @enum {string} */
             state: "open" | "merged" | "closed";
@@ -1197,7 +1203,7 @@ export interface components {
             snapshot: components["schemas"]["Snapshot"];
             /** Format: date-time */
             created_at: string;
-            /** Format: uuid */
+            /** @description 规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。 */
             author_id: string | null;
             content_url: string | null;
         };

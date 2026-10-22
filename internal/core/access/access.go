@@ -218,9 +218,8 @@ func (s *Service) mutate(ctx context.Context, r Request, operation string, check
 	return out, err
 }
 func (s *Service) UpdateAccount(ctx context.Context, r Request, id, role, status string, version int64, createPage bool) ([]byte, error) {
-	id = strings.ToLower(id)
 	r.Credentials.Write = true
-	if !identity.ValidID(id) || !slices.Contains([]string{"member", "moderator", "admin"}, role) || !slices.Contains([]string{"active", "disabled"}, status) {
+	if !identity.ValidAccountID(id) || !slices.Contains([]string{"member", "moderator", "admin"}, role) || !slices.Contains([]string{"active", "disabled"}, status) {
 		return nil, fault.Invalid
 	}
 	return s.mutate(ctx, r, "account.update:"+id, func(tx Tx) (identity.Actor, error) { return admin(ctx, tx, r.Credentials) }, func(tx Tx, a identity.Actor) (any, string, error) {
@@ -258,9 +257,6 @@ func (s *Service) UpdateAccount(ctx context.Context, r Request, id, role, status
 func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, members []string, version int64, createPage bool) ([]byte, error) {
 	id = strings.ToLower(id)
 	members = append([]string(nil), members...)
-	for i := range members {
-		members[i] = strings.ToLower(members[i])
-	}
 	r.Credentials.Write = true
 	if utf8.RuneCountInString(name) < 1 || utf8.RuneCountInString(name) > 100 || len(members) > 10000 {
 		return nil, fault.Invalid
@@ -291,7 +287,7 @@ func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, mem
 		}
 		seen := map[string]bool{}
 		for _, id := range members {
-			if !identity.ValidID(id) || seen[id] {
+			if !identity.ValidAccountID(id) || seen[id] {
 				return nil, "", fault.Invalid
 			}
 			seen[id] = true
@@ -302,7 +298,13 @@ func (s *Service) SaveGroup(ctx context.Context, r Request, id, name string, mem
 		if members == nil {
 			members = []string{}
 		}
-		slices.Sort(members)
+		// Canonical positive decimals sort numerically by length, then digits.
+		slices.SortFunc(members, func(a, b string) int {
+			if len(a) != len(b) {
+				return len(a) - len(b)
+			}
+			return strings.Compare(a, b)
+		})
 		g := Group{id, name, version + 1, members, createPage}
 		if err := tx.SaveGroup(ctx, g); err != nil {
 			return nil, "", err
@@ -325,7 +327,7 @@ func validatePolicy(ctx context.Context, tx Tx, p Policy) error {
 	}
 	for _, g := range p.Grants {
 		key := g.SubjectType + ":" + g.SubjectID
-		if !identity.ValidID(g.SubjectID) || seen[key] || len(g.Capabilities) == 0 {
+		if !validSubjectID(g.SubjectType, g.SubjectID) || seen[key] || len(g.Capabilities) == 0 {
 			return fault.Invalid
 		}
 		seen[key] = true
@@ -568,4 +570,15 @@ func Capabilities(a identity.Actor, p Policy, groups []Group) []string {
 		}
 	}
 	return out
+}
+
+func validSubjectID(kind, id string) bool {
+	switch kind {
+	case "user":
+		return identity.ValidAccountID(id)
+	case "group":
+		return identity.ValidID(id)
+	default:
+		return false
+	}
 }

@@ -16,8 +16,8 @@ Issue #8 实现 GET /search；Issue #51 扩展为 q、tag、tags、tag_match、e
 候选权限过滤。返回 SearchHitList，不返回总数、facet 或搜索引擎原始摘要。
 当前 head/policy_version 不匹配的候选跳过并安排修复；索引不可用返回 search_unavailable / 503。
 
-- 基础路径 `/api/v1`，JSON UTF-8；Page ID 使用正整数十进制字符串，其余 ID 使用 UUID，时间 RFC 3339 UTC。
-- UUID 输入接受大小写十六进制，Core 统一为小写后比较主体、组成员和幂等操作范围。
+- 基础路径 `/api/v1`，JSON UTF-8；Page 与 Account ID 使用正整数十进制字符串（1–9223372036854775807），其余 ID 使用 UUID，时间 RFC 3339 UTC。
+- UUID 输入接受大小写十六进制，Core 统一为小写后比较 UUID 主体和幂等操作范围；账户与组成员 ID 必须为规范数字字符串。
 - Cookie 会话或 Bearer Token 二选一；若两者同时提供且身份不同，返回
   `invalid_request`。匿名读取仅开放公开对象。
 - 变更会话请求校验 Origin 和 X-CSRF-Token；登录、注册校验 Origin，
@@ -135,3 +135,5 @@ Bearer 通过每次读取当前状态即时生效。Token 管理返回创建时�
 Core 在同一授权事务检查当前账户、会话及有效创建能力；失效、禁用、代次不符返回 401，
 缺少 Origin 返回 403。普通变更请求仍必须同时满足 Origin 与 CSRF。
 凭证按会话稳定派生，跨标签页恢复不互相失效；旧版本随机 CSRF 仍可用于原会话。
+
+Issue #55：账户 ID 拒绝 UUID、前导零、正负号、空白、零及 int64 溢出。Account.id、account_id、member_ids、author_id、actor_id 均为数字字符串；Revision 的空作者及 AuditEvent 的系统主体仍为 null。Grant 根据 subject_type 区分 user 数字 ID 与 group UUID。此为破坏性新部署基线，不兼容旧 UUID 账户和数据库。

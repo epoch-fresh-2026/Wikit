@@ -1,6 +1,6 @@
 CREATE TABLE wikit.page_issues (
  id uuid PRIMARY KEY, page_id bigint NOT NULL REFERENCES wikit.pages(id),
- author_id uuid NOT NULL REFERENCES wikit.users(id),
+ author_id bigint NOT NULL REFERENCES wikit.users(id),
  title text NOT NULL CHECK(char_length(title) BETWEEN 1 AND 300),
  body text NOT NULL CHECK(char_length(body)<=65536),
  state text NOT NULL CHECK(state IN ('open','closed')), hidden boolean NOT NULL DEFAULT false,
@@ -9,7 +9,7 @@ CREATE TABLE wikit.page_issues (
 );
 CREATE TABLE wikit.comments (
  id uuid PRIMARY KEY, issue_id uuid NOT NULL REFERENCES wikit.page_issues(id),
- author_id uuid NOT NULL REFERENCES wikit.users(id), body text NOT NULL CHECK(char_length(body) BETWEEN 1 AND 65536),
+ author_id bigint NOT NULL REFERENCES wikit.users(id), body text NOT NULL CHECK(char_length(body) BETWEEN 1 AND 65536),
  hidden boolean NOT NULL DEFAULT false, version bigint NOT NULL CHECK(version>0), created_at timestamptz NOT NULL
 );
 CREATE TABLE wikit.issue_proposals (
@@ -20,7 +20,7 @@ CREATE TABLE wikit.issue_proposals (
 );
 CREATE TABLE wikit.moderation_events (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),page_id bigint NOT NULL REFERENCES wikit.pages(id),target_id text NOT NULL,
- kind text NOT NULL CHECK(kind IN ('page','issue','comment')),actor_id uuid NOT NULL REFERENCES wikit.users(id),
+ kind text NOT NULL CHECK(kind IN ('page','issue','comment')),actor_id bigint NOT NULL REFERENCES wikit.users(id),
  hidden boolean NOT NULL,reason text NOT NULL CHECK(char_length(reason) BETWEEN 1 AND 2000),
  version bigint NOT NULL CHECK(version>0),request_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now()
 );

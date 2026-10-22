@@ -22,6 +22,7 @@ The Issue #35 redesign on this branch uses numeric Page IDs, a fixed home Page,
 explicit create_page grants, direct first publication, and a Wiki SPA with separate admin navigation.
 It is a fresh-deployment schema and is not included in the older image above. Existing UUID databases
 are rejected without deletion; rollback requires the matching old image and backup.
+Account IDs also use database-generated positive bigint values, serialized as decimal strings; this is a breaking fresh-deployment baseline with no UUID data migration ([ADR 0023](docs/adr/0023-numeric-account-ids.md)).
 See [redesign validation](docs/redesign-validation.md).
 
 ## Architecture
