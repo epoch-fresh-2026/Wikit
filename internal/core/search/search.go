@@ -8,13 +8,16 @@ import (
 	"unicode/utf8"
 
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
+	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 )
 
 type Query struct {
-	Q, Tag, Cursor string
-	Limit          int
+	Q, Tag, Cursor, Type string
+	TagSet               bool
+	Filter               content.TagFilter
+	Limit                int
 }
 type Hit struct {
 	PageID     string   `json:"page_id"`
@@ -33,19 +36,23 @@ func valid(s string, max int) bool {
 	return utf8.ValidString(s) && !strings.ContainsRune(s, 0) && utf8.RuneCountInString(s) <= max
 }
 func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (Result, error) {
-	if !valid(q.Q, 500) || strings.TrimSpace(q.Q) == "" || !valid(q.Tag, 64) || q.Limit < 1 || q.Limit > 100 {
+	if !valid(q.Q, 500) || strings.TrimSpace(q.Q) == "" || (q.Type != "" && q.Type != "document" && q.Type != "media") || q.Limit < 1 || q.Limit > 100 {
 		return Result{}, fault.BadRequest
 	}
 	q.Q = s.text.NFC(strings.TrimSpace(q.Q))
-	q.Tag = s.text.Fold(s.text.NFC(strings.TrimSpace(q.Tag)))
-	if !valid(q.Q, 500) || !valid(q.Tag, 64) {
+	var err error
+	q.Filter, err = q.Filter.Normalize(s.text, q.Tag, q.TagSet)
+	if err != nil {
+		return Result{}, err
+	}
+	if !valid(q.Q, 500) {
 		return Result{}, fault.BadRequest
 	}
 	var index, binding, actorID string
 	var filter Filter
 	offset := 0
 	c.Write = false
-	err := s.repo.WithinSearch(ctx, func(tx Tx) error {
+	err = s.repo.WithinSearch(ctx, func(tx Tx) error {
 		a, err := identity.Resolve(ctx, tx, c)
 		if err != nil {
 			return err
@@ -55,7 +62,7 @@ func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (
 		if err != nil {
 			return err
 		}
-		filter = Filter{Actor: a.ID, Admin: a.Role == "admin", Tag: q.Tag, Groups: []string{}}
+		filter = Filter{Actor: a.ID, Admin: a.Role == "admin", Tags: q.Filter, Type: q.Type, Groups: []string{}}
 		for _, g := range groups {
 			if a.ID != "" && slices.Contains(g.Members, a.ID) {
 				filter.Groups = append(filter.Groups, g.ID)
@@ -65,7 +72,10 @@ func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (
 		if err != nil {
 			return err
 		}
-		raw, err := json.Marshal([]string{q.Q, q.Tag, index})
+		raw, err := json.Marshal(struct {
+			Q, Type, Index string
+			Tags           content.TagFilter
+		}{q.Q, q.Type, index, q.Filter})
 		if err != nil {
 			return err
 		}
@@ -173,7 +183,7 @@ func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (
 					}
 					continue
 				}
-				if q.Tag != "" && !slices.Contains(source.Snapshot.Tags, q.Tag) {
+				if !q.Filter.Matches(source.Snapshot.Tags) || (q.Type != "" && q.Type != source.Page.Type) {
 					continue
 				}
 				if seen[candidate.ID] {

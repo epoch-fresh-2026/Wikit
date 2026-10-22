@@ -6,17 +6,21 @@ import (
 	"errors"
 	"time"
 
+	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/fault"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/identity"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/pages"
 	"github.com/jackc/pgx/v5"
 )
 
-func (t *securityTx) PageBatch(ctx context.Context, tag, kind, after string, limit int) ([]pages.Page, error) {
+func (t *securityTx) PageBatch(ctx context.Context, filter content.TagFilter, kind, after string, limit int) ([]pages.Page, error) {
 	rows, err := t.Query(ctx, "SELECT "+pageColumns+` FROM wikit.pages p JOIN wikit.page_policies a ON a.page_id=p.id
  WHERE p.id>$3::bigint AND a.status='published' AND p.head_revision_id IS NOT NULL
- AND ($1='' OR EXISTS(SELECT 1 FROM wikit.revision_tags rt WHERE rt.revision_id=p.head_revision_id AND rt.tag_key=$1))
- AND ($2='' OR p.type=$2) ORDER BY p.id LIMIT $4`, tag, kind, after, limit)
+ AND (cardinality($1::text[])=0 OR
+ ($5='all' AND NOT EXISTS(SELECT 1 FROM unnest($1::text[]) wanted(tag) WHERE NOT EXISTS(SELECT 1 FROM wikit.revision_tags rt WHERE rt.revision_id=p.head_revision_id AND rt.tag_key=wanted.tag))) OR
+ ($5='any' AND EXISTS(SELECT 1 FROM wikit.revision_tags rt WHERE rt.revision_id=p.head_revision_id AND rt.tag_key=ANY($1::text[]))))
+ AND NOT EXISTS(SELECT 1 FROM wikit.revision_tags rt WHERE rt.revision_id=p.head_revision_id AND rt.tag_key=ANY($6::text[]))
+ AND ($2='' OR p.type=$2) ORDER BY p.id LIMIT $4`, filter.Tags, kind, after, limit, filter.Match, filter.ExcludeTags)
 	if err != nil {
 		return nil, storageError(err)
 	}

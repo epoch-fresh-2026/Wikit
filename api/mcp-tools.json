@@ -720,7 +720,36 @@
           },
           "tag": {
             "type": "string",
-            "maxLength": 64
+            "maxLength": 64,
+            "description": "兼容单标签；不能与 tags 同传。"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "maxItems": 30,
+            "description": "包含标签；与 exclude_tags 输入项合计最多 30。"
+          },
+          "tag_match": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ],
+            "default": "all"
+          },
+          "exclude_tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "maxItems": 30,
+            "description": "任一命中即排除。"
           },
           "type": {
             "type": "string",
@@ -6641,7 +6670,43 @@
           },
           "tag": {
             "type": "string",
-            "maxLength": 64
+            "maxLength": 64,
+            "description": "兼容单标签；不能与 tags 同传。"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "maxItems": 30,
+            "description": "包含标签；与 exclude_tags 输入项合计最多 30。"
+          },
+          "tag_match": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ],
+            "default": "all"
+          },
+          "exclude_tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "maxItems": 30,
+            "description": "任一命中即排除。"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "document",
+              "media"
+            ]
           }
         }
       },

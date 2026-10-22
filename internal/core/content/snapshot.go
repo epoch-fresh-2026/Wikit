@@ -62,14 +62,19 @@ func (s *Snapshot) UnmarshalJSON(raw []byte) error {
 
 type MediaRef struct{ PageID, RevisionID string }
 
-// Text supplies Unicode and CommonMark primitives, never business rules.
-type Text interface {
+// TagText supplies Unicode primitives for shared tag keys.
+type TagText interface {
 	NFC(string) string
 	Fold(string) string
+}
+
+// Text supplies Unicode and CommonMark primitives, never business rules.
+type Text interface {
+	TagText
 	Links(string) ([]string, error)
 }
 
-func TagKey(text Text, value string) string {
+func TagKey(text TagText, value string) string {
 	return text.NFC(text.Fold(text.NFC(strings.TrimSpace(value))))
 }
 func validText(s string) bool { return utf8.ValidString(s) && !strings.ContainsRune(s, 0) }

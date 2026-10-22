@@ -43,6 +43,26 @@ test('MCP has no password/token-management tool and every mapping exists', () =>
   }
 });
 
+test('tag filters use repeated REST arrays and equivalent MCP fields', () => {
+  for (const [path, name] of [['/pages', 'wikit_pages_list'], ['/search', 'wikit_search']]) {
+    const parameters = openapi.paths[path].get.parameters;
+    const validate = validator(name);
+    const base = name === 'wikit_search' ? { q: '备份' } : {};
+    assert(validate({ ...base, tags: ['数据库', '部署'], tag_match: 'any', exclude_tags: ['过时'], type: 'document' }));
+    assert(validate({ ...base, exclude_tags: ['过时'] }));
+    assert(validate({ ...base, tag: '数据库' }));
+    assert(!validate({ ...base, tag_match: 'or' }));
+    assert(!validate({ ...base, tags: '数据库,部署' }));
+    assert(!validate({ ...base, exclude_tags: [null] }));
+    for (const field of ['tags', 'exclude_tags']) {
+      const p = parameters.find((p) => p.name === field);
+      assert.equal(p.style, 'form');
+      assert.equal(p.explode, true);
+      assert.deepEqual(p.schema, mcp.tools.find((t) => t.name === name).inputSchema.properties[field]);
+    }
+  }
+});
+
 
 test('session recovery requires Origin and Cookie but no prior CSRF or MCP tool', () => {
   const operation = openapi.paths['/auth/session'].post;

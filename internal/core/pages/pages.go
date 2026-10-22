@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/epoch-fresh-2026/Wikit/internal/core/access"
 	"github.com/epoch-fresh-2026/Wikit/internal/core/content"
@@ -37,7 +36,7 @@ type Tx interface {
 	Outbox(context.Context, content.Published) error
 	Page(context.Context, string) (Page, error)
 	PageCandidates(context.Context, string, string) ([]Page, error)
-	PageBatch(context.Context, string, string, string, int) ([]Page, error)
+	PageBatch(context.Context, content.TagFilter, string, string, int) ([]Page, error)
 	PageDetails(context.Context, []string) ([]Detail, error)
 	PageAnchor(context.Context, string, string, string, int) (string, error)
 	NewPageCursor(context.Context, string, string, string, string, int) (string, error)
@@ -236,6 +235,8 @@ func (s *Service) Proposal(ctx context.Context, c identity.Credentials, id strin
 
 type Query struct {
 	Kind, PageID, ProposalID, Tag, Type, State, Cursor string
+	TagSet                                             bool
+	Filter                                             content.TagFilter
 	Limit                                              int
 }
 type List struct {
@@ -252,12 +253,14 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 	if q.PageID != "" && !access.ValidPageID(q.PageID) || q.ProposalID != "" && !identity.ValidID(q.ProposalID) {
 		return List{}, fault.NotFound
 	}
-	q.Tag = content.TagKey(s.text, q.Tag)
-	if !utf8.ValidString(q.Tag) || strings.ContainsRune(q.Tag, 0) || utf8.RuneCountInString(q.Tag) > 64 {
-		return List{}, fault.BadRequest
+	var err error
+	q.Filter, err = q.Filter.Normalize(s.text, q.Tag, q.TagSet)
+	if err != nil {
+		return List{}, err
 	}
+	q.Tag = content.TagKey(s.text, q.Tag)
 	var out List
-	err := s.repo.WithinPages(ctx, func(tx Tx) error {
+	err = s.repo.WithinPages(ctx, func(tx Tx) error {
 		a, err := identity.Resolve(ctx, tx, c)
 		if err != nil {
 			return err
@@ -278,7 +281,16 @@ func (s *Service) List(ctx context.Context, c identity.Credentials, q Query) (Li
 				return err
 			}
 		}
-		bindingBytes, err := json.Marshal(struct{ Kind, Page, Proposal, Tag, Type, State string }{q.Kind, q.PageID, q.ProposalID, q.Tag, q.Type, q.State})
+		// Keep unrelated history, proposal and tag-list cursors compatible.
+		var bindingBytes []byte
+		if q.Kind == "pages" {
+			bindingBytes, err = json.Marshal(struct {
+				Kind, Type string
+				Filter     content.TagFilter
+			}{q.Kind, q.Type, q.Filter})
+		} else {
+			bindingBytes, err = json.Marshal(struct{ Kind, Page, Proposal, Tag, Type, State string }{q.Kind, q.PageID, q.ProposalID, q.Tag, q.Type, q.State})
+		}
 		if err != nil {
 			return err
 		}

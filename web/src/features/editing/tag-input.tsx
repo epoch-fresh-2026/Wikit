@@ -14,17 +14,19 @@ export function TagInput({
   value,
   onValue,
   onTags,
+  label = '标签',
 }: {
   tags: string[]
   value: string
   onValue: (v: string) => void
   onTags: (v: string[]) => void
+  label?: string
 }) {
   const id = useId(),
     composing = useRef(false)
   return (
     <div className="field">
-      <Label htmlFor={id}>标签</Label>
+      <Label htmlFor={id}>{label}</Label>
       <div className="tag-editor">
         {tags.map((tag, index) => (
           <Badge variant="secondary" className="tag-chip" key={`${tag}:${index}`}>

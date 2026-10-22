@@ -12,7 +12,6 @@ import {
   ActionFeedback,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/layout'
 import {
   Sheet,
@@ -26,54 +25,26 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/features/account/auth'
 import { SnapshotEditor, emptySnapshot } from '@/features/editing/editor'
 import { SnapshotView } from './markdown'
+import { SearchFilters } from './search-filters'
 
 export function SearchScreen() {
   const auth = useAuth()
-  const [params, setParams] = useSearchParams(),
-    [q, setQ] = useState(params.get('q') ?? '')
-  const tag = params.get('tag') ?? '',
-    type = params.get('type') ?? '',
-    search = (params.get('q') ?? '').trim()
-  useEffect(() => setQ(search), [search])
-  const path = search
-    ? 'search?' + query({ q: search, tag, type })
-    : 'pages?' + query({ tag, type })
+  const [params, setParams] = useSearchParams()
+  const search = (params.get('q') ?? '').trim()
+  const type = params.get('type') ?? ''
+  const filtered =
+    params.getAll('tags').length > 0 ||
+    !!params.get('tag') ||
+    params.getAll('exclude_tags').length > 0
+  const request = new URLSearchParams(params)
+  request.delete('q')
+  request.delete('cursor')
+  if (search) request.set('q', search)
+  const path = (search ? 'search?' : 'pages?') + request.toString()
   return (
     <>
-      <SectionTitle title={search ? '搜索结果' : tag ? `标签：${tag}` : '搜索页面'} />
-      <form
-        className="toolbar"
-        onSubmit={(e) => {
-          e.preventDefault()
-          setParams(query({ q: q.trim(), tag, type }))
-        }}
-      >
-        <Input
-          aria-label="搜索关键词"
-          placeholder="搜索页面"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <Button>搜索</Button>
-      </form>
-      <div className="toolbar">
-        <Input
-          aria-label="标签筛选"
-          placeholder="标签"
-          value={tag}
-          onChange={(e) => setParams(query({ q: search, tag: e.target.value, type }))}
-        />
-        <SelectField
-          label="页面类型"
-          value={type}
-          onChange={(v) => setParams(query({ q: search, tag, type: v }))}
-          options={[
-            ['', '全部类型'],
-            ['document', '文档'],
-            ['media', '媒体'],
-          ]}
-        />
-      </div>
+      <SectionTitle title={search ? '搜索结果' : '搜索页面'} />
+      <SearchFilters key={params.toString()} params={params} apply={(value) => setParams(value)} />
       {search ? (
         <Collection<Schema<'SearchHit'>>
           key={path}
@@ -81,7 +52,7 @@ export function SearchScreen() {
           empty={
             <>
               未找到匹配页面。
-              {!tag && !type && auth.account?.can_create_page && (
+              {!filtered && !type && auth.account?.can_create_page && (
                 <Button variant="link" asChild>
                   <Link to={`/pages/new?${query({ title: search })}`}>创建页面</Link>
                 </Button>

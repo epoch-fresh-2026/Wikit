@@ -44,6 +44,12 @@ JSON Schema inputSchema/outputSchema、annotations 和对应 REST operationId。
 
 ## 能力分组
 
+Issue #51：wikit_pages_list、wikit_search 共用 tags:string[]、tag_match:all|any
+（默认 all）、exclude_tags:string[]，以及 type:document|media。wikit_search 仍要求非空 q。
+数组合计最多 30 项，Core 规范化后每项 1–64 字符；排除任一命中即剔除。
+旧 tag 与 tags 同传拒绝；规则、错误、游标与 REST 一致，详见 ADR 0022。
+wikit_tags_list 不增加筛选、计数或推荐；工具总数不变。
+
 | 工具前缀／代表操作 | 能力 |
 | --- | --- |
 | wikit_pages_list、wikit_page_get、wikit_revision_get | 阅读当前页面及历史 |

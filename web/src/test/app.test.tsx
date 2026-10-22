@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { App } from '@/app'
@@ -55,24 +55,21 @@ function mount(route = '/', handler?: Handler, anonymous = false) {
     return failure('not_found', 404)
   })
   vi.stubGlobal('fetch', fetcher)
-  render(
-    <RouterProvider
-      router={createMemoryRouter(
-        [
-          {
-            path: '*',
-            element: (
-              <AuthProvider>
-                <App />
-              </AuthProvider>
-            ),
-          },
-        ],
-        { initialEntries: [route] },
-      )}
-    />,
+  const router = createMemoryRouter(
+    [
+      {
+        path: '*',
+        element: (
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        ),
+      },
+    ],
+    { initialEntries: [route] },
   )
-  return { fetcher, user: userEvent.setup() }
+  render(<RouterProvider router={router} />)
+  return { fetcher, router, user: userEvent.setup() }
 }
 beforeEach(() => {
   sessionStorage.clear()
@@ -257,16 +254,17 @@ it('opens tag filters in search and keeps the keyword when changing type', async
   await screen.findByRole('heading', { name: '协作知识' })
   const tag = revision.snapshot.tags[0]
   await user.click(screen.getByRole('link', { name: tag }))
-  await screen.findByRole('heading', { name: `标签：${tag}` })
+  await screen.findByRole('textbox', { name: '包含标签' })
   expect(screen.getByRole('link', { name: tag })).toHaveAttribute(
     'href',
-    `/search?tag=${encodeURIComponent(tag)}`,
+    `/search?tags=${encodeURIComponent(tag)}`,
   )
   await user.type(screen.getByRole('textbox', { name: '搜索关键词' }), 'wiki')
   await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
   await screen.findByRole('heading', { name: '搜索结果' })
   await user.click(screen.getByLabelText('页面类型'))
   await user.click(screen.getByRole('option', { name: '媒体' }))
+  await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
   await waitFor(() =>
     expect(
       fetcher.mock.calls.some(
@@ -274,7 +272,7 @@ it('opens tag filters in search and keeps the keyword when changing type', async
           url.startsWith('/api/v1/search?') &&
           url.includes('q=wiki') &&
           url.includes('type=media') &&
-          url.includes(`tag=${encodeURIComponent(tag)}`),
+          url.includes(`tags=${encodeURIComponent(tag)}`),
       ),
     ).toBe(true),
   )
@@ -705,13 +703,62 @@ it('does not expose a proposal through another page route', async () => {
 
 it('keeps focus while typing a multi-character tag filter into URL-backed search', async () => {
   const { user, fetcher } = mount('/search')
-  const input = await screen.findByRole('textbox', { name: '标签筛选' })
+  const input = await screen.findByRole('textbox', { name: '包含标签' })
   await user.type(input, 'knowledge')
   expect(input).toHaveValue('knowledge')
   expect(input).toHaveFocus()
+  expect(fetcher.mock.calls.some(([url]) => url.includes('tags=knowledge'))).toBe(false)
+  await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
   await waitFor(() =>
-    expect(fetcher.mock.calls.some(([url]) => url.includes('tag=knowledge'))).toBe(true),
+    expect(fetcher.mock.calls.some(([url]) => url.includes('tags=knowledge'))).toBe(true),
   )
+})
+
+it('submits tag groups together, restores navigation and clears the filters', async () => {
+  const { user, router, fetcher } = mount('/search?q=wiki&tag=legacy', (path) =>
+    path.startsWith('/api/v1/search?') ? json(list([])) : undefined,
+  )
+  await screen.findByRole('button', { name: '移除标签 legacy' })
+  expect(screen.queryByRole('link', { name: '创建页面' })).not.toBeInTheDocument()
+  const input = screen.getByRole('textbox', { name: '包含标签' })
+  await user.type(input, 'database{Enter}')
+  await user.type(input, 'with,comma')
+  await user.type(screen.getByRole('textbox', { name: '排除标签' }), 'old')
+  await user.click(screen.getByLabelText('匹配方式'))
+  await user.click(screen.getByRole('option', { name: '任一满足' }))
+  expect(router.state.location.search).toBe('?q=wiki&tag=legacy')
+  await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
+  await waitFor(() => expect(router.state.location.search).toContain('exclude_tags=old'))
+  const applied = new URLSearchParams(router.state.location.search)
+  expect(applied.getAll('tags')).toEqual(['legacy', 'database', 'with,comma'])
+  expect(applied.get('tag_match')).toBe('any')
+  await screen.findByRole('button', { name: '移除标签 old' })
+  await user.click(screen.getByRole('button', { name: '移除标签 database' }))
+  await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
+  await waitFor(() =>
+    expect(new URLSearchParams(router.state.location.search).getAll('tags')).toEqual([
+      'legacy',
+      'with,comma',
+    ]),
+  )
+  await act(async () => {
+    await router.navigate(-1)
+  })
+  await screen.findByRole('button', { name: '移除标签 database' })
+  await user.click(screen.getByRole('button', { name: '清空筛选' }))
+  await waitFor(() => expect(router.state.location.search).toBe(''))
+  expect(screen.getByRole('textbox', { name: '搜索关键词' })).toHaveValue('')
+  expect(screen.queryByRole('button', { name: '移除标签 old' })).not.toBeInTheDocument()
+  expect(fetcher.mock.calls.some(([path]) => path.includes('tags=with%2Ccomma'))).toBe(true)
+})
+
+it('keeps exclusion-only URL filters and does not offer page creation for them', async () => {
+  mount('/search?q=wiki&exclude_tags=old', (path) =>
+    path.startsWith('/api/v1/search?') ? json(list([])) : undefined,
+  )
+  await screen.findByText('未找到匹配页面。')
+  expect(screen.getByRole('button', { name: '移除标签 old' })).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: '创建页面' })).not.toBeInTheDocument()
 })
 
 it('paginates group member choices without submitting the group form', async () => {

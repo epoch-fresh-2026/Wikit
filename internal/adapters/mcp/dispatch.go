@@ -34,7 +34,10 @@ type arguments struct {
 	UploadID      string          `json:"upload_id"`
 	Limit         *int            `json:"limit"`
 	Cursor        string          `json:"cursor"`
-	Tag           string          `json:"tag"`
+	Tag           *string         `json:"tag"`
+	Tags          []string        `json:"tags"`
+	TagMatch      *string         `json:"tag_match"`
+	ExcludeTags   []string        `json:"exclude_tags"`
 	Type          string          `json:"type"`
 	State         string          `json:"state"`
 	Q             string          `json:"q"`
@@ -59,6 +62,14 @@ type moderation struct {
 
 func (s Services) invoke(ctx context.Context, op string, a arguments, r access.Request, ip string) (any, error) {
 	c := r.Credentials
+	tag := ""
+	if a.Tag != nil {
+		tag = *a.Tag
+	}
+	filter := content.TagFilter{Tags: a.Tags, ExcludeTags: a.ExcludeTags, MatchSet: a.TagMatch != nil}
+	if a.TagMatch != nil {
+		filter.Match = *a.TagMatch
+	}
 	limit := 20
 	if a.Limit != nil {
 		limit = *a.Limit
@@ -109,7 +120,7 @@ func (s Services) invoke(ctx context.Context, op string, a arguments, r access.R
 		return s.Access.UpdatePolicy(ctx, r, a.PageID, access.Policy{Visibility: in.Visibility, Grants: in.Grants}, in.Version)
 	case "pages_list", "tags_list", "revisions_list", "proposal_queue", "proposals_list", "proposal_revisions_list":
 		kind := map[string]string{"pages_list": "pages", "tags_list": "tags", "revisions_list": "revisions", "proposal_queue": "proposals", "proposals_list": "proposals", "proposal_revisions_list": "candidates"}[op]
-		return s.Pages.List(ctx, c, pages.Query{Kind: kind, PageID: a.PageID, ProposalID: a.ProposalID, Tag: a.Tag, Type: a.Type, State: a.State, Cursor: a.Cursor, Limit: limit})
+		return s.Pages.List(ctx, c, pages.Query{Kind: kind, PageID: a.PageID, ProposalID: a.ProposalID, Tag: tag, TagSet: a.Tag != nil, Filter: filter, Type: a.Type, State: a.State, Cursor: a.Cursor, Limit: limit})
 	case "page_get", "revision_get":
 		return s.Pages.Get(ctx, c, a.PageID, a.RevisionID)
 	case "proposal_get":
@@ -243,7 +254,7 @@ func (s Services) invoke(ctx context.Context, op string, a arguments, r access.R
 	case "upload_get":
 		return s.Media.Get(ctx, c, a.UploadID)
 	case "search":
-		return s.Search.Search(ctx, c, search.Query{Q: a.Q, Tag: a.Tag, Cursor: a.Cursor, Limit: limit})
+		return s.Search.Search(ctx, c, search.Query{Q: a.Q, Type: a.Type, Tag: tag, TagSet: a.Tag != nil, Filter: filter, Cursor: a.Cursor, Limit: limit})
 	}
 	return nil, fault.NotFound
 }

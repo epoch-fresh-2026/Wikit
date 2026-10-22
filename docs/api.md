@@ -12,7 +12,7 @@ Issue #9 增加 /mcp 的 39 个目录工具，直接复用既有 Core。REST/MCP
 忽略对象字段顺序和无意义空白，保留数字词法；旧原始字节摘要仍兼容原 body 字节的重试。
 稳定错误 DTO 共用，工具业务拒绝通过 isError 与同一 error JSON 返回；协议身份失败在执行前处理。
 
-Issue #8 实现 GET /search：q、tag、limit、cursor；拒绝其他查询参数，避免客户端控制
+Issue #8 实现 GET /search；Issue #51 扩展为 q、tag、tags、tag_match、exclude_tags、type、limit、cursor；拒绝其他查询参数，避免客户端控制
 候选权限过滤。返回 SearchHitList，不返回总数、facet 或搜索引擎原始摘要。
 当前 head/policy_version 不匹配的候选跳过并安排修复；索引不可用返回 search_unavailable / 503。
 
@@ -38,6 +38,18 @@ Issue #8 实现 GET /search：q、tag、limit、cursor；拒绝其他查询参�
   不能依赖重试重新取得原明文。退出、撤销均允许重复请求。
 - 过期 head 或候选返回 409 `stale_revision`；409 不应无条件自动重试。
   网络失败／503 只在幂等保障下重试；429 遵守 Retry-After。
+
+## 标签筛选（Issue #51）
+
+GET /pages 与 GET /search 接受 tags、exclude_tags 数组，使用重复同名查询参数
+（form/explode），例如 `/search?q=备份&tags=数据库&tags=部署&tag_match=all&exclude_tags=过时`。
+tag_match 默认 all（全部满足），any 表示至少一个；排除任一命中即剔除。
+空包含列表不限制，支持仅排除；重叠条件不报错，按排除优先。type 可为 document/media。
+旧 tag 为兼容单标签输入，不能与 tags 同传（包括空值）。旧 tag 空字符串不筛选；
+非空白标签按 Core NFC/case-fold、去重排序；空白项、非法模式、重复单值参数、
+输入标签项合计超过 30 或规范化后单项超过 64 字符均返回 invalid_request。
+数组不按逗号或空格切分。游标绑定规范化完整条件，重排同组标签不改变绑定；
+条件变化从第一页重试，升级前旧筛选游标失效。分页/权限/响应结构保持既有约定。
 
 ## 版本字段的含义
 

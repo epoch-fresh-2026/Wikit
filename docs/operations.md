@@ -92,6 +92,7 @@ Issue #8 内置每秒检查的搜索 worker；单轮有 30 秒时限，异步 ta
 pending、oldest_seconds、failures，不输出正文、ACL 或 key，且状态读取不等待 worker 锁。
 retry/status 只要求数据库配置。重建和投递共用会话锁，正在执行时另一管理写命令返回非零；可稍后重试。
 Meilisearch 固定版本 1.55.0，管理 key 仅供服务端使用；索引卷丢失后必须执行完整 search-rebuild。
+Issue #51 升级增加 type 可过滤属性；已有索引需先运行 search-rebuild，再开放类型搜索。
 旧/失败重建索引保留，清理前核对 search_state.active_index；不会自动删除线上索引。
 
 Issue #6 提供 `wikit blob-gc`；读取数据库、媒体目录和 WIKIT_BLOB_GC_GRACE，默认 168h，

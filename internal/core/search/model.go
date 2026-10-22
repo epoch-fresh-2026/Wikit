@@ -40,7 +40,8 @@ type Filter struct {
 	Actor  string
 	Groups []string
 	Admin  bool
-	Tag    string
+	Tags   content.TagFilter
+	Type   string
 }
 type Index interface {
 	Ensure(context.Context, string) error
