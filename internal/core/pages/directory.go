@@ -26,7 +26,7 @@ func (s *Service) directory(ctx context.Context, tx Tx, actor identity.Actor, gr
 	scanned := 0
 	for scanned < 1000 && len(selected) < q.Limit {
 		size := min(100, 1000-scanned)
-		batch, err := tx.PageBatch(ctx, q.Tag, q.Type, anchor, size)
+		batch, err := tx.PageBatch(ctx, q.Filter, q.Type, anchor, size)
 		if err != nil {
 			return out, err
 		}

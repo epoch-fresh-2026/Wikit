@@ -49,6 +49,12 @@ func (a API) pageRoute(r *http.Request, c identity.Credentials, requestID, path,
 	switch {
 	case path == "pages":
 		q.Kind = "pages"
+		var err error
+		q.Filter, err = tagQuery(r.URL.Query(), false)
+		if err != nil {
+			return nil, 0, err
+		}
+		q.TagSet = r.URL.Query().Has("tag")
 	case path == "tags":
 		q.Kind = "tags"
 	case path == "proposals":

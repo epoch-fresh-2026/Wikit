@@ -1843,6 +1843,9 @@ export interface operations {
                 limit?: number;
                 cursor?: string;
                 tag?: string;
+                tags?: string[];
+                tag_match?: "all" | "any";
+                exclude_tags?: string[];
                 type?: "document" | "media";
             };
             header?: never;
@@ -3280,6 +3283,10 @@ export interface operations {
                 cursor?: string;
                 q: string;
                 tag?: string;
+                tags?: string[];
+                tag_match?: "all" | "any";
+                exclude_tags?: string[];
+                type?: "document" | "media";
             };
             header?: never;
             path?: never;

@@ -6,6 +6,7 @@
 
 Wikit 是单站点、面向公开社区的自托管 Wiki，源码 MIT。站点内容许可独立配置。
 以标签组织知识，文档和媒体均为独立 Page。允许公开和受限页面。
+多标签 all/any 与排除筛选共用 Core 规则，见 [ADR 0022](adr/0022-tag-filters.md)（Issue #51）。
 首版不实现原生 Git、S3、多租户、模板、通知、实时协作、语义检索或高可用。
 
 技术基线：Go 模块化单体、PostgreSQL、Meilisearch、本地不可变媒体；

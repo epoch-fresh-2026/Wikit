@@ -1,5 +1,13 @@
 # 中英文检索与权限一致性
 
+Issue #51 / [ADR 0022](adr/0022-tag-filters.md)：页面列表和全文搜索共用多标签筛选。
+tags 包含列表按 tag_match=all|any 匹配（默认 all）；exclude_tags 任一命中即排除。
+包含与排除以 AND 组合，空包含列表不限制；重叠按排除优先，合法查询可无结果。
+Core 统一规范化、校验、去重排序，并在当前已发布内容复核时重新检查标签及类型。
+标签输入合计最多 30 项，规范化后每项 1–64 字符；不拆分逗号或空格。
+目录在数据库分页前过滤，搜索在索引候选阶段过滤并在 Core 复核，不由客户端过滤一页。
+索引 filterableAttributes 增加 type；已有部署须 search-rebuild 更新配置。
+
 Meilisearch 是查询加速器，不能决定对象是否可读。
 PostgreSQL 的 simple 字典和 pg_trgm 不作为中文分词替代。
 

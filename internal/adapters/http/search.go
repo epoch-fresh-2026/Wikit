@@ -10,17 +10,12 @@ import (
 )
 
 func (a API) searchRoute(r *http.Request, c identity.Credentials) (any, int, error) {
-	for key, values := range r.URL.Query() {
-		if len(values) != 1 {
-			return nil, 0, fault.BadRequest
-		}
-		switch key {
-		case "q", "tag", "limit", "cursor":
-		default:
-			return nil, 0, fault.BadRequest
-		}
+	values := r.URL.Query()
+	filter, err := tagQuery(values, true)
+	if err != nil {
+		return nil, 0, err
 	}
-	q := search.Query{Q: r.URL.Query().Get("q"), Tag: r.URL.Query().Get("tag"), Cursor: r.URL.Query().Get("cursor"), Limit: 20}
+	q := search.Query{Q: values.Get("q"), Tag: values.Get("tag"), TagSet: values.Has("tag"), Filter: filter, Type: values.Get("type"), Cursor: values.Get("cursor"), Limit: 20}
 	if raw := r.URL.Query().Get("limit"); raw != "" {
 		n, err := strconv.Atoi(raw)
 		if err != nil {

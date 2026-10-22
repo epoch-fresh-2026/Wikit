@@ -1285,7 +1285,55 @@
             "required": false,
             "schema": {
               "type": "string",
-              "maxLength": 64
+              "maxLength": 64,
+              "description": "兼容单标签；不能与 tags 同传。"
+            }
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              "maxItems": 30,
+              "description": "包含标签；与 exclude_tags 输入项合计最多 30。"
+            }
+          },
+          {
+            "name": "tag_match",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "any"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "exclude_tags",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              "maxItems": 30,
+              "description": "任一命中即排除。"
             }
           },
           {
@@ -4982,7 +5030,67 @@
             "required": false,
             "schema": {
               "type": "string",
-              "maxLength": 64
+              "maxLength": 64,
+              "description": "兼容单标签；不能与 tags 同传。"
+            }
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              "maxItems": 30,
+              "description": "包含标签；与 exclude_tags 输入项合计最多 30。"
+            }
+          },
+          {
+            "name": "tag_match",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "any"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "exclude_tags",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              "maxItems": 30,
+              "description": "任一命中即排除。"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "document",
+                "media"
+              ]
             }
           }
         ],

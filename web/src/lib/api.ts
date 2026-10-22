@@ -178,8 +178,11 @@ export class Client {
   }
 }
 export const api = new Client()
-export function query(values: Record<string, string | null | undefined>) {
+export function query(values: Record<string, string | string[] | null | undefined>) {
   const p = new URLSearchParams()
-  for (const [key, value] of Object.entries(values)) if (value) p.set(key, value)
+  for (const [key, value] of Object.entries(values)) {
+    if (Array.isArray(value)) for (const item of value) p.append(key, item)
+    else if (value) p.set(key, value)
+  }
   return p.toString()
 }

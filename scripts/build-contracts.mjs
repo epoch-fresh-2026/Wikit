@@ -26,6 +26,13 @@ const snapshotBase = {
   title: { ...string(300), minLength: 1 },
   tags: { ...array({ ...string(64), minLength: 1 }), maxItems: 30, uniqueItems: true },
 };
+const tagFilters = {
+  tag: { ...string(64), description: '兼容单标签；不能与 tags 同传。' },
+  tags: { ...array({ ...string(64), minLength: 1 }), maxItems: 30, description: '包含标签；与 exclude_tags 输入项合计最多 30。' },
+  tag_match: { ...enumOf('all', 'any'), default: 'all' },
+  exclude_tags: { ...array({ ...string(64), minLength: 1 }), maxItems: 30, description: '任一命中即排除。' },
+  type: enumOf('document', 'media'),
+};
 const schemas = {
   Account: object({
     id, username: string(32), display_name: string(100),
@@ -203,7 +210,7 @@ op('get', '/admin/groups', 'groups_list', 'Administration', '管理员列出用�
 op('post', '/admin/groups', 'group_create', 'Administration', '管理员创建用户组', 'Group', 'GroupCreate', { status: 201 });
 op('put', '/admin/groups/{group_id}', 'group_update', 'Administration', '管理员更新组及成员', 'Group', 'GroupUpdate');
 op('get', '/admin/audit', 'audit_list', 'Administration', '管理员查询审计事件', 'AuditEventList', null, { list: true });
-op('get', '/pages', 'pages_list', 'Pages', '列出当前可读已发布页面', 'PageDetailList', null, { public: true, list: true, query: { tag: string(64), type: enumOf('document', 'media') } });
+op('get', '/pages', 'pages_list', 'Pages', '列出当前可读已发布页面', 'PageDetailList', null, { public: true, list: true, query: tagFilters });
 op('post', '/pages', 'page_create', 'Pages', '创建页面及首个提案', 'CreatedPage', 'CreatePage', { status: 201 });
 op('get', '/pages/{page_id}', 'page_get', 'Pages', '读取页面当前发布内容', 'PageDetail', null, { public: true });
 op('get', '/pages/{page_id}/policy', 'page_policy_get', 'Pages', '管理者读取页面权限', 'Policy');
@@ -238,7 +245,7 @@ op('post', '/uploads', 'upload_prepare', 'Media', '预约鉴权媒体上传', 'U
 op('put', '/uploads/{upload_id}/content', 'upload_content', 'Media', '流式写入媒体原件', 'Blob', 'binary', { mcp: false });
 op('get', '/uploads/{upload_id}', 'upload_get', 'Media', '上传者读取上传状态', 'Upload');
 op('get', '/tags', 'tags_list', 'Search', '列出当前可读页面的标签', 'TagList', null, { public: true, list: true });
-op('get', '/search', 'search', 'Search', '检索并校验当前权限及版本', 'SearchHitList', null, { public: true, list: true, query: { q: { ...string(500), minLength: 1 }, tag: string(64) }, requiredQuery: ['q'] });
+op('get', '/search', 'search', 'Search', '检索并校验当前权限及版本', 'SearchHitList', null, { public: true, list: true, query: { q: { ...string(500), minLength: 1 }, ...tagFilters }, requiredQuery: ['q'] });
 
 function closure(schema) {
   const names = new Set();
@@ -276,7 +283,7 @@ export function buildContracts() {
       ...(o.list ? { limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 }, cursor: string(2048) } : {}),
       ...o.query,
     };
-    for (const [name, schema] of Object.entries(query)) parameters.push({ name, in: 'query', required: o.requiredQuery?.includes(name) ?? false, schema });
+    for (const [name, schema] of Object.entries(query)) parameters.push({ name, in: 'query', required: o.requiredQuery?.includes(name) ?? false, ...(schema.type === 'array' ? { style: 'form', explode: true } : {}), schema });
     const mutating = !['get', 'head'].includes(o.method);
     const idempotent = mutating && !o.sensitive && o.input !== 'binary';
     if (idempotent) parameters.push({

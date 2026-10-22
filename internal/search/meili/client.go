@@ -120,7 +120,7 @@ func (c *Client) Ensure(ctx context.Context, index string) error {
 	wanted := map[string]any{
 		"searchableAttributes": []string{"title", "tags", "body"},
 		"displayedAttributes":  []string{"page_id", "revision_id", "policy_version"},
-		"filterableAttributes": []string{"visibility", "read_users", "read_groups", "tags"},
+		"filterableAttributes": []string{"visibility", "read_users", "read_groups", "tags", "type"},
 		"rankingRules":         []string{"attribute", "words", "typo", "proximity", "sort", "exactness"},
 		"localizedAttributes":  []any{map[string]any{"attributePatterns": []string{"title", "tags", "body"}, "locales": []string{"zho", "eng"}}},
 		"pagination":           map[string]any{"maxTotalHits": 1000000},
@@ -173,8 +173,22 @@ func (c *Client) Search(ctx context.Context, index, q string, f search.Filter, o
 		}
 		filter = append(filter, "("+strings.Join(acl, " OR ")+")")
 	}
-	if f.Tag != "" {
-		filter = append(filter, "tags = "+quote(f.Tag))
+	if len(f.Tags.Tags) > 0 {
+		includes := []string{}
+		for _, tag := range f.Tags.Tags {
+			includes = append(includes, "tags = "+quote(tag))
+		}
+		join := " AND "
+		if f.Tags.Match == "any" {
+			join = " OR "
+		}
+		filter = append(filter, "("+strings.Join(includes, join)+")")
+	}
+	for _, tag := range f.Tags.ExcludeTags {
+		filter = append(filter, "NOT (tags = "+quote(tag)+")")
+	}
+	if f.Type != "" {
+		filter = append(filter, "type = "+quote(f.Type))
 	}
 	var out struct {
 		Hits []search.Candidate `json:"hits"`
