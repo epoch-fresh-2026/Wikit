@@ -8,14 +8,15 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 
 ## 页面与闭环
 
-前台为 Wiki React SPA：顶部搜索和账户菜单、左侧站点导航、中间正文、右侧文章目录。
-窄屏导航使用 Sidebar/Sheet，文章目录按需打开。首页 `/` 读取 Page 1，与普通文档共用阅读与提案流程。
-不使用宣传标题、装饰英文眉题或口号。后台采用独立 AdminLayout，只保留账户、用户组与审计导航。
+前台为 Wiki React SPA：顶部站名（链接首页）、搜索、具有创建权时的创建入口和账户菜单，中间正文、右侧文章目录。
+按 Issue #39 与 ADR 0019 移除站点侧边栏、全部页面与全站提案页面；页面顶部阅读、讨论、历史、提案等操作右对齐，窄屏换行。
+窄屏文章目录使用 Sheet 按需打开。首页 `/` 读取 Page 1，与普通文档共用阅读与提案流程。
+不使用宣传标题、装饰英文眉题或口号。后台采用独立 AdminLayout，以横向导航提供账户、用户组、审计及返回站点入口。
 
 | 路由 | 内容 |
 | --- | --- |
 | `/` | 固定首页 Page 1 |
-| `/pages`、`/search` | 页面目录、搜索、标签与类型过滤 |
+| `/search` | 搜索、标签与类型过滤；无关键词时列出匹配页面 |
 | `/pages/new` | 具有 create_page 时创建并直接发布文档或媒体 |
 | `/pages/:id` | 阅读、标签、当前版本、页面工具 |
 | `/pages/:id/history`、`/pages/:id/revisions/:revisionID` | 历史、比较、恢复与撤销提案 |
@@ -24,10 +25,11 @@ Issue #10 使用 React、TypeScript strict、Vite、Tailwind CSS 与 shadcn/ui�
 | `/pages/:pageId/proposals/:id`、其 `/edit` | 独立提案详情与编辑，校验所属 Page |
 | `/pages/:id/issues`、`/pages/:pageId/issues/:id` | 页面讨论列表及独立讨论详情 |
 | `/pages/:id/policy` | 页面 ACL 与治理，首页不能隐藏或限制访问 |
-| `/proposals` | 辅助全站提案摘要与跳转 |
 | `/admin/accounts`、`/admin/groups`、`/admin/audit` | 账户角色/状态/创建权、组成员/创建权、审计 |
 
 `/admin` 默认进入账户管理。新建成功进入已发布页面；修改已有页面进入提案详情。
+`/pages` 与 `/proposals` 不再注册为前台路由，旧地址显示未找到页面；标签链接统一进入 `/search?tag=…`。
+页面面包屑从首页进入当前页面。提案列表仅在具体 Page 下提供；REST/MCP 列表接口不变。
 提案默认展示差异，候选预览和候选历史通过 Tabs 切换，编辑使用独立路由。
 有有效 merge 能力且正在展示匹配当前 head/候选的 diff 时可合并，无批准表单、审核记录或轮次。
 候选或 head 变化后必须重新读取；不会自动发布新的内容。恢复和撤销仍生成提案。
@@ -75,3 +77,10 @@ frontend CI 随实现启用。组件测试覆盖用户行为、
 模拟 API 的组件测试不算真实后端端到端 smoke；实际运行的范围在 Issue/PR 中单独记录。
 
 Issue #33 升级 jsdom 30 后，根目录与 Web 开发环境最低要求 Node 24.15.0（<25）；Docker 构建同步固定该版本。
+
+Issue #39 本地验证（2026-10-22）：`npm run check`、前端类型检查、42 项组件测试与生产构建、
+`go vet ./...` 和 `go test -race -count=1 ./...` 通过。
+独立内存 API 夹具加载生产构建，在 320、768、1280 CSS 像素检查阅读页：页面操作均为右对齐，
+窄屏换行且页面无横向溢出；320 像素搜索与后台账户页也无横向溢出。
+此浏览器验证不代表真实后端端到端测试。本轮未运行 PostgreSQL/Meilisearch 集成及容器验收：
+本机未配置本轮集成依赖且没有 Docker；全部 CI 阶段保持启用。

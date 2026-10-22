@@ -163,7 +163,7 @@ export function TagLinks({ tags }: { tags: string[] }) {
   return (
     <div className="tags">
       {tags.map((tag) => (
-        <Link key={tag} to={`/pages?tag=${encodeURIComponent(tag)}`}>
+        <Link key={tag} to={`/search?tag=${encodeURIComponent(tag)}`}>
           <Badge variant="secondary" className="tag-chip">
             {tag}
           </Badge>

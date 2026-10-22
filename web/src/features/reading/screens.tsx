@@ -27,24 +27,19 @@ import { useAuth } from '@/features/account/auth'
 import { SnapshotEditor, emptySnapshot } from '@/features/editing/editor'
 import { SnapshotView } from './markdown'
 
-export function ExploreScreen() {
+export function SearchScreen() {
   const [params, setParams] = useSearchParams(),
     [q, setQ] = useState(params.get('q') ?? '')
-  const auth = useAuth(),
-    tag = params.get('tag') ?? '',
+  const tag = params.get('tag') ?? '',
     type = params.get('type') ?? '',
     search = params.get('q') ?? ''
   useEffect(() => setQ(search), [search])
-  const path = search ? 'search?' + query({ q: search, tag }) : 'pages?' + query({ tag, type })
+  const path = search
+    ? 'search?' + query({ q: search, tag, type })
+    : 'pages?' + query({ tag, type })
   return (
     <>
-      <SectionTitle title={search ? '搜索结果' : tag ? `标签：${tag}` : '全部页面'}>
-        {auth.account?.can_create_page && (
-          <Button asChild>
-            <Link to="/pages/new">创建页面</Link>
-          </Button>
-        )}
-      </SectionTitle>
+      <SectionTitle title={search ? '搜索结果' : tag ? `标签：${tag}` : '搜索页面'} />
       <form
         className="toolbar"
         onSubmit={(e) => {
@@ -67,18 +62,16 @@ export function ExploreScreen() {
           value={tag}
           onChange={(e) => setParams(query({ q: search, tag: e.target.value, type }))}
         />
-        {!search && (
-          <SelectField
-            label="页面类型"
-            value={type}
-            onChange={(v) => setParams(query({ tag, type: v }))}
-            options={[
-              ['', '全部类型'],
-              ['document', '文档'],
-              ['media', '媒体'],
-            ]}
-          />
-        )}
+        <SelectField
+          label="页面类型"
+          value={type}
+          onChange={(v) => setParams(query({ q: search, tag, type: v }))}
+          options={[
+            ['', '全部类型'],
+            ['document', '文档'],
+            ['media', '媒体'],
+          ]}
+        />
       </div>
       {search ? (
         <Collection<Schema<'SearchHit'>> key={path} path={path} empty="未找到匹配页面。">

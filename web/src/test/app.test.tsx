@@ -111,6 +111,75 @@ it('browses pages and tags and submits a keyboard search without rendering snipp
   expect(document.querySelector('script')).toBeNull()
   expect(screen.getByText('<script>private</script>')).toBeInTheDocument()
 })
+it.each(['/pages', '/proposals'])(
+  'removes the standalone %s screen and its navigation',
+  async (route) => {
+    const { fetcher } = mount(route)
+    await screen.findByRole('heading', { name: '未找到此页面' })
+    expect(screen.queryByRole('link', { name: '全部页面' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '全站提案' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '切换导航' })).not.toBeInTheDocument()
+    expect(document.querySelector('[data-slot="sidebar"]')).toBeNull()
+    expect(fetcher.mock.calls.some(([path]) => /^\/api\/v1\/(pages|proposals)\?/.test(path))).toBe(
+      false,
+    )
+  },
+)
+it('keeps creation in the header and page-specific navigation accessible', async () => {
+  const { user } = mount(`/pages/${pageID}`)
+  await screen.findByRole('heading', { name: '协作知识' })
+  expect(
+    within(screen.getByRole('banner', { name: '站点' })).getByRole('link', { name: '创建页面' }),
+  ).toHaveAttribute('href', '/pages/new')
+  const tools = within(screen.getByRole('navigation', { name: '页面操作' }))
+  expect(tools.getByRole('link', { name: '阅读' })).toHaveAttribute('aria-current', 'page')
+  await user.click(tools.getByRole('link', { name: '提案' }))
+  await screen.findByRole('heading', { name: '页面提案' })
+  expect(
+    screen
+      .getAllByRole('link', { name: proposal.current_revision.snapshot.title })
+      .map((link) => link.getAttribute('href')),
+  ).toContain(`/pages/${pageID}/proposals/${proposalID}`)
+})
+it('opens tag filters in search and keeps the keyword when changing type', async () => {
+  const { user, fetcher } = mount(`/pages/${pageID}`, (path) =>
+    path.startsWith('/api/v1/search?') ? json(list([])) : undefined,
+  )
+  await screen.findByRole('heading', { name: '协作知识' })
+  const tag = revision.snapshot.tags[0]
+  await user.click(screen.getByRole('link', { name: tag }))
+  await screen.findByRole('heading', { name: `标签：${tag}` })
+  expect(screen.getByRole('link', { name: tag })).toHaveAttribute(
+    'href',
+    `/search?tag=${encodeURIComponent(tag)}`,
+  )
+  await user.type(screen.getByRole('textbox', { name: '搜索关键词' }), 'wiki')
+  await user.click(within(screen.getByRole('main')).getByRole('button', { name: '搜索' }))
+  await screen.findByRole('heading', { name: '搜索结果' })
+  await user.click(screen.getByLabelText('页面类型'))
+  await user.click(screen.getByRole('option', { name: '媒体' }))
+  await waitFor(() =>
+    expect(
+      fetcher.mock.calls.some(
+        ([url]) =>
+          url.startsWith('/api/v1/search?') &&
+          url.includes('q=wiki') &&
+          url.includes('type=media') &&
+          url.includes(`tag=${encodeURIComponent(tag)}`),
+      ),
+    ).toBe(true),
+  )
+})
+it('keeps administrator sections reachable without a sidebar', async () => {
+  mount('/admin/accounts', (path) =>
+    path.startsWith('/api/v1/admin/accounts?') ? json(list([])) : undefined,
+  )
+  const nav = within(await screen.findByRole('navigation', { name: '管理导航' }))
+  expect(nav.getByRole('link', { name: '账户' })).toHaveAttribute('href', '/admin/accounts')
+  expect(nav.getByRole('link', { name: '用户组' })).toHaveAttribute('href', '/admin/groups')
+  expect(nav.getByRole('link', { name: '审计' })).toHaveAttribute('href', '/admin/audit')
+  expect(nav.getByRole('link', { name: '返回站点' })).toHaveAttribute('href', '/')
+})
 it('logs in with Cookie/CSRF and does not persist a password or Bearer token', async () => {
   const { user, fetcher } = mount(
     '/login',
@@ -488,13 +557,13 @@ it('keeps IME confirmation inside the tag input and includes pending unsplit tag
 it('requires confirmation before leaving an unsaved editor', async () => {
   const { user } = mount('/pages/new')
   await user.type(await screen.findByRole('textbox', { name: '标题' }), '未提交')
-  await user.click(screen.getByRole('link', { name: '全部页面' }))
+  await user.click(screen.getByRole('link', { name: 'Wikit 首页' }))
   await screen.findByRole('alertdialog')
   await user.click(screen.getByRole('button', { name: '继续编辑' }))
   expect(screen.getByRole('textbox', { name: '标题' })).toHaveValue('未提交')
-  await user.click(screen.getByRole('link', { name: '全部页面' }))
+  await user.click(screen.getByRole('link', { name: 'Wikit 首页' }))
   await user.click(await screen.findByRole('button', { name: '放弃修改' }))
-  await screen.findByRole('heading', { name: '全部页面' })
+  await screen.findByRole('heading', { name: '协作知识' })
 })
 it('does not expose a proposal through another page route', async () => {
   mount(`/pages/99/proposals/${proposalID}`)
@@ -503,8 +572,8 @@ it('does not expose a proposal through another page route', async () => {
   expect(screen.queryByText(proposal.current_revision.snapshot.title)).not.toBeInTheDocument()
 })
 
-it('keeps focus while typing a multi-character tag filter into the URL-backed directory', async () => {
-  const { user, fetcher } = mount('/pages')
+it('keeps focus while typing a multi-character tag filter into URL-backed search', async () => {
+  const { user, fetcher } = mount('/search')
   const input = await screen.findByRole('textbox', { name: '标签筛选' })
   await user.type(input, 'knowledge')
   expect(input).toHaveValue('knowledge')
@@ -614,9 +683,9 @@ it('moves focus to the selected article heading after closing the mobile content
   const { user } = mount('/pages/2')
   const heading = await screen.findByRole('heading', { name: '内容', level: 2 })
   const scroll = vi.spyOn(heading, 'scrollIntoView')
-  const trigger = screen.getByRole('button', { name: '文章目录' })
+  const trigger = await screen.findByRole('button', { name: '文章目录' })
   await user.click(trigger)
-  await user.click(within(screen.getByRole('dialog')).getByRole('link', { name: '内容' }))
+  await user.click(within(await screen.findByRole('dialog')).getByRole('link', { name: '内容' }))
   await waitFor(() => expect(heading).toHaveFocus())
   expect(scroll).toHaveBeenCalledWith({ block: 'start' })
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

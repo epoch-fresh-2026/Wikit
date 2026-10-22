@@ -1,31 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
-import {
-  BookOpen,
-  Files,
-  GitPullRequest,
-  Plus,
-  Search,
-  Settings,
-  Users,
-  Shield,
-  ScrollText,
-} from 'lucide-react'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from '@/components/ui/sidebar'
+import { BookOpen, Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -46,76 +21,6 @@ import { api, type Schema } from '@/lib/api'
 import { useAction, useResource } from '@/lib/hooks'
 import { ActionFeedback } from '@/components/shared'
 
-function Navigation({ admin }: { admin: boolean }) {
-  const auth = useAuth(),
-    location = useLocation(),
-    sidebar = useSidebar()
-  const items = admin
-    ? ([
-        ['/admin/accounts', '账户', Users],
-        ['/admin/groups', '用户组', Shield],
-        ['/admin/audit', '审计', ScrollText],
-      ] as const)
-    : ([
-        ['/', '首页', BookOpen],
-        ['/pages', '全部页面', Files],
-        ['/proposals', '全站提案', GitPullRequest],
-      ] as const)
-  useEffect(() => {
-    sidebar.setOpenMobile(false)
-  }, [location.pathname])
-  return (
-    <Sidebar>
-      <SidebarHeader>
-        <Link to={admin ? '/admin/accounts' : '/'} className="site-name">
-          <BookOpen size={20} />
-          {admin ? 'Wikit 管理' : 'Wikit'}
-        </Link>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map(([to, label, Icon]) => (
-                <SidebarMenuItem key={to}>
-                  <SidebarMenuButton asChild isActive={location.pathname === to}>
-                    <NavLink to={to} end>
-                      <Icon />
-                      <span>{label}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {!admin && auth.account?.can_create_page && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link to="/pages/new">
-                      <Plus />
-                      创建页面
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to={admin ? '/' : '/account'}>
-                <Settings />
-                {admin ? '返回站点' : '账户'}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
-  )
-}
-
 export function SiteLayout({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const auth = useAuth(),
     navigate = useNavigate(),
@@ -130,14 +35,16 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
     setQuery(new URLSearchParams(location.search).get('q') ?? '')
   }, [location.search])
   return (
-    <SidebarProvider>
+    <div className="site-shell">
       <a className="skip-link" href="#main">
         跳到主要内容
       </a>
-      <Navigation admin={admin} />
-      <SidebarInset className="min-w-0">
-        <header className="site-header">
-          <SidebarTrigger aria-label="切换导航" />
+      <div className="min-w-0">
+        <header className="site-header" aria-label="站点">
+          <Link to="/" className="site-name" aria-label="Wikit 首页">
+            <BookOpen size={20} />
+            <span>Wikit</span>
+          </Link>
           {admin ? (
             <span className="font-medium">站点管理</span>
           ) : (
@@ -159,6 +66,14 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
                 <Search />
               </Button>
             </form>
+          )}
+          {!admin && auth.account?.can_create_page && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/pages/new">
+                <Plus />
+                创建页面
+              </Link>
+            </Button>
           )}
           <div className="site-account">
             {auth.account && !api.csrf && <Link to="/login">重新登录</Link>}
@@ -210,6 +125,22 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
             )}
           </div>
         </header>
+        {admin && (
+          <nav className="admin-navigation" aria-label="管理导航">
+            {[
+              ['/admin/accounts', '账户'],
+              ['/admin/groups', '用户组'],
+              ['/admin/audit', '审计'],
+              ['/', '返回站点'],
+            ].map(([to, label]) => (
+              <Button key={to} variant="ghost" size="sm" asChild>
+                <NavLink to={to} end>
+                  {label}
+                </NavLink>
+              </Button>
+            ))}
+          </nav>
+        )}
         <main
           id="main"
           tabIndex={-1}
@@ -219,8 +150,8 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
           <ActionFeedback action={action} />
           {children}
         </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
   )
 }
 
@@ -242,7 +173,7 @@ export function PageNavigation({
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link to="/pages">页面</Link>
+              <Link to="/">首页</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
