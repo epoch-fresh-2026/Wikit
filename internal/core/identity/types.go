@@ -8,6 +8,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -89,7 +90,7 @@ type Tx interface {
 	GrantedCreate(context.Context, string) (bool, error)
 	Authentication
 	UserByName(context.Context, string) (Record, error)
-	InsertUser(context.Context, Record) error
+	InsertUser(context.Context, Record) (string, error)
 	SaveUser(context.Context, Record) error
 	Token(context.Context, string) (Token, error)
 	SaveToken(context.Context, Token) error
@@ -144,6 +145,14 @@ func validCSRF(session, csrf, legacyDigest string) bool {
 	derived := subtle.ConstantTimeCompare([]byte(Digest(sessionCSRF(session))), supplied)
 	return legacy|derived == 1
 }
+
+// ValidAccountID accepts only canonical decimal positive int64 identifiers.
+func ValidAccountID(id string) bool {
+	n, err := strconv.ParseInt(id, 10, 64)
+	return err == nil && n > 0 && strconv.FormatInt(n, 10) == id
+}
+
+// ValidID validates UUID identifiers, including groups and content objects.
 func ValidID(id string) bool {
 	return regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).MatchString(strings.ToLower(id))
 }
@@ -267,19 +276,17 @@ func (s *Service) create(ctx context.Context, username, password, role, requestI
 	if err != nil {
 		return Account{}, "", err
 	}
-	id, err := s.secrets.ID()
-	if err != nil {
-		return Account{}, "", err
-	}
 	plain, err := s.secrets.Secret()
 	if err != nil {
 		return Account{}, "", err
 	}
-	u := Record{Account: Account{ID: id, Username: username, DisplayName: username, Role: role, Status: "active", CanCreatePage: role == "admin"}, PasswordHash: hash, AuthVersion: 1}
+	u := Record{Account: Account{Username: username, DisplayName: username, Role: role, Status: "active", CanCreatePage: role == "admin"}, PasswordHash: hash, AuthVersion: 1}
 	err = s.repo.WithinIdentity(ctx, func(tx Tx) error {
-		if err := tx.InsertUser(ctx, u); err != nil {
+		id, err := tx.InsertUser(ctx, u)
+		if err != nil {
 			return err
 		}
+		u.ID = id
 		if err := tx.SaveToken(ctx, Token{id, Digest(plain), 1, time.Now().UTC()}); err != nil {
 			return err
 		}

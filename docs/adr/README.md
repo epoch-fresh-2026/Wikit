@@ -24,3 +24,5 @@
 - [0020 会话写入凭证恢复](0020-session-csrf-recovery.md)
 - [0021 有界读取与性能测量](0021-bounded-read-paths.md)
 - [0022 多标签筛选](0022-tag-filters.md)
+
+- [0023 递增账户 ID](0023-numeric-account-ids.md)

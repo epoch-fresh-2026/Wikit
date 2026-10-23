@@ -4,6 +4,18 @@ import { pathToFileURL } from 'node:url';
 const string = (maxLength = 4096) => ({ type: 'string', maxLength });
 const id = { type: 'string', format: 'uuid' };
 const pageId = { type: 'string', pattern: '^[1-9][0-9]{0,18}$' };
+// Match positive int64 exactly without converting an ID through a JS number.
+const maxAccountID = '9223372036854775807';
+const accountAlternatives = ['[1-9][0-9]{0,17}'];
+for (let i = 0; i < maxAccountID.length; i++) {
+  const low = i === 0 ? 1 : 0;
+  const high = Number(maxAccountID[i]) - 1;
+  if (high >= low) accountAlternatives.push(`${maxAccountID.slice(0, i)}[${low}-${high}][0-9]{${maxAccountID.length - i - 1}}`);
+}
+accountAlternatives.push(maxAccountID);
+// JSON Schema's $ may match before a final newline; also exclude every non-digit.
+const accountId = { type: 'string', pattern: `^(?:${accountAlternatives.join('|')})$`, not: { type: 'string', pattern: '[^0-9]' }, description: '规范正整数账户 ID，范围 1–9223372036854775807；全程字符串。' };
+const nullableAccountId = { ...accountId, type: ['string', 'null'] };
 const nullableId = { type: ['string', 'null'], format: 'uuid' };
 const integer = { type: 'integer', minimum: 0 };
 const date = { type: 'string', format: 'date-time' };
@@ -35,7 +47,7 @@ const tagFilters = {
 };
 const schemas = {
   Account: object({
-    id, username: string(32), display_name: string(100),
+    id: accountId, username: string(32), display_name: string(100),
     role: enumOf('member', 'moderator', 'admin'), status: enumOf('active', 'disabled'), create_page: { type: 'boolean' }, can_create_page: { type: 'boolean' },
   }),
   RegisterInput: object({
@@ -58,9 +70,9 @@ const schemas = {
     status: enumOf('active', 'disabled'), create_page: { type: 'boolean' }, expected_auth_version: integer,
   }),
   AccountAdmin: object({ account: ref('Account'), auth_version: integer }),
-  Group: object({ id, name: string(100), version: integer, member_ids: array(id), create_page: { type: 'boolean' } }),
+  Group: object({ id, name: string(100), version: integer, member_ids: array(accountId), create_page: { type: 'boolean' } }),
   GroupCreate: object({ create_page: { type: 'boolean' }, name: { ...string(100), minLength: 1 } }),
-  GroupUpdate: object({ create_page: { type: 'boolean' }, name: string(100), member_ids: array(id), expected_version: integer }),
+  GroupUpdate: object({ create_page: { type: 'boolean' }, name: string(100), member_ids: array(accountId), expected_version: integer }),
   DocumentSnapshot: object({
     type: { const: 'document', type: 'string' }, ...snapshotBase, markdown: string(1048576),
   }),
@@ -76,7 +88,7 @@ const schemas = {
   }),
   Revision: object({
     id, page_id: pageId, parent_id: nullableId, source_proposal_id: nullableId, source_kind: enumOf('bootstrap', 'create', 'merge'),
-    snapshot: ref('Snapshot'), created_at: date, author_id: nullableId,
+    snapshot: ref('Snapshot'), created_at: date, author_id: nullableAccountId,
     content_url: { type: ['string', 'null'] },
   }),
   PageDetail: object({
@@ -87,7 +99,7 @@ const schemas = {
     snapshot: ref('Snapshot'), created_at: date,
   }),
   Proposal: object({
-    id, page_id: pageId, author_id: id, state: enumOf('open', 'merged', 'closed'),
+    id, page_id: pageId, author_id: accountId, state: enumOf('open', 'merged', 'closed'),
     version: integer, current_revision: ref('ProposalRevision'),
   }),
   CreatePage: object({ visibility: enumOf('public', 'restricted'), snapshot: ref('Snapshot') }),
@@ -99,12 +111,10 @@ const schemas = {
     state: enumOf('open', 'closed'), expected_proposal_version: integer,
   }),
   RollbackInput: object({ revision_id: id, expected_head_revision_id: id }),
-  Grant: object({
-    subject_type: enumOf('user', 'group'), subject_id: id,
-    capabilities: {
-      ...array(enumOf('read', 'propose', 'discuss', 'merge', 'manage')), uniqueItems: true,
-    },
-  }),
+  Grant: { oneOf: ['user', 'group'].map((type) => object({
+    subject_type: { type: 'string', const: type }, subject_id: type === 'user' ? accountId : id,
+    capabilities: { ...array(enumOf('read', 'propose', 'discuss', 'merge', 'manage')), uniqueItems: true },
+  })) },
   Policy: object({
     visibility: enumOf('public', 'restricted'), grants: array(ref('Grant')), policy_version: integer,
   }),
@@ -116,7 +126,7 @@ const schemas = {
     hidden: { type: 'boolean' }, reason: { ...string(2000), minLength: 1 }, expected_version: integer,
   }),
   Issue: object({
-    id, page_id: pageId, author_id: id, title: string(300), body: string(65536),
+    id, page_id: pageId, author_id: accountId, title: string(300), body: string(65536),
     state: enumOf('open', 'closed'), hidden: { type: 'boolean' }, version: integer,
     proposal_ids: array(id), created_at: date,
   }),
@@ -125,7 +135,7 @@ const schemas = {
   IssueLink: object({ proposal_id: id, expected_version: integer }),
   CommentInput: object({ body: { ...string(65536), minLength: 1 } }),
   Comment: object({
-    id, issue_id: id, author_id: id, body: string(65536), hidden: { type: 'boolean' },
+    id, issue_id: id, author_id: accountId, body: string(65536), hidden: { type: 'boolean' },
     version: integer, created_at: date,
   }),
   UploadInput: object({
@@ -153,7 +163,7 @@ const schemas = {
     title: string(300), tags: array(string(64)), snippet: string(2000),
   }),
   AuditEvent: object({
-    id, actor_id: nullableId, action: string(100), target_id: { type: ['string','null'] },
+    id, actor_id: nullableAccountId, action: string(100), target_id: { type: ['string','null'] },
     request_id: string(100), created_at: date,
   }),
   Error: object({
@@ -278,7 +288,7 @@ export function buildContracts() {
   const error = { $ref: '#/components/responses/BusinessError' };
   for (const o of operations) {
     const pathNames = [...o.path.matchAll(/\{([^}]+)\}/g)].map((m) => m[1]);
-    const parameters = pathNames.map((name) => ({ name, in: 'path', required: true, schema: name === 'page_id' ? pageId : id }));
+    const parameters = pathNames.map((name) => ({ name, in: 'path', required: true, schema: name === 'page_id' ? pageId : name === 'account_id' ? accountId : id }));
     const query = {
       ...(o.list ? { limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 }, cursor: string(2048) } : {}),
       ...o.query,
@@ -327,7 +337,7 @@ export function buildContracts() {
     paths[o.path] ??= {};
     paths[o.path][o.method] = operation;
     if (o.mcp !== false) {
-      const inputProperties = Object.fromEntries(pathNames.map((n) => [n, n === 'page_id' ? pageId : id]));
+      const inputProperties = Object.fromEntries(pathNames.map((n) => [n, n === 'page_id' ? pageId : n === 'account_id' ? accountId : id]));
       Object.assign(inputProperties, query);
       const required = [...pathNames, ...(o.requiredQuery ?? [])];
       if (o.input) {

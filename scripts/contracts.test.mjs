@@ -75,3 +75,26 @@ test('session recovery requires Origin and Cookie but no prior CSRF or MCP tool'
   assert(!validate({ csrf_token: 'untrusted' }));
   assert(!validate(null));
 });
+
+
+test('account IDs are exact decimal strings and ACL subjects retain their distinct types', () => {
+  const update = validator('wikit_account_update');
+  const input = { account_id: '9223372036854775807', idempotency_key: 'numeric-account', body: { role: 'member', status: 'active', create_page: false, expected_auth_version: 1 } };
+  for (const account_id of ['1', '9007199254740993', '9223372036854775807']) assert(update({ ...input, account_id }));
+  for (const account_id of [1, uuid, '0', '01', '+1', '-1', ' 1', '1\n', '1e3', '9223372036854775808']) assert(!update({ ...input, account_id }), String(account_id));
+  assert.deepEqual(openapi.paths['/admin/accounts/{account_id}'].patch.parameters.find((p) => p.name === 'account_id').schema, mcp.tools.find((t) => t.name === 'wikit_account_update').inputSchema.properties.account_id);
+  const policy = validator('wikit_page_policy_update');
+  const grants = [{ subject_type: 'user', subject_id: '9007199254740993', capabilities: ['read'] }, { subject_type: 'group', subject_id: uuid, capabilities: ['read'] }];
+  const request = { page_id: '2', idempotency_key: 'mixed-subjects', body: { visibility: 'restricted', grants, expected_policy_version: 1 } };
+  assert(policy(request), JSON.stringify(policy.errors));
+  grants[0].subject_id = uuid;
+  assert(!policy(request));
+  grants[0].subject_id = '1';
+  grants[1].subject_id = '2';
+  assert(!policy(request));
+  const group = validator('wikit_group_update');
+  const members = { group_id: uuid, idempotency_key: 'group-members', body: { name: 'Readers', create_page: false, expected_version: 1, member_ids: ['1', '9007199254740993'] } };
+  assert(group(members));
+  members.body.member_ids = [uuid];
+  assert(!group(members));
+});

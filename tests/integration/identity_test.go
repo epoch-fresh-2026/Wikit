@@ -361,13 +361,13 @@ func TestConcurrentSensitiveRequestsDoNotExhaustPool(t *testing.T) {
 	}
 }
 
-func TestUUIDCaseNormalization(t *testing.T) {
+func TestGroupUUIDCaseAndNumericAccountIDs(t *testing.T) {
 	s := newSuite(t)
 	ctx := context.Background()
 	u, _ := s.register(t, "mixed_case_user")
 	admin := identity.Credentials{Bearer: s.adminToken}
 	if _, err := s.access.UpdateAccount(ctx, requestKey(admin, "uppercase-account"), strings.ToUpper(u.ID), "moderator", "active", 1, false); err != nil {
-		t.Fatal("valid uppercase UUID rejected", err)
+		t.Fatal("valid numeric account ID rejected", err)
 	}
 	data, err := s.access.SaveGroup(ctx, requestKey(admin, "case-group-create"), "", "Case group", nil, 0, false)
 	if err != nil {
@@ -377,11 +377,11 @@ func TestUUIDCaseNormalization(t *testing.T) {
 	if err := json.Unmarshal(data, &group); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "case-group-update"), strings.ToUpper(group.ID), group.Name, []string{strings.ToUpper(u.ID)}, 1, false); err != nil {
+	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "case-group-update"), strings.ToUpper(group.ID), group.Name, []string{u.ID}, 1, false); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "case-duplicate"), group.ID, group.Name, []string{u.ID, strings.ToUpper(u.ID)}, 2, false); err != fault.Invalid {
-		t.Fatal("case aliases bypassed duplicate detection", err)
+	if _, err := s.access.SaveGroup(ctx, requestKey(admin, "case-duplicate"), group.ID, group.Name, []string{u.ID, u.ID}, 2, false); err != fault.Invalid {
+		t.Fatal("duplicate numeric members accepted", err)
 	}
 	page := s.pageID(t)
 	s.seedPolicy(t, access.Policy{PageID: page, Visibility: "restricted", Status: "published", Version: 1, Grants: []access.Grant{{SubjectType: "user", SubjectID: u.ID, Capabilities: []string{"read"}}}})
