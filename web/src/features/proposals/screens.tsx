@@ -27,13 +27,15 @@ export function ProposalListScreen() {
   const path = `pages/${id}/proposals?state=${state}`
   return (
     <>
-      <PageHeader id={id} title="页面提案" />
-      <SelectField
-        label="提案状态"
-        value={state}
-        onChange={(v) => setParams({ state: v })}
-        options={Object.entries(stateLabel)}
-      />
+      <PageHeader id={id} title="页面提案" description="查看修改建议，检查差异并跟进发布。" />
+      <div className="toolbar">
+        <SelectField
+          label="提案状态"
+          value={state}
+          onChange={(v) => setParams({ state: v })}
+          options={Object.entries(stateLabel)}
+        />
+      </div>
       <Collection<Schema<'Proposal'>> key={path} path={path}>
         {(p) => (
           <div className="list-row" key={p.id}>
@@ -257,7 +259,25 @@ function ProposalDetail({
                         }[f.path] ?? f.path}
                       </h2>
                       {f.unified_diff ? (
-                        <pre className="diff">{f.unified_diff}</pre>
+                        <pre className="diff">
+                          {f.unified_diff.split('\n').map((line, index) => (
+                            <span
+                              key={index}
+                              className={
+                                line.startsWith('+')
+                                  ? 'diff-added'
+                                  : line.startsWith('-')
+                                    ? 'diff-removed'
+                                    : line.startsWith('@@')
+                                      ? 'diff-location'
+                                      : undefined
+                              }
+                            >
+                              {line}
+                              {'\n'}
+                            </span>
+                          ))}
+                        </pre>
                       ) : (
                         <div className="compare">
                           <div>

@@ -59,9 +59,7 @@ function PolicyEditor({
       <Link to={`/pages/${id}`}>返回页面</Link>
       <section className="panel stack">
         <h2>访问策略</h2>
-        <p className="muted">
-          权限与授予边界由服务端校验。修改绑定当前策略版本 {policy.policy_version}。
-        </p>
+        <p className="muted">设置哪些人可以阅读、讨论或修改此页面。保存后立即生效。</p>
         <form
           className="stack"
           onSubmit={(e) => {

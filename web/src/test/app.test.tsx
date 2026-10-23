@@ -75,6 +75,52 @@ beforeEach(() => {
   sessionStorage.clear()
   api.setCSRF('browser-csrf')
 })
+
+it('marks home reading and page editing as the current page tool', async () => {
+  const { router } = mount('/')
+  await screen.findByRole('heading', { name: '协作知识' })
+  expect(
+    within(screen.getByRole('navigation', { name: '页面操作' })).getByRole('link', {
+      name: '阅读',
+    }),
+  ).toHaveAttribute('aria-current', 'page')
+  await act(() => router.navigate(`/pages/${pageID}/edit`))
+  await screen.findByLabelText('Markdown 正文')
+  const tools = within(screen.getByRole('navigation', { name: '页面操作' }))
+  expect(tools.getByRole('link', { name: '提出修改' })).toHaveAttribute('aria-current', 'page')
+  expect(tools.getByRole('link', { name: '阅读' })).not.toHaveAttribute('aria-current')
+  await act(() => router.navigate(`/pages/${pageID}/revisions/${revisionID}`))
+  await screen.findByText(/固定发布版本/)
+  expect(
+    within(screen.getByRole('navigation', { name: '页面操作' })).getByRole('link', {
+      name: '历史',
+    }),
+  ).toHaveAttribute('aria-current', 'page')
+})
+
+it('keeps the edited draft across preview switches and submits the latest text', async () => {
+  const { user, fetcher } = mount(`/pages/${pageID}/edit`, (path, init) =>
+    path === `/api/v1/pages/${pageID}/proposals` && init.method === 'POST'
+      ? json(proposal)
+      : undefined,
+  )
+  const input = await screen.findByLabelText('Markdown 正文')
+  await user.clear(input)
+  await user.type(input, '新的正文')
+  await user.click(screen.getByRole('button', { name: '查看预览' }))
+  expect(
+    await within(screen.getByRole('region', { name: 'Markdown 预览' })).findByText('新的正文'),
+  ).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: '编辑正文' }))
+  expect(input).toHaveValue('新的正文')
+  await user.click(screen.getByRole('button', { name: '提交提案' }))
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      `/api/v1/pages/${pageID}/proposals`,
+      expect.objectContaining({ body: expect.stringContaining('新的正文') }),
+    ),
+  )
+})
 afterEach(() => {
   vi.unstubAllGlobals()
   api.onUnauthorized = () => {}

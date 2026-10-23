@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useDeferredValue, memo } from 'react'
 import { type Schema } from '@/lib/api'
 import { useAction } from '@/lib/hooks'
 import { ActionFeedback, Field, SelectField } from '@/components/shared'
@@ -7,6 +7,8 @@ import { LeaveGuard } from './leave-guard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Markdown, uploadFile } from '@/features/reading/markdown'
+
+const MarkdownPreview = memo(Markdown)
 
 export const emptySnapshot: Schema<'Snapshot'> = {
   type: 'document',
@@ -38,6 +40,8 @@ export function SnapshotEditor({
     initial.type === 'document' ? initial.markdown : initial.description,
   )
   const [blob, setBlob] = useState(initial.type === 'media' ? initial.blob_id : '')
+  const [view, setView] = useState<'edit' | 'preview'>('edit')
+  const previewText = useDeferredValue(text)
   const upload = useAction()
   const dirty =
     type !== initial.type ||
@@ -50,7 +54,7 @@ export function SnapshotEditor({
     <>
       <LeaveGuard dirty={dirty} saving={saving} />
       <form
-        className="stack"
+        className="stack snapshot-editor"
         onSubmit={(e) => {
           e.preventDefault()
           if (upload.busy || submitDisabled) return
@@ -112,28 +116,51 @@ export function SnapshotEditor({
             <ActionFeedback action={upload} />
           </div>
         )}
-        <div className="editor-grid">
-          <div>
+        <div className="editor-view-switch" role="group" aria-label="编辑视图">
+          <Button
+            type="button"
+            variant={view === 'edit' ? 'secondary' : 'ghost'}
+            aria-pressed={view === 'edit'}
+            onClick={() => setView('edit')}
+          >
+            编辑正文
+          </Button>
+          <Button
+            type="button"
+            variant={view === 'preview' ? 'secondary' : 'ghost'}
+            aria-pressed={view === 'preview'}
+            onClick={() => setView('preview')}
+          >
+            查看预览
+          </Button>
+        </div>
+        <div className="editor-grid" data-view={view}>
+          <div className="editor-input">
             <Field
               label={type === 'document' ? 'Markdown 正文' : '媒体描述（Markdown）'}
               value={text}
               onChange={setText}
               multiline
             />
-            <p className="muted">
-              支持 Markdown。原始 HTML 不执行；内部媒体请使用固定发布版本链接。
-            </p>
+            <p className="muted">支持 Markdown；媒体引用请使用固定版本链接。</p>
           </div>
-          <section className="preview" aria-label="Markdown 预览">
+          <section className="preview" aria-label="Markdown 预览" aria-busy={text !== previewText}>
             <h2>预览</h2>
-            <Markdown text={text} />
+            {previewText ? (
+              <MarkdownPreview text={previewText} />
+            ) : (
+              <p className="preview-placeholder">写下内容后，这里会显示阅读效果。</p>
+            )}
           </section>
         </div>
-        <Button
-          disabled={submitDisabled || action.busy || upload.busy || (type === 'media' && !blob)}
-        >
-          {label}
-        </Button>
+        <div className="editor-submit">
+          <span className="muted">{dirty ? '有未提交的修改' : '尚未修改内容'}</span>
+          <Button
+            disabled={submitDisabled || action.busy || upload.busy || (type === 'media' && !blob)}
+          >
+            {action.busy ? '正在提交…' : label}
+          </Button>
+        </div>
         <ActionFeedback action={action} />
       </form>
     </>
