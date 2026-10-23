@@ -1,7 +1,7 @@
 CREATE TABLE wikit.blobs (
  id uuid PRIMARY KEY, digest text NOT NULL CHECK(length(digest)=64), size bigint NOT NULL CHECK(size>0),
  mime text NOT NULL, storage_key text NOT NULL UNIQUE, state text NOT NULL CHECK(state IN ('pending','ready','deleting')),
- uploader uuid NOT NULL REFERENCES wikit.users(id), created_at timestamptz NOT NULL DEFAULT now()
+ uploader bigint NOT NULL REFERENCES wikit.users(id), created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE wikit.pages (
  id bigint PRIMARY KEY REFERENCES wikit.page_policies(page_id),
@@ -9,14 +9,14 @@ CREATE TABLE wikit.pages (
  UNIQUE(id,type)
 );
 CREATE TABLE wikit.proposals (
- id uuid PRIMARY KEY, page_id bigint NOT NULL REFERENCES wikit.pages(id), author_id uuid NOT NULL REFERENCES wikit.users(id),
+ id uuid PRIMARY KEY, page_id bigint NOT NULL REFERENCES wikit.pages(id), author_id bigint NOT NULL REFERENCES wikit.users(id),
  state text NOT NULL CHECK(state IN ('open','closed','merged')), version bigint NOT NULL CHECK(version>0),
  current_revision_id uuid NOT NULL, UNIQUE(id,page_id)
 );
 CREATE TABLE wikit.revisions (
  id uuid PRIMARY KEY, page_id bigint NOT NULL, type text NOT NULL, parent_id uuid,
  source_proposal_id uuid UNIQUE, snapshot jsonb NOT NULL,
- publisher_id uuid REFERENCES wikit.users(id), author_id uuid REFERENCES wikit.users(id), source_kind text NOT NULL CHECK(source_kind IN ('bootstrap','create','merge')), created_at timestamptz NOT NULL,
+ publisher_id bigint REFERENCES wikit.users(id), author_id bigint REFERENCES wikit.users(id), source_kind text NOT NULL CHECK(source_kind IN ('bootstrap','create','merge')), created_at timestamptz NOT NULL,
  sealed boolean NOT NULL DEFAULT false,
  blob_id uuid GENERATED ALWAYS AS ((snapshot->>'blob_id')::uuid) STORED REFERENCES wikit.blobs(id),
  CHECK((source_kind='bootstrap') = (publisher_id IS NULL)), CHECK((source_kind='merge') = (parent_id IS NOT NULL)), CHECK((source_kind='merge') = (source_proposal_id IS NOT NULL)), CHECK((source_kind='bootstrap') = (author_id IS NULL)), CHECK(source_kind<>'bootstrap' OR page_id=1), CHECK(id IS DISTINCT FROM parent_id), CHECK(snapshot->>'type' IS NOT DISTINCT FROM type),

@@ -103,6 +103,7 @@ function PolicyEditor({
               />
               <Field
                 label={`授权 ${i + 1} 主体 ID`}
+                hint={grant.subject_type === 'user' ? '填写账户数字 ID' : '填写用户组 UUID'}
                 value={grant.subject_id}
                 onChange={(v) => updateGrant(i, { ...grant, subject_id: v })}
                 required

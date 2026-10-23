@@ -3,7 +3,7 @@
 当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
 
 Page ID 使用 PostgreSQL 正整数 bigint 序列，预留 1，后续从 2 分配，可有间隙且不复用。
-REST/MCP 使用规范十进制字符串，范围 1–9223372036854775807；其他对象继续 UUID。
+Account ID 同样为正整数 bigint，从 1 起；REST/MCP 使用规范十进制字符串，范围 1–9223372036854775807；其他对象继续 UUID。
 UTC timestamptz 对外输出 RFC 3339。页面关联、ACL、媒体引用、搜索与游标都使用数字 Page ID。
 审计 target_id 使用 text，兼容 Page 数字 ID 和其他 UUID。
 
@@ -11,7 +11,7 @@ UTC timestamptz 对外输出 RFC 3339。页面关联、ACL、媒体引用、搜�
 
 | 实体 | 核心字段与约束 |
 | --- | --- |
-| users | UUID、唯一 username_key、password_hash、role、status、auth_version、create_page |
+| users | bigint 序列 ID、唯一 username_key、password_hash、role、status、auth_version、create_page |
 | user_tokens / sessions | 摘要、代次、有效期；不保存明文凭证 |
 | groups / group_members | UUID、version、create_page；成员组合唯一 |
 | page_policies / page_grants | bigint page_id、visibility、published/hidden、policy_version；能力 read/propose/discuss/merge/manage |
@@ -96,7 +96,9 @@ Issue #2 的首个迁移只建立 `wikit` schema，不提前创建业务表。
 `public.wikit_schema_migrations` 记录编号、文件名、SHA-256 和 UTC 应用时间。
 独立 migrate 命令在一个事务内获取固定 transaction advisory lock，然后校验历史，
 应用全部待执行 SQL 并记录版本；失败回滚整批，取消／超时释放锁。
-本次明确为不兼容的新部署基线，旧库校验和不匹配即拒绝，不清空、不原地转换；此基线发布后已应用迁移不得修改。历史缺口、校验和差异、未知新版本均拒绝执行。
+Issue #35 及 #55 明确为不兼容的新部署基线，旧库校验和不匹配即拒绝，不清空、不原地转换；此基线发布后已应用迁移不得修改。历史缺口、校验和差异、未知新版本均拒绝执行。
 应用启动与 readiness 均要求历史与本二进制内嵌迁移完全一致，不隐式升级数据库。
 SQL 文件通过 `.gitattributes` 固定 LF，避免跨平台 checkout 改变校验和。
 迁移 SQL 禁止自行控制事务或包含不能在事务内执行的语句；无 down 命令。
+
+Issue #55 按用户确认进行破坏性基线更新：users 及所有账户外键为 bigint，page_grants.subject_id 为 text（user 为数字字符串，group 为 UUID）。账户由数据库序列从 1 分配，不转换旧 UUID 数据。旧库校验和不同会被拒绝，需显式新建空库；不自动清空。详见 [ADR 0023](adr/0023-numeric-account-ids.md)。

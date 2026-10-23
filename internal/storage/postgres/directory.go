@@ -72,13 +72,13 @@ func (t *securityTx) PageDetails(ctx context.Context, ids []string) ([]pages.Det
 
 func (t *securityTx) PageAnchor(ctx context.Context, plain, actor, kind string, limit int) (string, error) {
 	var anchor string
-	err := t.QueryRow(ctx, `SELECT page_anchor::text FROM wikit.list_cursors WHERE digest=$1 AND actor_id IS NOT DISTINCT FROM nullif($2,'')::uuid AND kind=$3 AND page_size=$4 AND expires_at>now() AND page_anchor IS NOT NULL`, identity.Digest(plain), actor, kind, limit).Scan(&anchor)
+	err := t.QueryRow(ctx, `SELECT page_anchor::text FROM wikit.list_cursors WHERE digest=$1 AND actor_id IS NOT DISTINCT FROM nullif($2,'')::bigint AND kind=$3 AND page_size=$4 AND expires_at>now() AND page_anchor IS NOT NULL`, identity.Digest(plain), actor, kind, limit).Scan(&anchor)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", fault.BadRequest
 	}
 	return anchor, storageError(err)
 }
 func (t *securityTx) NewPageCursor(ctx context.Context, plain, actor, kind, anchor string, limit int) (string, error) {
-	_, err := t.Exec(ctx, `INSERT INTO wikit.list_cursors(digest,actor_id,kind,page_size,position,expires_at,page_anchor) VALUES($1,nullif($2,'')::uuid,$3,$4,0,$5,$6)`, identity.Digest(plain), actor, kind, limit, time.Now().Add(10*time.Minute), anchor)
+	_, err := t.Exec(ctx, `INSERT INTO wikit.list_cursors(digest,actor_id,kind,page_size,position,expires_at,page_anchor) VALUES($1,nullif($2,'')::bigint,$3,$4,0,$5,$6)`, identity.Digest(plain), actor, kind, limit, time.Now().Add(10*time.Minute), anchor)
 	return plain, storageError(err)
 }

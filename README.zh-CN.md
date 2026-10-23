@@ -12,6 +12,8 @@ React WebUI 已提供 Wiki SPA、独立提案页面、独立后台、标签输�
 v0.1.0 GHCR 镜像已通过完整发布 CI 及按不可变 digest 拉取后的实际验收，生产部署仍由维护者手动执行。**
 本分支的 Issue #35 重设计使用数字 Page ID、固定首页和 create_page 权限，是不兼容的新部署基线，尚未包含在上述旧镜像中。旧库会被拒绝且不会自动清空；回退使用旧镜像与旧备份。验证见[重设计记录](docs/redesign-validation.md)。
 
+账户 ID 使用数据库分配的正整数 bigint，接口以十进制字符串传输。本次为破坏性新部署基线，不迁移旧 UUID 账户数据；旧库校验和不匹配会被拒绝，不自动清空。见 [ADR 0023](docs/adr/0023-numeric-account-ids.md)。
+
 版本、digest、运行证据与拉取权限见[发布验收记录](docs/release-readiness.md)。
 后续工作见[开发路线](docs/roadmap.md)与
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues)。
