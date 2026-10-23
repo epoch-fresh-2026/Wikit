@@ -16,7 +16,7 @@ export function LoginScreen({ register = false }: { register?: boolean }) {
     navigate = useNavigate()
   if (issued)
     return (
-      <section className="narrow panel">
+      <section className="auth panel">
         <SectionTitle title="账户已创建" />
         <p>请立即保存个人 Token。离开此页后无法再次读取。</p>
         <Secret value={issued} />
@@ -31,8 +31,13 @@ export function LoginScreen({ register = false }: { register?: boolean }) {
       </section>
     )
   return (
-    <section className="narrow panel">
-      <SectionTitle title={register ? '注册' : '登录'} />
+    <section className="auth panel">
+      <SectionTitle
+        title={register ? '注册' : '登录'}
+        description={
+          register ? '创建账户，参与知识的讨论与完善。' : '登录 Wikit，继续你的阅读与协作。'
+        }
+      />
 
       <form
         className="stack"
@@ -74,7 +79,7 @@ export function LoginScreen({ register = false }: { register?: boolean }) {
         <Button disabled={action.busy}>{register ? '创建账户' : '登录'}</Button>
         <ActionFeedback action={action} />
       </form>
-      <Link to={register ? '/login' : '/register'}>
+      <Link className="auth-switch" to={register ? '/login' : '/register'}>
         {register ? '已有账户？前往登录' : '还没有账户？立即注册'}
       </Link>
     </section>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
-import { BookOpen, Search } from 'lucide-react'
+import { BookOpen, Search, ChevronDown, UserRound, Pencil, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,7 +22,8 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
   const [query, setQuery] = useState(''),
     main = useRef<HTMLElement>(null)
   useEffect(() => {
-    main.current?.focus()
+    main.current?.focus({ preventScroll: true })
+    if (!location.hash) window.scrollTo({ top: 0, behavior: 'instant' })
   }, [location.pathname])
   useEffect(() => {
     setQuery(new URLSearchParams(location.search).get('q') ?? '')
@@ -34,79 +35,86 @@ export function SiteLayout({ children, admin = false }: { children: ReactNode; a
       </a>
       <div className="min-w-0">
         <header className="site-header" aria-label="站点">
-          <Link to="/" className="site-name" aria-label="Wikit 首页">
-            <BookOpen size={20} />
-            <span>Wikit</span>
-          </Link>
-          {admin ? (
-            <span className="font-medium">站点管理</span>
-          ) : (
-            <form
-              role="search"
-              className="site-search"
-              onSubmit={(e) => {
-                e.preventDefault()
-                navigate('/search?q=' + encodeURIComponent(query.trim()))
-              }}
-            >
-              <Input
-                aria-label="搜索页面"
-                placeholder="搜索页面"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <Button variant="ghost" size="icon" aria-label="搜索">
-                <Search />
-              </Button>
-            </form>
-          )}
-          <div className="site-account">
-            {auth.account ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="account-menu"
-                    title={auth.account.display_name || auth.account.username}
-                  >
-                    <span className="truncate">
-                      {auth.account.display_name || auth.account.username}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/account">账户设置</Link>
-                  </DropdownMenuItem>
-                  {auth.account.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin/accounts">站点管理</Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    disabled={action.busy}
-                    onSelect={() =>
-                      void action.run(async () => {
-                        await api.send('auth/logout', {})
-                        auth.clear()
-                        navigate('/')
-                      })
-                    }
-                  >
-                    退出
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="site-header-inner">
+            <Link to="/" className="site-name" aria-label="Wikit 首页">
+              <span className="site-mark">
+                <BookOpen size={20} aria-hidden />
+              </span>
+              <span>Wikit</span>
+            </Link>
+            {admin ? (
+              <span className="font-medium">站点管理</span>
             ) : (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link to="/login">登录</Link>
+              <form
+                role="search"
+                className="site-search"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  navigate('/search?q=' + encodeURIComponent(query.trim()))
+                }}
+              >
+                <Search className="search-icon" size={17} aria-hidden />
+                <Input
+                  aria-label="搜索页面"
+                  placeholder="搜索页面"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                <Button variant="ghost" size="sm" aria-label="搜索">
+                  搜索
                 </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/register">注册</Link>
-                </Button>
-              </>
+              </form>
             )}
+            <div className="site-account">
+              {auth.account ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="account-menu"
+                      title={auth.account.display_name || auth.account.username}
+                    >
+                      <UserRound size={16} aria-hidden />
+                      <span className="truncate">
+                        {auth.account.display_name || auth.account.username}
+                      </span>
+                      <ChevronDown size={14} aria-hidden />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to="/account">账户设置</Link>
+                    </DropdownMenuItem>
+                    {auth.account.role === 'admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/accounts">站点管理</Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                      disabled={action.busy}
+                      onSelect={() =>
+                        void action.run(async () => {
+                          await api.send('auth/logout', {})
+                          auth.clear()
+                          navigate('/')
+                        })
+                      }
+                    >
+                      退出
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link to="/login">登录</Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link to="/register">注册</Link>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </header>
         {admin && (
@@ -144,14 +152,16 @@ export function PageHeader({
   title,
   capabilities,
   children,
+  description,
 }: {
   id: string
   title: string
   capabilities?: string[]
   children?: ReactNode
+  description?: string
 }) {
   return (
-    <SectionTitle title={title}>
+    <SectionTitle title={title} description={description}>
       {children}
       <PageNavigation id={id} capabilities={capabilities} />
     </SectionTitle>
@@ -159,6 +169,7 @@ export function PageHeader({
 }
 
 function PageNavigation({ id, capabilities }: { id: string; capabilities?: string[] }) {
+  const location = useLocation()
   const context = useResource<Schema<'PageDetail'>>(
     capabilities === undefined ? `pages/${id}` : null,
   )
@@ -172,19 +183,39 @@ function PageNavigation({ id, capabilities }: { id: string; capabilities?: strin
         ['/proposals', '提案'],
       ].map(([suffix, label]) => (
         <Button key={suffix} variant="ghost" size="sm" asChild>
-          <NavLink end={!suffix} to={`/pages/${id}${suffix}`}>
+          <Link
+            to={`/pages/${id}${suffix}`}
+            aria-current={
+              (
+                !suffix
+                  ? location.pathname === `/pages/${id}` ||
+                    (id === '1' && location.pathname === '/')
+                  : location.pathname.startsWith(`/pages/${id}${suffix}`) ||
+                    (suffix === '/history' &&
+                      location.pathname.startsWith(`/pages/${id}/revisions/`))
+              )
+                ? 'page'
+                : undefined
+            }
+          >
             {label}
-          </NavLink>
+          </Link>
         </Button>
       ))}
       {caps.includes('propose') && (
         <Button size="sm" variant="outline" asChild>
-          <Link to={`/pages/${id}/edit`}>提出修改</Link>
+          <NavLink to={`/pages/${id}/edit`}>
+            <Pencil size={14} aria-hidden />
+            提出修改
+          </NavLink>
         </Button>
       )}
       {caps.includes('manage') && (
         <Button size="sm" variant="ghost" asChild>
-          <Link to={`/pages/${id}/policy`}>页面管理</Link>
+          <NavLink to={`/pages/${id}/policy`}>
+            <Settings2 size={14} aria-hidden />
+            页面管理
+          </NavLink>
         </Button>
       )}
     </nav>

@@ -2,16 +2,22 @@ import { Component, Suspense, lazy, type ReactNode } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { SiteLayout, AdminLayout } from '@/components/layout'
 
-import { Loading } from '@/components/shared'
+import { Loading, SectionTitle } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/account/auth'
-import {
-  SearchScreen,
-  PageScreen,
-  EditPageScreen,
-  HistoryScreen,
-  RevisionScreen,
-} from '@/features/reading/screens'
+import { PageScreen } from '@/features/reading/screens'
+const SearchScreen = lazy(() =>
+  import('@/features/reading/search-screen').then((m) => ({ default: m.SearchScreen })),
+)
+const EditPageScreen = lazy(() =>
+  import('@/features/editing/screens').then((m) => ({ default: m.EditPageScreen })),
+)
+const HistoryScreen = lazy(() =>
+  import('@/features/reading/history').then((m) => ({ default: m.HistoryScreen })),
+)
+const RevisionScreen = lazy(() =>
+  import('@/features/reading/history').then((m) => ({ default: m.RevisionScreen })),
+)
 const AccountScreen = lazy(() =>
   import('@/features/account/screens').then((m) => ({ default: m.AccountScreen })),
 )
@@ -44,8 +50,9 @@ class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean 
   }
   render() {
     return this.state.failed ? (
-      <div role="alert" className="error">
-        <p>页面暂时无法加载，请重新连接。</p>
+      <div role="alert" className="error panel narrow">
+        <h1>页面暂时无法加载</h1>
+        <p className="muted my-4">请检查网络连接后重试。</p>
         <Button onClick={() => window.location.reload()}>重新加载页面</Button>
       </div>
     ) : (
@@ -101,9 +108,19 @@ export function App() {
               <Route
                 path="*"
                 element={
-                  <section>
-                    <h1>未找到此页面</h1>
-                    <Link to="/">返回首页</Link>
+                  <section className="narrow panel">
+                    <SectionTitle
+                      title="未找到此页面"
+                      description="检查页面地址，或通过搜索继续寻找内容。"
+                    />
+                    <div className="actions">
+                      <Button asChild>
+                        <Link to="/search">搜索页面</Link>
+                      </Button>
+                      <Button variant="outline" asChild>
+                        <Link to="/">返回首页</Link>
+                      </Button>
+                    </div>
                   </section>
                 }
               />

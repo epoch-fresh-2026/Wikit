@@ -138,13 +138,24 @@ export function Loading({ error }: { error?: ApiError }) {
   return error ? (
     <ErrorNotice error={error} />
   ) : (
-    <div role="status" className="muted">
-      <Skeleton className="h-5 w-40" />
+    <div role="status" className="loading-state" aria-busy="true">
+      <Skeleton className="h-7 w-2/5" />
+      <Skeleton className="mt-6 h-3 w-full" />
+      <Skeleton className="mt-3 h-3 w-5/6" />
+      <Skeleton className="mt-3 h-3 w-3/5" />
       <span className="sr-only">正在读取…</span>
     </div>
   )
 }
-export function SectionTitle({ title, children }: { title: string; children?: ReactNode }) {
+export function SectionTitle({
+  title,
+  children,
+  description,
+}: {
+  title: string
+  children?: ReactNode
+  description?: string
+}) {
   useEffect(() => {
     document.title = title + ' · Wikit'
   }, [title])
@@ -152,6 +163,7 @@ export function SectionTitle({ title, children }: { title: string; children?: Re
     <header className="section-title">
       <div>
         <h1>{title}</h1>
+        {description && <p className="section-description">{description}</p>}
       </div>
       {children}
     </header>

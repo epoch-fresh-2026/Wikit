@@ -31,7 +31,7 @@ export function IssueListScreen() {
   const path = `pages/${id}/issues?state=${state}&include_hidden=${hidden}`
   return (
     <>
-      <PageHeader id={id} title="讨论" />
+      <PageHeader id={id} title="讨论" description="提出问题、补充背景，一起完善这篇页面。" />
       <Link to={`/pages/${id}`}>返回页面</Link>
       <div className="toolbar">
         <SelectField
@@ -58,7 +58,7 @@ export function IssueListScreen() {
                 </Link>
               </h2>
               <small>
-                {i.state}
+                {i.state === 'open' ? '进行中' : '已关闭'}
                 {i.hidden ? ' · 已隐藏' : ''} · <DateText value={i.created_at} />
               </small>
             </div>
@@ -205,7 +205,7 @@ function IssueDetail({
         </Collection>
       </section>
       <section className="panel">
-        <h2>添加不可变评论</h2>
+        <h2>参与讨论</h2>
         <form
           onSubmit={(e) => {
             e.preventDefault()
