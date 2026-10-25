@@ -43,6 +43,24 @@ it('retains tables and code and renders ordinary text safely', () => {
   expect(screen.getByText('<img onerror="bad()">')).toBeInTheDocument()
   expect(document.querySelector('img')).toBeNull()
 })
+it('assigns stable anchors through level six including duplicate and setext headings', () => {
+  render(<Markdown text={'Root\n====\n\n## Stats\n\n#### Deep\n\n###### Leaf\n\n## Stats'} />)
+  const headings = screen.getAllByRole('heading')
+  expect(headings.map((heading) => heading.id)).toEqual([
+    'section-0',
+    'section-1',
+    'section-2',
+    'section-3',
+    'section-4',
+  ])
+  expect(headings.map((heading) => heading.textContent)).toEqual([
+    'Root',
+    'Stats',
+    'Deep',
+    'Leaf',
+    'Stats',
+  ])
+})
 it('displays protected inline media without invalid paragraph nesting and releases bytes on unmount', async () => {
   const revoke = vi.fn(),
     OriginalURL = URL

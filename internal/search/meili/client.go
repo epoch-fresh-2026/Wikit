@@ -193,7 +193,7 @@ func (c *Client) Search(ctx context.Context, index, q string, f search.Filter, o
 	var out struct {
 		Hits []search.Candidate `json:"hits"`
 	}
-	_, err := c.call(ctx, "POST", path(index)+"/search", map[string]any{"q": q, "filter": strings.Join(filter, " AND "), "offset": offset, "limit": limit, "attributesToRetrieve": []string{"page_id", "revision_id", "policy_version"}, "locales": []string{"zho", "eng"}}, &out)
+	_, err := c.call(ctx, "POST", path(index)+"/search", map[string]any{"q": q, "matchingStrategy": "all", "filter": strings.Join(filter, " AND "), "offset": offset, "limit": limit, "attributesToRetrieve": []string{"page_id", "revision_id", "policy_version"}, "locales": []string{"zho", "eng"}}, &out)
 	if err != nil {
 		return search.Candidates{}, err
 	}

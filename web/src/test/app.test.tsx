@@ -127,6 +127,62 @@ afterEach(() => {
   api.setCSRF('')
 })
 
+it('shows passage evidence and a pinned section citation without executing source HTML', async () => {
+  const citation = `/pages/${pageID}/revisions/${revisionID}#section-2`
+  mount('/search?q=needle', (path) =>
+    path.startsWith('/api/v1/search?')
+      ? json(
+          list([
+            {
+              page_id: pageID,
+              revision_id: revisionID,
+              type: 'document',
+              title: 'Evidence page',
+              tags: [],
+              snippet: 'Answer needle',
+              passages: [
+                {
+                  text: '<script>Answer needle</script>',
+                  section_path: ['Stats', 'Attack'],
+                  section_id: 'section-2',
+                  start_line: 21,
+                  end_line: 23,
+                  truncated: false,
+                  citation_url: citation,
+                },
+              ],
+            },
+          ]),
+        )
+      : undefined,
+  )
+  const link = await screen.findByRole('link', { name: 'Stats › Attack · 第 21–23 行 · 固定版本' })
+  expect(link).toHaveAttribute('href', citation)
+  expect(screen.getByText('<script>Answer needle</script>')).toBeInTheDocument()
+  expect(document.querySelector('script')).toBeNull()
+})
+
+it('does not fabricate evidence for a metadata-only match', async () => {
+  mount('/search?q=metadata', (path) =>
+    path.startsWith('/api/v1/search?')
+      ? json(
+          list([
+            {
+              page_id: pageID,
+              revision_id: revisionID,
+              type: 'document',
+              title: 'Metadata page',
+              tags: [],
+              snippet: '',
+              passages: [],
+            },
+          ]),
+        )
+      : undefined,
+  )
+  expect(await screen.findByText('页面匹配，暂无可定位的正文摘录。')).toBeInTheDocument()
+})
+
 it('browses pages and tags and submits a keyboard search without rendering snippets as HTML', async () => {
   const { user, fetcher } = mount('/', (path) =>
     path.startsWith('/api/v1/search?')

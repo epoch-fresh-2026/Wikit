@@ -1,13 +1,7 @@
 # 单机部署、备份与恢复
 
-当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
-
-Issue #49 增加 schema 0009（页面目录游标锚点）。升级前备份，在维护窗口运行 migrate 后
-启动新镜像；旧目录游标返回 invalid_request，客户端从第一页重读。其他游标格式不变。
-旧二进制会因严格迁移历史检查拒绝 0009；回退需恢复升级前匹配数据库和原件备份。
-
-状态：Issue #11 的容器、Compose、恢复和规模验收已在真实 CI 中通过，见
-[发布验收记录](release-readiness.md)。正式 tag、GHCR digest、CI 证据及拉取权限边界均在该记录登记。
+容器、Compose、恢复与规模验收的历史证据见 [发布验收记录](release-readiness.md)。
+正式 tag、镜像 digest、CI 证据及拉取权限边界在该记录登记。
 
 ## 容器交付约定
 
@@ -74,28 +68,38 @@ Compose 包含 wikit、PostgreSQL、Meilisearch。只向宿主暴露应用端口
 本地文件系统调用不能被 context 中断，故不承诺故障磁盘下的硬性响应时限。
 启动先验证上述依赖，失败则不监听。`WIKIT_PUBLIC_URL` 接受 HTTPS 或仅本机
 HTTP（localhost／loopback IP），禁止凭证、查询和 fragment；监听地址默认 `:8080`。
-账户阶段已实现 WIKIT_REGISTRATION_ENABLED 与 WIKIT_SESSION_TTL；
-serve 要求至少一名活跃管理员。Issue #8 起 serve/search-rebuild 要求 Meilisearch URL 和至少 16 字节的 key，
+注册开关与会话时限分别由 WIKIT_REGISTRATION_ENABLED 和 WIKIT_SESSION_TTL 配置；
+serve 要求至少一名活跃管理员。serve/search-rebuild 要求 Meilisearch URL 和至少 16 字节的 key，
 禁止 URL 携带凭证、路径、查询或 fragment；不会因为 Meilisearch 暂不可用而拒绝数据库服务启动。
 
 ## 初始化与升级
 
-Issue #9 的 /mcp 使用用户现有 Bearer Token，不配置额外共享服务 Token。
+### 数据库兼容边界
+
+当前采用数字账户 ID 新部署基线，不提供旧 UUID 账户迁移。旧库的迁移校验和不匹配会拒绝启动与 migrate；程序不会清空旧库。使用新空数据库执行 migrate 并重新创建管理员，不复用旧 Token/Cookie。保留旧环境时将旧二进制、旧数据库和原件备份配套保存，不支持跨基线直接升级或回退。
+
+### 初始化与维护
+
+schema 0009 使用页面目录游标锚点。升级前备份，在维护窗口运行 migrate 后
+启动新镜像；旧目录游标返回 invalid_request，客户端从第一页重读。其他游标格式不变。
+旧二进制会因严格迁移历史检查拒绝 0009；回退需恢复升级前匹配数据库和原件备份。
+
+/mcp 使用用户现有 Bearer Token，不配置额外共享服务 Token。
 生产反向代理保留 WIKIT_PUBLIC_URL 的 Host，使用 HTTPS；允许无 Origin 的非浏览器客户端，
 带 Origin 时必须匹配站点。每请求重新鉴权，session ID 不替代 Token，空闲 15 分钟过期。
 普通 JSON 请求总量上限 6 MiB，单工具 body 沿用 REST 上限。大文件先预约后走 HTTPS PUT。
 当前没有 OAuth discovery/授权页面；不能依靠 session ID、浏览器 Cookie 或工具参数认证。
 
-Issue #8 内置每秒检查的搜索 worker；单轮有 30 秒时限，异步 task UID 和重试状态持久化。
+serve 内置每秒检查的搜索 worker；单轮有 30 秒时限，异步 task UID 和重试状态持久化。
 `wikit search-rebuild` 构建新索引、追赶增量后切换数据库 active_index；失败时旧指针保留。
 `wikit search-retry` 将失败 outbox 的下一次尝试设为立即；`wikit search-status` 输出
 pending、oldest_seconds、failures，不输出正文、ACL 或 key，且状态读取不等待 worker 锁。
 retry/status 只要求数据库配置。重建和投递共用会话锁，正在执行时另一管理写命令返回非零；可稍后重试。
 Meilisearch 固定版本 1.55.0，管理 key 仅供服务端使用；索引卷丢失后必须执行完整 search-rebuild。
-Issue #51 升级增加 type 可过滤属性；已有索引需先运行 search-rebuild，再开放类型搜索。
+索引必须包含 type 可过滤属性；配置不符时先运行 search-rebuild，再开放类型搜索。
 旧/失败重建索引保留，清理前核对 search_state.active_index；不会自动删除线上索引。
 
-Issue #6 提供 `wikit blob-gc`；读取数据库、媒体目录和 WIKIT_BLOB_GC_GRACE，默认 168h，
+媒体清理使用 `wikit blob-gc`；读取数据库、媒体目录和 WIKIT_BLOB_GC_GRACE，默认 168h，
 只清理超过宽限期的未引用 blob、孤立原件和临时文件，输出数量而非物理路径。
 失败返回非零，可重复运行恢复 deleting 墓碑。备份窗口停止上传与 GC。
 serve 读取 WIKIT_MAX_UPLOAD_BYTES（默认 104857600）和同一宽限期配置；
@@ -153,7 +157,3 @@ CI 基准在恢复后的隔离库添加 100000 个文档 Page：80% 公开、10%
 磁盘空间、outbox 积压及最旧事件年龄、索引失败、上传失败、备份时间。
 容量告警和备份频率由站点维护者配置；首版不提供通知系统。
 至少在每次涉及持久化的版本发布前执行一次恢复演练。
-
-## 账户数字 ID 基线（Issue #55）
-
-此为用户确认的破坏性更新，直接修改建库基线，不提供旧 UUID 账户迁移。旧库的迁移校验和不匹配会拒绝启动与 migrate；程序不会清空旧库。使用新空数据库执行 migrate 并重新创建管理员，不复用旧 Token/Cookie。保留旧环境时将旧二进制、旧数据库和原件备份配套保存，不支持跨基线直接升级或回退。

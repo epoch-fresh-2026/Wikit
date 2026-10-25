@@ -42,6 +42,12 @@ web/src/components/ui/    shadcn/ui 基础组件
   添加镜像接口。共享类型必须有清晰归属，不用通用 `map[string]any` 传业务对象。
 - 禁止循环依赖、可变全局服务定位器和跨请求共享可变认证状态。
 
+检索的静态属性／请求词表与解析过程分开组织，词表在初始化后只读，避免在逐字符扫描中
+重复生成组合或复制大切片。调用方需要修改词表时必须显式复制；派生列表不能改写共享底层数组。
+重构保持现有语法、排序及覆盖规则，使用正式回归和可重复基准验证结果与分配开销。
+扫描优化必须保持 Unicode 匹配与标识符边界：只有整词在 Unicode case folding 下不变时
+才能使用精确查找；大小写词族和其他输入继续使用通用匹配，并与原有匹配契约做等价验证。
+
 ## 可扩展
 
 - 文件存储与搜索通过 `BlobStore`、`SearchIndex` 等小接口替换，
@@ -78,9 +84,9 @@ web/src/components/ui/    shadcn/ui 基础组件
 自动化负责格式、类型、测试和依赖边界检查；高内聚与合理抽象仍必须人工评审。
 后端模块首次落地时添加依赖边界测试，防止 Core 引入适配器或存储实现。
 
-Issue #2 首次落地 `internal/core/health`，由该消费方定义 `Check(context.Context) error`
+例如 `internal/core/health` 由消费方定义 `Check(context.Context) error`
 小接口；HTTP 仅将健康用例结果映射为 200/503，具体 PostgreSQL／目录实现由
 `cmd/wikit` 注入。Core 边界测试遍历包的直接与传递依赖，禁止第三方库及非 Core
 项目包进入 Core，并禁止直接导入协议、数据库及文件系统 API。
 标准库内部依赖（如 encoding/json 经 fmt 使用 os）不代表 Core 调用文件系统。
-后续业务模块按实际用例建立，不创建空模块。
+业务模块按实际用例建立，不创建空模块。

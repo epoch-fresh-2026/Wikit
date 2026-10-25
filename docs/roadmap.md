@@ -1,7 +1,7 @@
-# v0.1 开发路线
+# v0.1 实施历史
 
 状态：v0.1.0 实现与发布验收已完成，证据见[发布记录](release-readiness.md)；以下保留原实施顺序。
-Issue #35 的 Wiki SPA 与发布流程重设计见 [ADR 0018](adr/0018-wiki-publication-redesign.md) 和[验证记录](redesign-validation.md)，不与旧版镜像或 schema 混同。
+当前 Wiki SPA 与发布流程的设计取舍见 [ADR 0018](adr/0018-wiki-publication-redesign.md) 和[验证记录](redesign-validation.md)，不与旧版镜像或 schema 混同。
 每项工作遵守 Issue 确认 → 文档先行 → 实现 → PR → CI 的闭环。
 
 | 顺序 | GitHub Issue | 依赖 |

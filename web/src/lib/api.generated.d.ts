@@ -1226,10 +1226,20 @@ export interface components {
             title: string;
             tags: string[];
             snippet: string;
+            passages: components["schemas"]["SearchPassage"][];
         };
         SearchHitList: {
             items: components["schemas"]["SearchHit"][];
             next_cursor: string | null;
+        };
+        SearchPassage: {
+            text: string;
+            section_path: string[];
+            section_id: string | null;
+            start_line: number;
+            end_line: number;
+            truncated: boolean;
+            citation_url: string;
         };
         Session: {
             account: components["schemas"]["Account"];

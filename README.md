@@ -18,11 +18,12 @@ production deployment remains manual.** See the [release evidence and registry a
 [implementation roadmap](docs/roadmap.md) and
 [GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
 
-The Issue #35 redesign on this branch uses numeric Page IDs, a fixed home Page,
+The current source uses numeric Page and Account IDs, a fixed home Page,
 explicit create_page grants, direct first publication, and a Wiki SPA with separate admin navigation.
 It is a fresh-deployment schema and is not included in the older image above. Existing UUID databases
 are rejected without deletion; rollback requires the matching old image and backup.
-Account IDs also use database-generated positive bigint values, serialized as decimal strings; this is a breaking fresh-deployment baseline with no UUID data migration ([ADR 0023](docs/adr/0023-numeric-account-ids.md)).
+Account IDs are database-generated positive bigint values serialized as exact decimal strings.
+Deployment compatibility and recovery procedures are defined in the [operations guide](docs/operations.md).
 See [redesign validation](docs/redesign-validation.md).
 
 ## Architecture
@@ -38,7 +39,7 @@ merges, restore/revert proposals, and Page Issues are specified in the
 [design](docs/design.md). Native Git access, multi-tenancy, templates, collaborative
 editing, notifications, semantic search, S3, and high availability are outside v0.1.
 
-## Work on the design
+## Development checks
 
 Install Node.js 24, then run:
 
@@ -48,9 +49,9 @@ npm run check
 ```
 
 These commands validate documentation, API and MCP contracts, and repository
-workflow configuration. They do not test a working wiki. Application checks become
-mandatory as implementation stages are enabled. See [development](docs/development.md)
-and the [deployment specification](docs/operations.md) for planned runtime setup.
+workflow configuration. Backend, frontend, database integration and container checks
+are also required; see [development](docs/development.md) and [testing](docs/testing.md).
+Runtime setup is described in the [operations guide](docs/operations.md).
 
 For the WebUI, run `npm ci --prefix web`, then `npm run dev --prefix web`.
 See [WebUI development and state boundaries](docs/web.md) for the backend origin configuration and checks.

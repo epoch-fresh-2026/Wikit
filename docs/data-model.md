@@ -1,11 +1,12 @@
 # 数据与事务设计
 
-当前发布规则见 [ADR 0018](adr/0018-wiki-publication-redesign.md)（Issue #35）。
-
 Page ID 使用 PostgreSQL 正整数 bigint 序列，预留 1，后续从 2 分配，可有间隙且不复用。
 Account ID 同样为正整数 bigint，从 1 起；REST/MCP 使用规范十进制字符串，范围 1–9223372036854775807；其他对象继续 UUID。
 UTC timestamptz 对外输出 RFC 3339。页面关联、ACL、媒体引用、搜索与游标都使用数字 Page ID。
 审计 target_id 使用 text，兼容 Page 数字 ID 和其他 UUID。
+
+users 及账户外键为 bigint，page_grants.subject_id 为 text，按 user 数字字符串或 group UUID 校验。
+旧 UUID 账户数据库不做原地转换，校验和不匹配时拒绝执行，需显式使用新空库。
 
 ## 实体与发布约束
 
@@ -26,8 +27,8 @@ UTC timestamptz 对外输出 RFC 3339。页面关联、ACL、媒体引用、搜�
 | outbox_events / search_state | 顺序、任务 UID、目标索引、重试状态、active_index |
 | idempotency_records / list_cursors | 绑定当前账户、操作/查询与有效期 |
 
-Issue #49 的 0009 迁移为 list_cursors 增加可空 bigint page_anchor，页面目录保存最后消费
-候选的数值 ID，外部仍为随机不透明 token。其他列表继续使用 position；不改写既有迁移。
+list_cursors 使用可空 bigint page_anchor，页面目录保存最后消费
+候选的数值 ID，外部仍为随机不透明 token。其他列表继续使用 position。
 
 source_kind 区分 bootstrap/create/merge。只有 merge 有 source_proposal_id 且要求 parent；
 bootstrap 只允许 Page 1、无用户作者和发布者；create/merge 必须有作者与发布者。
@@ -53,7 +54,7 @@ outbox worker 按 Page 顺序投递并持久化远端 task UID。每次读取当
 
 ## 媒体原件
 
-Issue #6 增加 uploads 预约（1 小时）、有界写入租约和 blob GC 墓碑状态。
+uploads 包含预约（1 小时）、有界写入租约和 blob GC 墓碑状态。
 上传先以短授权事务领取唯一 attempt，流式写 staging 文件不持有数据库连接或授权锁；
 完成时重新鉴权并检查预约/租约，在同一授权事务内提交原件、登记 ready blob、更新预约和审计。
 100 MiB 为默认上限，实际字节必须与预约大小完全一致，声明 MIME 与文件头识别结果一致。
@@ -91,14 +92,12 @@ GC 默认宽限期 7 天。提案的全部历史快照、发布历史、媒体�
 schema 兼容性列入发行说明。生产不自动运行破坏性 down migration。
 数据库、原件是备份对象；搜索索引及派生文件是可重建数据。
 
-Issue #2 的首个迁移只建立 `wikit` schema，不提前创建业务表。
+首个迁移只建立 `wikit` schema，不提前创建业务表。
 内嵌 `internal/storage/postgres/migrations/NNNN_name.sql` 从 0001 连续编号；
 `public.wikit_schema_migrations` 记录编号、文件名、SHA-256 和 UTC 应用时间。
 独立 migrate 命令在一个事务内获取固定 transaction advisory lock，然后校验历史，
 应用全部待执行 SQL 并记录版本；失败回滚整批，取消／超时释放锁。
-Issue #35 及 #55 明确为不兼容的新部署基线，旧库校验和不匹配即拒绝，不清空、不原地转换；此基线发布后已应用迁移不得修改。历史缺口、校验和差异、未知新版本均拒绝执行。
+当前使用不兼容的新部署基线，旧库校验和不匹配即拒绝，不清空、不原地转换；此基线发布后已应用迁移不得修改。历史缺口、校验和差异、未知新版本均拒绝执行。
 应用启动与 readiness 均要求历史与本二进制内嵌迁移完全一致，不隐式升级数据库。
 SQL 文件通过 `.gitattributes` 固定 LF，避免跨平台 checkout 改变校验和。
 迁移 SQL 禁止自行控制事务或包含不能在事务内执行的语句；无 down 命令。
-
-Issue #55 按用户确认进行破坏性基线更新：users 及所有账户外键为 bigint，page_grants.subject_id 为 text（user 为数字字符串，group 为 UUID）。账户由数据库序列从 1 分配，不转换旧 UUID 数据。旧库校验和不同会被拒绝，需显式新建空库；不自动清空。详见 [ADR 0023](adr/0023-numeric-account-ids.md)。

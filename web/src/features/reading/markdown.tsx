@@ -1,7 +1,7 @@
 import MarkdownRenderer from 'react-markdown'
 import { Link } from 'react-router'
 import remarkGfm from 'remark-gfm'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, type Schema } from '@/lib/api'
 
 const fixedContent =
@@ -78,8 +78,23 @@ export function Media({
   )
 }
 export function Markdown({ text }: { text: string }) {
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const headings = Array.from(
+      root.current?.querySelectorAll<HTMLElement>('h1,h2,h3,h4,h5,h6') ?? [],
+    )
+    headings.forEach((heading, index) => {
+      heading.id = `section-${index}`
+      heading.tabIndex = -1
+    })
+    const target = headings.find((heading) => `#${heading.id}` === window.location.hash)
+    if (target) {
+      target.scrollIntoView({ block: 'start' })
+      target.focus({ preventScroll: true })
+    }
+  }, [text])
   return (
-    <div className="markdown">
+    <div className="markdown" ref={root}>
       <MarkdownRenderer
         skipHtml
         remarkPlugins={[remarkGfm]}

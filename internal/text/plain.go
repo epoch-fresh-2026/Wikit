@@ -14,6 +14,10 @@ import (
 func (Parser) Plain(markdown string) (string, error) {
 	source := []byte(markdown)
 	root := goldmark.New().Parser().Parse(gmtext.NewReader(source))
+	return plainNode(root, source)
+}
+
+func plainNode(root ast.Node, source []byte) (string, error) {
 	var out strings.Builder
 	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {

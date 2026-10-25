@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve, relative } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -6,18 +6,11 @@ import YAML from 'yaml';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { buildContracts, serialize } from './build-contracts.mjs';
+import { repositoryFiles } from './repository-files.mjs';
 
 const root = process.cwd();
 const read = (path) => readFileSync(path, 'utf8');
-const ignored = new Set(['.git', 'node_modules', '.local', 'dist', 'coverage']);
-function walk(dir = '.') {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    if (ignored.has(entry.name)) return [];
-    const path = `${dir}/${entry.name}`;
-    return entry.isDirectory() ? walk(path) : [path.replace(/^\.\//, '')];
-  });
-}
-const files = walk();
+const files = repositoryFiles(root);
 let links = 0;
 for (const file of files.filter((p) => p.endsWith('.md'))) {
   const content = read(file);

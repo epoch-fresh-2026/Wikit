@@ -5,7 +5,9 @@ export function useArticleOutline(article: RefObject<HTMLDivElement | null>, con
   const [active, setActive] = useState('')
 
   useEffect(() => {
-    const nodes = Array.from(article.current?.querySelectorAll<HTMLElement>('h1,h2,h3') ?? [])
+    const nodes = Array.from(
+      article.current?.querySelectorAll<HTMLElement>('h1,h2,h3,h4,h5,h6') ?? [],
+    )
     setHeadings(
       nodes.map((node, index) => {
         node.id = `section-${index}`

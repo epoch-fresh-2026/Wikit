@@ -10,7 +10,7 @@ REST 与 MCP 使用同一套账户权限。
 媒体上传、鉴权 Range 下载、本地安全 GC、页面议题与治理、中英文搜索及索引恢复已实现；官方 SDK 提供 39 个 MCP 工具，复用同一 Core。
 React WebUI 已提供 Wiki SPA、独立提案页面、独立后台、标签输入和编辑离开提示，frontend CI 已启用。
 v0.1.0 GHCR 镜像已通过完整发布 CI 及按不可变 digest 拉取后的实际验收，生产部署仍由维护者手动执行。**
-本分支的 Issue #35 重设计使用数字 Page ID、固定首页和 create_page 权限，是不兼容的新部署基线，尚未包含在上述旧镜像中。旧库会被拒绝且不会自动清空；回退使用旧镜像与旧备份。验证见[重设计记录](docs/redesign-validation.md)。
+当前源码使用数字 Page ID、固定首页和 create_page 权限，是不兼容的新部署基线，尚未包含在上述旧镜像中。旧库会被拒绝且不会自动清空；回退使用旧镜像与旧备份。验证见[重设计记录](docs/redesign-validation.md)。
 
 账户 ID 使用数据库分配的正整数 bigint，接口以十进制字符串传输。本次为破坏性新部署基线，不迁移旧 UUID 账户数据；旧库校验和不匹配会被拒绝，不自动清空。见 [ADR 0023](docs/adr/0023-numeric-account-ids.md)。
 
@@ -39,8 +39,8 @@ npm run check
 ```
 
 这些命令检查文档、REST/MCP 契约及仓库工作流，不代表应用功能已经通过测试。
-实现阶段逐步启用不可跳过的应用检查。参阅[开发说明](docs/development.md)、
-[部署恢复设计](docs/operations.md)。
+后端、前端、数据库集成与容器检查均为必需阶段，参阅[开发说明](docs/development.md)和
+[测试策略](docs/testing.md)。运行配置与恢复流程见[部署手册](docs/operations.md)。
 
 WebUI 开发先运行 `npm ci --prefix web`，再运行 `npm run dev --prefix web`。
 后端 origin 配置、状态边界及检查命令见 [WebUI](docs/web.md)。

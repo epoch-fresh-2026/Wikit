@@ -48,12 +48,22 @@ type Index interface {
 	Put(context.Context, string, []Document) (int64, error)
 	Delete(context.Context, string, []string) (int64, error)
 	Wait(context.Context, int64) error
+	// Search requires all query terms; a short result must not drop terms to fill limit.
 	Search(context.Context, string, string, Filter, int, int) (Candidates, error)
 }
 type Text interface {
 	NFC(string) string
 	Fold(string) string
 	Plain(string) (string, error)
+	Blocks(string) ([]TextBlock, error)
+}
+
+// TextBlock describes source content, not an independently authorized object.
+type TextBlock struct {
+	Text               string
+	SectionPath        []string
+	SectionID          *string
+	StartLine, EndLine int
 }
 type Tx interface {
 	access.Authorization

@@ -195,7 +195,12 @@ func New(s Services) (*Handler, error) {
 			if err := output.Validate(normalized); err != nil {
 				return reject(errors.New("output contract mismatch"))
 			}
-			return &sdk.CallToolResult{StructuredContent: json.RawMessage(encoded), Content: []sdk.Content{&sdk.TextContent{Text: "ok"}}}, nil
+			message := "ok"
+			if tool.Operation == "search" && args.Mode == "rag" {
+				// Include identical evidence for clients that only consume text.
+				message = string(encoded)
+			}
+			return &sdk.CallToolResult{StructuredContent: json.RawMessage(encoded), Content: []sdk.Content{&sdk.TextContent{Text: message}}}, nil
 		})
 	}
 	if len(seen) != len(operations) {

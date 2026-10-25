@@ -1,14 +1,11 @@
 # 开发工作流与 CI/CD
 
-## 本轮与后续实现
+## 工程结构与运行基线
 
-Issue #2 建立后端基础：Go composition root、配置、健康检查、SQL 迁移和真实
-PostgreSQL 测试。Issue #3 增加账户、会话、Token 和授权治理；Issue #4 增加页面
-创建/读取、直接首版发布和历史读取；Issue #5 增加审核、原子合并、三方 rebase 与撤销/恢复。
-Issue #6 增加流式媒体上传、固定版本鉴权下载和 blob-gc；Issue #7 增加页面议题、评论、
-同 Page 提案关联，以及带理由与审计的页面/讨论隐藏和恢复。
-Issue #10 启用 frontend CI；Issue #11 的容器、恢复及基准验收已通过，启用 container
-和 release_ready。实际受控 tag/GHCR 产物与完整发布 CI 见 [发布验收记录](release-readiness.md)。
+Go composition root 位于 cmd/wikit；Core 承载领域规则，适配器处理 HTTP、MCP、文本和外部存储。
+WebUI 位于 web，机器契约由 scripts/build-contracts.mjs 生成，正式测试位于各模块及 tests/integration。
+实验题集、冻结包和运行报告放在被 Git 忽略的 .local，不与正式夹具混放。
+仓库文档检查包含未跟踪的新文件，但不进入含自身 .git 的独立仓库或 worktree；这些工程独立验证。
 
 WebUI 位于 web/，使用 React 19.3.1、TypeScript 7.0.2、Vite 8.3.4、Tailwind 4.3.3 与 shadcn/ui。
 源码组件由 shadcn CLI 4.22.1 导入，使用本地 cn 工具；运行依赖由 package-lock.json 锁定。
@@ -17,13 +14,13 @@ API 类型由根目录 openapi-typescript 7.13.0 与 TypeScript 5.9.3 生成，W
 命令：先 npm ci，再 npm ci --prefix web、npm run typecheck --prefix web、npm run test:ci --prefix web、
 npm run build --prefix web；开发代理与后端 origin 见 [WebUI](web.md)。
 
-Issue #9 增加官方 Go MCP SDK v1.7.0 和 jsonschema-go v0.4.3，协议依赖只在适配器/组合根使用。
+MCP 使用官方 Go MCP SDK v1.7.0 和 jsonschema-go v0.4.3，协议依赖只在适配器/组合根使用。
 `serve` 同时提供 REST 和 /mcp；MCP 只使用用户 Bearer Token，空闲 session 15 分钟过期。
 集成测试使用真实 SDK StreamableClientTransport，而非手写协议替代客户端；覆盖全部 39 工具、
 REST/MCP 幂等/游标/错误等价，以及账户/组/页面撤权与真实合并的两种提交顺序。
 MCP 不接收二进制工具参数；upload_prepare 返回同源上传路径，再用同一 Token PUT 原件。
 
-Issue #8 增加 Meilisearch 1.55.0 的中英文搜索、可恢复 outbox worker 和 search-rebuild/retry/status。
+检索使用 Meilisearch 1.55.0，提供中英文搜索、可恢复 outbox worker 和 search-rebuild/retry/status。
 本地测试额外要求 WIKIT_MEILI_URL、WIKIT_MEILI_KEY 指向专用 Meilisearch；测试使用独立索引，
 不会接触线上索引。CI 在既有 integration 阶段启动真实 Meilisearch，不增加跳过路径。
 可运行 `go run ./cmd/wikit search-rebuild` 重建，`search-status` 查看积压，`search-retry` 立即重试失败事件。
@@ -62,9 +59,9 @@ npm run check
 ```
 
 后端、前端、集成和容器阶段用 `.github/implementation.json` 显式登记。
-全为 false 表示应用尚未实现。对应路径出现时检查会要求启用阶段；
+当前所有阶段均启用，对应路径出现时检查会要求启用阶段；
 阶段一旦启用，后续 PR 不允许回退。新增阶段必须带真实测试，不能靠空测试通过。
-主分支初始只有文档／契约检查；不能把跳过的应用测试宣称为已验证。
+不能把跳过的应用测试宣称为已验证。
 `release_ready` 是额外发布门槛，只有完成全部产品验收并提交发布证据后才能启用。
 
 ## 工作流

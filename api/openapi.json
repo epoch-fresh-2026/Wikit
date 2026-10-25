@@ -6654,7 +6654,8 @@
           "type",
           "title",
           "tags",
-          "snippet"
+          "snippet",
+          "passages"
         ],
         "properties": {
           "page_id": {
@@ -6686,6 +6687,13 @@
           "snippet": {
             "type": "string",
             "maxLength": 2000
+          },
+          "passages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchPassage"
+            },
+            "maxItems": 3
           }
         }
       },
@@ -6708,6 +6716,55 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "SearchPassage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "section_path",
+          "section_id",
+          "start_line",
+          "end_line",
+          "truncated",
+          "citation_url"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "section_path": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "maxItems": 6
+          },
+          "section_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^section-[0-9]+$"
+          },
+          "start_line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "end_line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "citation_url": {
+            "type": "string",
+            "maxLength": 300
           }
         }
       },
