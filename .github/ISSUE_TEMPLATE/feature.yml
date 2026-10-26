@@ -25,6 +25,6 @@ body:
     id: dependencies
     attributes:
       label: 依赖与文档影响
-      description: 关联 Issue；需要先更新的设计文档和契约。
+      description: 在此链接需求、业务规则、模块协作、接口及验收文档的对应章节，并说明依赖。文档正文不写本 Issue 编号。
     validations:
       required: true

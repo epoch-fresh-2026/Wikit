@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * 注册账户并显示一次 Token
-         * @description 注册账户并显示一次 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 注册账户并显示一次 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["register"];
         delete?: never;
@@ -35,7 +35,7 @@ export interface paths {
         put?: never;
         /**
          * 登录并建立安全会话
-         * @description 登录并建立安全会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 登录并建立安全会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["login"];
         delete?: never;
@@ -55,7 +55,7 @@ export interface paths {
         put?: never;
         /**
          * 严格同源恢复有效会话的写入凭证，不延长会话
-         * @description 严格同源恢复有效会话的写入凭证，不延长会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 严格同源恢复有效会话的写入凭证，不延长会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["session_restore"];
         delete?: never;
@@ -75,7 +75,7 @@ export interface paths {
         put?: never;
         /**
          * 注销当前会话
-         * @description 注销当前会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 注销当前会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["logout"];
         delete?: never;
@@ -93,7 +93,7 @@ export interface paths {
         };
         /**
          * 获取当前账户
-         * @description 获取当前账户。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 获取当前账户。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["account_me"];
         put?: never;
@@ -115,7 +115,7 @@ export interface paths {
         put?: never;
         /**
          * 修改密码并撤销会话
-         * @description 修改密码并撤销会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 修改密码并撤销会话。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["password_change"];
         delete?: never;
@@ -133,13 +133,13 @@ export interface paths {
         };
         /**
          * 查询账户 Token 状态
-         * @description 查询账户 Token 状态。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 查询账户 Token 状态。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["token_status"];
         put?: never;
         /**
          * 轮换唯一 Token
-         * @description 轮换唯一 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 轮换唯一 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["token_rotate"];
         delete?: never;
@@ -159,7 +159,7 @@ export interface paths {
         put?: never;
         /**
          * 撤销账户 Token
-         * @description 撤销账户 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 撤销账户 Token。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["token_revoke"];
         delete?: never;
@@ -177,7 +177,7 @@ export interface paths {
         };
         /**
          * 管理员列出账户
-         * @description 管理员列出账户。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理员列出账户。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["accounts_list"];
         put?: never;
@@ -203,7 +203,7 @@ export interface paths {
         head?: never;
         /**
          * 管理员更新角色或状态
-         * @description 管理员更新角色或状态。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理员更新角色或状态。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         patch: operations["account_update"];
         trace?: never;
@@ -217,13 +217,13 @@ export interface paths {
         };
         /**
          * 管理员列出用户组
-         * @description 管理员列出用户组。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理员列出用户组。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["groups_list"];
         put?: never;
         /**
          * 管理员创建用户组
-         * @description 管理员创建用户组。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理员创建用户组。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["group_create"];
         delete?: never;
@@ -242,7 +242,7 @@ export interface paths {
         get?: never;
         /**
          * 管理员更新组及成员
-         * @description 管理员更新组及成员。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理员更新组及成员。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         put: operations["group_update"];
         post?: never;
@@ -261,7 +261,7 @@ export interface paths {
         };
         /**
          * 管理员查询审计事件
-         * @description 管理员查询审计事件。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理员查询审计事件。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["audit_list"];
         put?: never;
@@ -281,13 +281,13 @@ export interface paths {
         };
         /**
          * 列出当前可读已发布页面
-         * @description 列出当前可读已发布页面。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 列出当前可读已发布页面。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["pages_list"];
         put?: never;
         /**
          * 创建页面及首个提案
-         * @description 创建页面及首个提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 创建页面及首个提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["page_create"];
         delete?: never;
@@ -305,7 +305,7 @@ export interface paths {
         };
         /**
          * 读取页面当前发布内容
-         * @description 读取页面当前发布内容。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 读取页面当前发布内容。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["page_get"];
         put?: never;
@@ -325,12 +325,12 @@ export interface paths {
         };
         /**
          * 管理者读取页面权限
-         * @description 管理者读取页面权限。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理者读取页面权限。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["page_policy_get"];
         /**
          * 管理者替换页面授权策略
-         * @description 管理者替换页面授权策略。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理者替换页面授权策略。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         put: operations["page_policy_update"];
         post?: never;
@@ -351,7 +351,7 @@ export interface paths {
         put?: never;
         /**
          * 管理者隐藏或恢复页面
-         * @description 管理者隐藏或恢复页面。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理者隐藏或恢复页面。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["page_moderate"];
         delete?: never;
@@ -369,7 +369,7 @@ export interface paths {
         };
         /**
          * 列出页面发布历史
-         * @description 列出页面发布历史。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 列出页面发布历史。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["revisions_list"];
         put?: never;
@@ -389,7 +389,7 @@ export interface paths {
         };
         /**
          * 读取明确发布版本
-         * @description 读取明确发布版本。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 读取明确发布版本。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["revision_get"];
         put?: never;
@@ -409,7 +409,7 @@ export interface paths {
         };
         /**
          * 鉴权后读取固定版本原件
-         * @description 鉴权后读取固定版本原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 鉴权后读取固定版本原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["revision_content"];
         put?: never;
@@ -429,7 +429,7 @@ export interface paths {
         };
         /**
          * 列出可读的提案摘要
-         * @description 列出可读的提案摘要。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 列出可读的提案摘要。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["proposal_queue"];
         put?: never;
@@ -449,13 +449,13 @@ export interface paths {
         };
         /**
          * 列出页面提案
-         * @description 列出页面提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 列出页面提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["proposals_list"];
         put?: never;
         /**
          * 提交单页面修改提案
-         * @description 提交单页面修改提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 提交单页面修改提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["proposal_create"];
         delete?: never;
@@ -473,7 +473,7 @@ export interface paths {
         };
         /**
          * 读取提案及当前候选
-         * @description 读取提案及当前候选。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 读取提案及当前候选。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["proposal_get"];
         put?: never;
@@ -493,13 +493,13 @@ export interface paths {
         };
         /**
          * 读取不可变候选历史
-         * @description 读取不可变候选历史。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 读取不可变候选历史。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["proposal_revisions_list"];
         put?: never;
         /**
          * 提交候选更新或已解决冲突
-         * @description 提交候选更新或已解决冲突。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 提交候选更新或已解决冲突。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["proposal_update"];
         delete?: never;
@@ -517,7 +517,7 @@ export interface paths {
         };
         /**
          * 鉴权后读取候选媒体原件
-         * @description 鉴权后读取候选媒体原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 鉴权后读取候选媒体原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["proposal_content"];
         put?: never;
@@ -537,7 +537,7 @@ export interface paths {
         };
         /**
          * 对比基础与候选并标记过期
-         * @description 对比基础与候选并标记过期。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 对比基础与候选并标记过期。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["proposal_diff"];
         put?: never;
@@ -559,7 +559,7 @@ export interface paths {
         put?: never;
         /**
          * 三方合并至当前发布版本并生成新候选
-         * @description 三方合并至当前发布版本并生成新候选。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 三方合并至当前发布版本并生成新候选。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["proposal_rebase"];
         delete?: never;
@@ -579,7 +579,7 @@ export interface paths {
         put?: never;
         /**
          * 按当前合并权限与预期版本原子发布提案
-         * @description 按当前合并权限与预期版本原子发布提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 按当前合并权限与预期版本原子发布提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["proposal_merge"];
         delete?: never;
@@ -599,7 +599,7 @@ export interface paths {
         put?: never;
         /**
          * 关闭或重开提案
-         * @description 关闭或重开提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 关闭或重开提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["proposal_state"];
         delete?: never;
@@ -619,7 +619,7 @@ export interface paths {
         put?: never;
         /**
          * 为撤销一次发布创建提案
-         * @description 为撤销一次发布创建提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 为撤销一次发布创建提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["page_revert"];
         delete?: never;
@@ -639,7 +639,7 @@ export interface paths {
         put?: never;
         /**
          * 为恢复旧快照创建提案
-         * @description 为恢复旧快照创建提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 为恢复旧快照创建提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["page_restore"];
         delete?: never;
@@ -657,13 +657,13 @@ export interface paths {
         };
         /**
          * 列出页面议题
-         * @description 列出页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 列出页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["issues_list"];
         put?: never;
         /**
          * 创建页面议题
-         * @description 创建页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 创建页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["issue_create"];
         delete?: never;
@@ -681,7 +681,7 @@ export interface paths {
         };
         /**
          * 读取页面议题
-         * @description 读取页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 读取页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["issue_get"];
         put?: never;
@@ -703,7 +703,7 @@ export interface paths {
         put?: never;
         /**
          * 关闭或重开页面议题
-         * @description 关闭或重开页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 关闭或重开页面议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["issue_state"];
         delete?: never;
@@ -723,7 +723,7 @@ export interface paths {
         put?: never;
         /**
          * 关联同页面提案
-         * @description 关联同页面提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 关联同页面提案。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["issue_link_proposal"];
         delete?: never;
@@ -743,7 +743,7 @@ export interface paths {
         put?: never;
         /**
          * 管理者隐藏或恢复议题
-         * @description 管理者隐藏或恢复议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理者隐藏或恢复议题。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["issue_moderate"];
         delete?: never;
@@ -761,13 +761,13 @@ export interface paths {
         };
         /**
          * 读取可见评论
-         * @description 读取可见评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 读取可见评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["comments_list"];
         put?: never;
         /**
          * 追加议题评论
-         * @description 追加议题评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 追加议题评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["comment_create"];
         delete?: never;
@@ -787,7 +787,7 @@ export interface paths {
         put?: never;
         /**
          * 管理者隐藏或恢复评论
-         * @description 管理者隐藏或恢复评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 管理者隐藏或恢复评论。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["comment_moderate"];
         delete?: never;
@@ -807,7 +807,7 @@ export interface paths {
         put?: never;
         /**
          * 预约鉴权媒体上传
-         * @description 预约鉴权媒体上传。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 预约鉴权媒体上传。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         post: operations["upload_prepare"];
         delete?: never;
@@ -826,7 +826,7 @@ export interface paths {
         get?: never;
         /**
          * 流式写入媒体原件
-         * @description 流式写入媒体原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 流式写入媒体原件。REST 已实现；此操作不提供 MCP 工具。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         put: operations["upload_content"];
         post?: never;
@@ -845,7 +845,7 @@ export interface paths {
         };
         /**
          * 上传者读取上传状态
-         * @description 上传者读取上传状态。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 上传者读取上传状态。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["upload_get"];
         put?: never;
@@ -865,7 +865,7 @@ export interface paths {
         };
         /**
          * 列出当前可读页面的标签
-         * @description 列出当前可读页面的标签。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 列出当前可读页面的标签。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["tags_list"];
         put?: never;
@@ -885,7 +885,7 @@ export interface paths {
         };
         /**
          * 检索并校验当前权限及版本
-         * @description 检索并校验当前权限及版本。REST 与 MCP 工具已实现。业务权限与状态机见 docs/api.md 及 docs/permissions.md。
+         * @description 检索并校验当前权限及版本。REST 与 MCP 工具已实现。业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。
          */
         get: operations["search"];
         put?: never;

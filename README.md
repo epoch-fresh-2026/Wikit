@@ -7,7 +7,7 @@ diffs, merges, and immutable publication history. Documents and media are
 independent Pages organized with tags. Humans and agents share the same account
 permissions through REST and MCP.
 
-**Version: 0.1.0.** The source implements accounts and per-Page permissions, immutable history,
+The source implements accounts and per-Page permissions, immutable history,
 direct first publication, proposal merge/rebase/revert/restore, media upload and authorized downloads,
 Page Issues and moderation, Chinese/English search, and index recovery. The Wiki WebUI and 39 MCP tools
 use the same Core; MCP also provides bounded, cited RAG context from full-text search.
@@ -15,13 +15,11 @@ use the same Core; MCP also provides bounded, cited RAG context from full-text s
 Page and Account IDs are database-generated positive integers serialized as exact decimal strings.
 The home Page is fixed, page creation requires an explicit grant, and subsequent changes use proposals.
 The current schema requires a fresh deployment and rejects old UUID databases without deleting data.
-See the [operations guide](docs/operations.md) for deployment, compatibility, backup and recovery.
+See the [operations guide](docs/engineering/operations.md) for deployment, compatibility, backup and recovery.
 
-The existing `v0.1.0` image belongs to an earlier source and schema baseline. Its immutable digest and
-verified checks are recorded in [release evidence](docs/release-readiness.md); they do not certify the
-current source. Current behavior is defined by the [design documents](docs/README.md), with
-[validation records](docs/redesign-validation.md) identifying the exact revisions tested.
-Production deployment remains manual; maintenance keeps the version fixed at `0.1.0`.
+Current requirements and contracts are organized in the [documentation index](docs/README.md).
+Release readiness must be verified against the exact source commit and image digest; historical checks do not certify current source.
+See [release acceptance](docs/quality/release-readiness.md). Production deployment remains manual.
 
 ## Architecture
 
@@ -30,11 +28,11 @@ Both adapters use one Go Core. PostgreSQL owns business state, a local persisten
 volume stores immutable media, and Meilisearch provides rebuildable Chinese and
 English search. Git is not a runtime storage dependency.
 
-The 0.1.0 deployment baseline is a single-host Docker Compose deployment. Public and restricted
+The deployment baseline is a single-host Docker Compose deployment. Public and restricted
 Pages, per-Page permissions, single-Page proposals, version-pinned media references,
 merges, restore/revert proposals, and Page Issues are specified in the
-[design](docs/design.md). Native Git access, multi-tenancy, templates, collaborative
-editing, notifications, semantic search, S3, and high availability are outside 0.1.0.
+[requirements](docs/requirements.md). Native Git access, multi-tenancy, templates, collaborative
+editing, notifications, semantic search, S3, and high availability are outside the product scope.
 
 ## Development checks
 
@@ -47,18 +45,18 @@ npm run check
 
 These commands validate documentation, API and MCP contracts, and repository
 workflow configuration. Backend, frontend, database integration and container checks
-are also required; see [development](docs/development.md) and [testing](docs/testing.md).
-Runtime setup is described in the [operations guide](docs/operations.md).
+are also required; see [development](docs/engineering/development.md) and [testing](docs/quality/testing.md).
+Runtime setup is described in the [operations guide](docs/engineering/operations.md).
 
 For the WebUI, run `npm ci --prefix web`, then `npm run dev --prefix web`.
-See [WebUI development and state boundaries](docs/web.md) for the backend origin configuration and checks.
+See [WebUI development and state boundaries](docs/interfaces/web.md) for the backend origin configuration and checks.
 
 ## Contribute
 
 Confirm the design and acceptance criteria in a GitHub Issue, update affected
 documents before code, and submit a linked PR. Code must be highly cohesive,
 loosely coupled, modular, and extensible through concrete boundaries; see
-[coding standards](docs/coding-standards.md). Detailed design documents are in Chinese;
+[coding standards](docs/engineering/coding-standards.md). Detailed design documents are in Chinese;
 API names and code identifiers are English.
 
 ## License

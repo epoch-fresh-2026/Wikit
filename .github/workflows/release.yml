@@ -36,7 +36,7 @@ jobs:
           if (!required.every((name) => stages[name] === true)) {
             throw new Error('All implementation stages and release readiness must be complete.');
           }
-          if (!fs.existsSync('docs/release-readiness.md')) throw new Error('Missing release evidence.');
+          if (!fs.existsSync('docs/quality/release-readiness.md')) throw new Error('Missing release evidence.');
           JS
   validation:
     needs: readiness
