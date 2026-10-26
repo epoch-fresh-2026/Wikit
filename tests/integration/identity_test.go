@@ -392,6 +392,22 @@ func TestGroupUUIDCaseAndNumericAccountIDs(t *testing.T) {
 func TestRateLimitAndRegistrationOff(t *testing.T) {
 	s := newSuite(t)
 	ctx := context.Background()
+	// Freeze only this isolated database's counter window. Password verification
+	// can cross a wall-clock minute; the production limiter correctly resets then.
+	// Keep the real Allow transactions and conflict updates under test.
+	if _, err := s.db.conn.Exec(ctx, `
+		CREATE TABLE wikit.test_rate_window (start_at timestamptz NOT NULL);
+		INSERT INTO wikit.test_rate_window VALUES ('epoch');
+		CREATE FUNCTION wikit.test_rate_window() RETURNS trigger LANGUAGE plpgsql AS $$
+		BEGIN
+			NEW.window_start := (SELECT start_at FROM wikit.test_rate_window);
+			RETURN NEW;
+		END $$;
+		CREATE TRIGGER test_rate_window BEFORE INSERT ON wikit.auth_limits
+		FOR EACH ROW EXECUTE FUNCTION wikit.test_rate_window();
+	`); err != nil {
+		t.Fatal(err)
+	}
 	for i := 0; i < 10; i++ {
 		if err := s.db.store.Allow(ctx, "probe", "ip\x00name"); err != nil {
 			t.Fatal(err)
@@ -408,6 +424,15 @@ func TestRateLimitAndRegistrationOff(t *testing.T) {
 		if i == 10 && err != fault.Limited {
 			t.Fatal("failed login counters rolled back", err)
 		}
+	}
+	if _, err := s.db.conn.Exec(ctx, `UPDATE wikit.test_rate_window SET start_at=start_at+interval '1 minute'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.db.store.Allow(ctx, "probe", "ip\x00name"); err != nil {
+		t.Fatal("counter did not reset in the new window", err)
+	}
+	if _, err := s.accounts.Login(ctx, "absent_user", password, "failed-ip", "new-window", true); err != fault.Unauthenticated {
+		t.Fatal("failed login did not receive a new window", err)
 	}
 	p, err := security.NewPasswords()
 	if err != nil {

@@ -78,7 +78,7 @@ if (stages.integration) {
 if (stages.container) assert(stages.backend && stages.frontend && stages.integration, 'Container stage requires application stages.');
 if (stages.release_ready) {
   assert(Object.values(stages).every(Boolean), 'Release requires every stage.');
-  assert(existsSync('docs/release-readiness.md'), 'Release readiness evidence missing.');
+  assert(existsSync('docs/quality/release-readiness.md'), 'Release readiness evidence missing.');
 }
 if (process.env.GITHUB_EVENT_PATH) {
   const event = JSON.parse(read(process.env.GITHUB_EVENT_PATH));

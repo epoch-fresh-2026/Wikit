@@ -7,10 +7,10 @@ test('accepts confirmed-design declaration with a contract change', () => {
 });
 
 test('accepts a partial delivery without automatically closing the Issue', () => {
-  assert.deepEqual(parsePolicy('Refs #3\nDesign-Impact: updated', ['docs/api.md']), [3]);
+  assert.deepEqual(parsePolicy('Refs #3\nDesign-Impact: updated', ['docs/interfaces/rest.md']), [3]);
 });
 test('requires a real local Issue reference rather than arbitrary URL text', () => {
-  assert.throws(() => parsePolicy('See https://example.com/12\nDesign-Impact: updated', ['docs/design.md']));
+  assert.throws(() => parsePolicy('See https://example.com/12\nDesign-Impact: updated', ['docs/architecture/overview.md']));
 });
 test('does not accept an updated-design claim without design changes', () => {
   assert.throws(() => parsePolicy('Fixes #2\nDesign-Impact: updated', ['internal/core/main.go']));

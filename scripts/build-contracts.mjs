@@ -342,7 +342,7 @@ export function buildContracts() {
     }
     const operation = {
       operationId: o.name, tags: [o.tag], summary: o.summary,
-      description: `${o.summary}。${implementedRest.has(o.name) ? (o.mcp === false ? 'REST 已实现；此操作不提供 MCP 工具。' : 'REST 与 MCP 工具已实现。') : '目标行为尚未实现。'}业务权限与状态机见 docs/api.md 及 docs/permissions.md。`,
+      description: `${o.summary}。${implementedRest.has(o.name) ? (o.mcp === false ? 'REST 已实现；此操作不提供 MCP 工具。' : 'REST 与 MCP 工具已实现。') : '目标行为尚未实现。'}业务权限与状态机见 docs/interfaces/rest.md 及 docs/business-rules.md。`,
       security: o.anonymous ? [] : o.sessionOnly ? [{ session: [] }] : o.public ? [{}, { session: [] }, { bearer: [] }] : [{ session: [] }, { bearer: [] }],
       parameters, responses,
     };

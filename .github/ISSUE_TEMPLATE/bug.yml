@@ -17,6 +17,7 @@ body:
   - type: textarea
     id: design
     attributes:
-      label: 设计影响与验证方式
+      label: 设计影响与验收条件
+      description: 链接预期行为对应的需求、业务规则、模块或接口文档章节，列出可验证条件；文档正文不登记本 Issue。
     validations:
       required: true
