@@ -87,6 +87,8 @@ node scripts/rag-requirement-audit.mjs <fixture.json> <result.json> <audit.json>
 ## 事务、安全与兼容性
 
 认证覆盖错误密码、单 Token 轮换／撤销、账户代次、CSRF、Origin/Host、限流和敏感响应 no-store。
+固定窗口限流测试在独立数据库夹具中控制窗口边界，验证同窗口失败尝试独立提交、超过阈值拒绝，
+以及切换窗口后重新计数；不得假设一组真实密码校验恰好落在同一墙钟分钟内。
 当前权限覆盖页面、历史、提案 diff、讨论、下载、标签、搜索及幂等重放；隐藏与恢复不改变独立治理状态。
 合并测试验证版本前置条件、并发 head、三方冲突、撤权竞争及审计／outbox／幂等结果的事务回滚。
 媒体测试验证 MIME、大小、流式失败、不可覆盖原件、Range/HEAD/条件读取、租约 fencing 及 GC/发布竞争。

@@ -8,23 +8,42 @@ Use `docs/README.md` to find the document that owns each concern.
 
 ## Issue-driven development
 
-Follow **Issue → Design → Implementation → PR → Review → Merge**.
+Every development task follows **Requirements Analysis → Issue → Design → Documentation → Implementation → PR → Review → Merge**
+（需求分析 → 提 Issue → 设计 → 更新文档 → 开发 → 提 PR → 审查 → 合并）.
+This applies to features, fixes, refactoring, documentation and dependency maintenance.
+Unless the user explicitly limits the scope, carry the task through review, required checks, merge and Issue closure.
+Do not stop after local edits, a commit, a push or PR creation and wait for the user to request the next stage.
+Existing user authorization and confirmed requirements remain valid; do not request the same approval again.
+If a real blocker prevents completion, report the exact failed stage, evidence and required action; never bypass checks or claim completion.
 
-1. **Issue**: create or claim a GitHub Issue with the problem, scope, dependencies and testable acceptance criteria.
+1. **Requirements Analysis**: understand the problem, users, expected behavior, scope, exclusions and acceptance criteria.
+   Read the existing requirements, business rules, affected modules and contracts; inspect implementation and dependencies.
+   Resolve consequential ambiguity before designing or changing behavior.
+2. **Issue**: create or claim a GitHub Issue before editing specifications or implementation, recording the analysis,
+   scope, dependencies and testable acceptance criteria. Continue an existing Issue for follow-up work within its scope.
    The Issue links to the relevant requirements, business rules, module design, interface and test sections.
    Keep task progress, discussion and delivery evidence in the Issue and PR, not in specification documents.
-2. **Design**: update the owning documents as coherent, complete descriptions of the intended behavior.
-   Resolve cross-document inconsistencies and obtain maintainer confirmation with `design-approved` before implementation.
-   No separate design PR is required. Record consequential choices and tradeoffs in `docs/architecture/decisions.md`.
-3. **Implementation**: implement the confirmed design and acceptance criteria. If scope or design changes,
+3. **Design**: define module ownership and collaboration, interfaces, data/transaction boundaries, authorization,
+   failure handling and verification. Obtain maintainer confirmation and record it with `design-approved` before implementation;
+   explicit requirements and decisions already confirmed by the maintainer count as confirmation.
+4. **Documentation**: update the owning documents as coherent, complete descriptions of the confirmed design before implementation.
+   Reconcile requirements, business rules, module collaboration, contracts and acceptance criteria, including their links.
+   Record consequential choices and tradeoffs in `docs/architecture/decisions.md`. No separate design PR is required.
+5. **Implementation**: implement the confirmed design and acceptance criteria, then run the affected checks.
+   Commit and push the scoped changes to a working branch. If scope or design changes,
    update the Issue and owning documents and reconfirm the design before continuing dependent implementation.
-4. **PR**: link the same-repository Issue with `Closes #N` for complete delivery or `Refs #N` for partial delivery.
+6. **PR**: create a PR linking the same-repository Issue with `Closes #N` for complete delivery or `Refs #N` for partial delivery.
    Include `Design-Impact: updated`, or `Design-Impact: none` with a concrete `Design-Reason:`.
    Report actual checks, results and unrun checks; keep remaining acceptance items in the Issue.
-5. **Review**: check requirements, business rules, module collaboration, interfaces, tests and documentation together.
-   Resolve review feedback and pass every enabled CI check. Automated policy checks do not replace design review.
-6. **Merge**: merge only after review and required checks pass, using the repository's protected-branch rules.
-   Close the Issue only when its acceptance criteria are complete; partial deliveries leave it open.
+7. **Review**: review the actual PR diff against requirements, business rules, module collaboration, interfaces, tests and documentation.
+   Record review scope, findings and resolutions in the PR. Identify self-review honestly; do not claim independent approval.
+   Fix findings, push corrections, re-review affected changes and wait for every enabled CI check on the latest head.
+   Diagnose failed checks; never disable a stage, weaken assertions or repeatedly rerun unexplained failures to obtain a green result.
+   Automated policy checks and passing CI do not replace substantive review.
+8. **Merge**: after review feedback is resolved and all required checks pass on the latest head, merge through the protected PR workflow.
+   Reconfirm the head commit before merging; do not bypass protections or self-approve where independent approval is required.
+   Verify the PR is merged, update acceptance/evidence and confirm Issue closure when complete; partial deliveries leave it open.
+   Synchronize the local checkout without overwriting unrelated changes, and report the Issue, PR, merge result and validation limits.
 
 ## Documentation maintenance
 

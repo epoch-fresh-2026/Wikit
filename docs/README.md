@@ -31,6 +31,6 @@
 重要取舍修订架构决策的相应主题，历史内容通过 Git 查询。
 依赖版本以清单与锁文件为准；业务 Revision、协议路径和迁移编号是技术标识，不是文档版本。
 
-开发流程统一为 **Issue → Design → Implementation → PR → Review → Merge**，具体要求见[AGENTS.md](../AGENTS.md)。
+开发流程统一为 **需求分析 → Issue → 设计 → 更新文档 → 开发 → PR → 审查 → 合并**，具体要求见[AGENTS.md](../AGENTS.md)。
 Issue 链接相关文档章节、承载方案讨论和验收进度；规格正文不写开发 Issue 编号或链接。
 运行证据放在 PR、CI 日志及产物中，长期文档保留验证方法、判定标准和必要的兼容性边界。
