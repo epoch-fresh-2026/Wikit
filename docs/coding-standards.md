@@ -12,7 +12,7 @@
 
 ## 低耦合与模块边界
 
-建议结构（实现阶段创建实际需要的目录）：
+模块结构（按实际业务能力建立目录）：
 
 ```text
 cmd/wikit/                 composition root、启动与命令
@@ -82,7 +82,7 @@ web/src/components/ui/    shadcn/ui 基础组件
 5. 测试是否验证外部行为与边界，而不是重复实现细节？
 
 自动化负责格式、类型、测试和依赖边界检查；高内聚与合理抽象仍必须人工评审。
-后端模块首次落地时添加依赖边界测试，防止 Core 引入适配器或存储实现。
+后端模块维护依赖边界测试，防止 Core 引入适配器或存储实现。
 
 例如 `internal/core/health` 由消费方定义 `Check(context.Context) error`
 小接口；HTTP 仅将健康用例结果映射为 200/503，具体 PostgreSQL／目录实现由

@@ -2,7 +2,7 @@
 
 机器契约：[OpenAPI 3.1](../api/openapi.json)。源码为
 `scripts/build-contracts.mjs`，修改后运行 `npm run contracts:build`。
-检查要求生成结果与源码一致。契约版本 0.1.0 不代表应用已经发布。
+检查要求生成结果与源码一致。产品与契约版本统一固定为 0.1.0；发布状态以对应提交和产物的实际验收为准。
 
 ## 统一约定
 

@@ -1,37 +1,39 @@
-# 依赖升级集成（Issue #33）
+# 依赖维护与兼容性
 
-日期：2026-10-21；用户已确认升级全部十项依赖。
+依赖版本以清单与锁文件为准，第三方 Actions 固定完整 SHA。依赖维护不改变产品版本 `0.1.0`。
+运行环境为 Node 24.15.0 起且低于 25、Go 1.25；构建期类型定义和 Action 自身运行时不改变应用运行基线。
 
-原 PR #12、#13、#14、#15、#16、#26、#27、#28、#29、#30 先 squash 合入维护集成分支，
-最终集成 PR 必须基于最新 main 通过全部启用的 CI 后合并。中间分支只组装候选，
-不代表生产发布或主分支验收完成。main 的保护规则和所有 CI 阶段保持启用。
+## 工具链边界
 
-| 依赖 | 目标版本 |
-| --- | --- |
-| TypeScript（应用编译器） | 7.0.2 |
-| React Router | 8.4.0 |
-| jsdom | 30.1.3 |
-| @types/node | 26.6.5 |
-| Prettier | 3.9.10 |
-| actions/setup-go | 7.0.0 |
-| actions/checkout | 7.0.1 |
-| actions/setup-node | 7.1.0 |
-| docker/login-action | 4.6.0 |
-| docker/build-push-action | 7.4.0 |
+Web 使用 TypeScript 7.0.2，契约生成使用 openapi-typescript 7.13.0 与 TypeScript 5.9.3，
+二者隔离在 Web 与根目录工具链，原因见 [ADR 0017](../adr/0017-contract-generator-toolchain.md)。
+路径别名使用相对配置文件位置的 `@/*` → `./src/*`，与 Vite 一致，不使用已删除的 baseUrl。
+React Router 8.4.0 保持 BrowserRouter 与 declarative Routes/Route，不引入 framework mode。
+jsdom 30.1.3 要求最低 Node 24.15.0，engines 与 Docker 构建环境使用同一边界。
+@types/node 26.6.5 仅提供构建期类型，不能据此使用 Node 26 专有 API。
+Prettier 3.9.10 负责格式化，升级不要求批量改写无关源码。
 
-运行环境继续使用 Node 24、Go 1.25。jsdom 30 要求最低 Node 24.15.0，Docker 与 engines
-同步提升；@types/node 26 不意味着允许使用 Node 26 专有 API。
-openapi-typescript 7.13.0 仍要求 TypeScript ^5.x，需要将生成器与应用编译器隔离。
+## 工作流依赖
 
-每项兼容性处理见本目录的 PR 记录。最终 CI 包括文档/契约、Go vet/race、API 类型同步、
-strict、组件测试、生产构建、真实 PostgreSQL/Meilisearch 集成，以及完整容器恢复/规模验收。
-发布 Actions 另核对固定 SHA、输入、权限和输出；未实际执行的 GHCR 推送单独记录，
-不为依赖维护而创建新的发布标签。
+| Action | 版本 | 保留的约束 |
+| --- | --- | --- |
+| actions/setup-go | 7.0.0 | 应用 Go 版本来自 go.mod，核对缓存与版本输入 |
+| actions/checkout | 7.0.1 | 需要历史的任务使用 fetch-depth: 0，persist-credentials: false；不启用不安全 PR checkout |
+| actions/setup-node | 7.1.0 | Node 24 与 npm 缓存，应用仍受 engines 最低版本约束 |
+| docker/login-action | 4.6.0 | 核对 registry/username/password；仅发布任务以 GITHUB_TOKEN 登录 GHCR |
+| docker/build-push-action | 7.4.0 | 核对 context/push/platforms/labels/tags 与 digest 输出，发布 linux/amd64 版本和 SHA 标签 |
 
-## 本地组合验证
+PR 验证使用只读权限；仅发布任务拥有 packages: write，不使用 pull_request_target 执行贡献者代码。
+升级后核对固定 SHA、输入、权限和输出，不为验证依赖维护创建发布标签。
 
-Node 24.15.0（官方可执行文件且 SHA-256 与发布清单一致）下，根目录和 web 干净 npm ci、
-API 类型同步、TypeScript 7 strict、28 项组件测试、生产构建全部通过；Prettier CLI 报告 3.9.10。
-Go 源码未改变，本次已运行 gofmt、go vet 与 go test -race -count=1 ./...，全部通过。
-本机未安装 Docker，最终 PostgreSQL/Meilisearch 集成、容器恢复和规模验收以集成 PR 的完整 CI 为准。
-组装期间的中间 PR 运行不作为最终验收证据；重复运行可在候选组装完成后取消。
+## 验证与证据
+
+每次维护均须通过文档与契约检查、Go vet/race、API 类型同步、Web strict、组件测试、生产构建、
+真实 PostgreSQL/Meilisearch 集成与容器恢复和规模验收。检查入口见[开发工作流](../development.md)。
+中间集成分支不代表主分支验收完成；实际 GHCR 推送与镜像运行单独登记。
+
+2026-10-21 的组合验证在校验官方 SHA-256 的 Node 24.15.0 下完成根目录与 Web 干净安装，
+API 类型同步、TypeScript strict、28 项组件测试、生产构建及 Prettier 版本检查通过；
+Go 格式、go vet 与 go test -race -count=1 ./... 通过。
+此前 Node 24.14.1 下的生成器迁移预检通过，但该版本不满足最终 jsdom 运行基线。
+当时本机没有 Docker，未在本机验证容器；完整发布运行证据见[发布验收记录](../release-readiness.md)。

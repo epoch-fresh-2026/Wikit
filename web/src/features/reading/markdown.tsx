@@ -20,10 +20,12 @@ export function Media({
   url,
   alt = '媒体原件',
   mime,
+  showDownload = false,
 }: {
   url: string
   alt?: string
   mime?: string
+  showDownload?: boolean
 }) {
   const [objectURL, setObjectURL] = useState(''),
     [type, setType] = useState(mime ?? ''),
@@ -67,13 +69,15 @@ export function Media({
       ) : type.startsWith('video/') ? (
         <video src={objectURL} controls aria-label={alt} />
       ) : (
-        <span>PDF 原件可通过下方链接打开。</span>
+        <span>{showDownload ? 'PDF 原件可通过下方链接打开。' : '请前往媒体页面查看原件。'}</span>
       )}
-      <span className="media-caption">
-        <a href={objectURL} download={alt}>
-          下载原件
-        </a>
-      </span>
+      {showDownload && (
+        <span className="media-caption">
+          <a href={objectURL} download={alt}>
+            下载原件
+          </a>
+        </span>
+      )}
     </span>
   )
 }
@@ -136,7 +140,7 @@ export function SnapshotView({
         <Markdown text={snapshot.markdown} />
       ) : (
         <>
-          {contentURL && <Media url={contentURL} alt={snapshot.title} />}
+          {contentURL && <Media url={contentURL} alt={snapshot.title} showDownload />}
           <Markdown text={snapshot.description} />
         </>
       )}

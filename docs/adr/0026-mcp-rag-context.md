@@ -1,6 +1,6 @@
 # 0026 MCP RAG 上下文与问句提取
 
-状态：accepted；日期：2026-10-24；关联 Issue #62。用户要求 RAG 仅用于 MCP 搜索。
+状态：accepted；日期：2026-10-24。用户要求 RAG 仅用于 MCP 搜索。
 
 在既有 `wikit_search` 上增加显式 `mode=rag`，默认 `lexical` 保持兼容。
 REST/Web 不增加问句改写或 RAG。Core 实现有界问句提炼、最多四路全文召回、去重和

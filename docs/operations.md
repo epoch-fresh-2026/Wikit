@@ -42,7 +42,7 @@ Compose 包含 wikit、PostgreSQL、Meilisearch。只向宿主暴露应用端口
 
 持久卷：PostgreSQL 数据、媒体原件、Meilisearch 数据。
 搜索卷丢失可重建，数据库与原件丢失不可仅靠其他卷恢复。
-镜像及基础镜像在实现阶段锁定明确版本／digest。
+镜像及基础镜像锁定明确版本／digest。
 
 | 配置 | 默认／要求 |
 | --- | --- |
@@ -108,7 +108,7 @@ serve 读取 WIKIT_MAX_UPLOAD_BYTES（默认 104857600）和同一宽限期配�
 blob 删除意图与完成状态写入审计，actor 为本地系统、request_id 为本次 GC 的随机运行 ID。
 媒体根目录由部署者独占管理，子目录为 objects 和 staging；文件名只使用服务端 UUID。
 
-实现阶段提供独立 migrate、create-admin、search-rebuild、blob-gc 管理命令。
+应用提供独立 migrate、create-admin、search-rebuild、blob-gc 管理命令。
 操作必须输出明确结果，凭证交互输入，不作为命令参数。
 
 首次部署：准备环境与卷 → 启动依赖 → migration → 本地创建管理员 →

@@ -1,6 +1,6 @@
 # 0014 MCP 传输与 Core 等价性
 
-状态：accepted；日期：2026-10-20；关联 Issue：#9、#3。
+状态：accepted；日期：2026-10-20。
 
 使用官方 Go SDK v1.7.0，机器工具目录嵌入程序，由 MCP 适配器直接分派到既有 Core。
 不回环调用 REST，不新增凭证管理、OAuth、resources、prompts 或模型调用能力。

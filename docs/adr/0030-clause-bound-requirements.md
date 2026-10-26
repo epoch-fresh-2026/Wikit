@@ -1,6 +1,6 @@
 # 0030 子句绑定的检索需求
 
-状态：accepted；日期：2026-10-25；关联 Issue #63，用户确认本轮优先修复主体/属性归属。
+状态：accepted；日期：2026-10-25。
 
 ADR 0029 的属性列表不能表达“A的X与B的Y”，交叉覆盖会额外要求A/Y和B/X。
 新增 `plan.bindings`（最多64项），每项包含subject、attribute、stage、filters。

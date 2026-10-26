@@ -1,6 +1,6 @@
 # 0028 RAG 排序与证据预算
 
-状态：accepted；日期：2026-10-25；关联 Issue #62。用户授权参考开源 RAG 优化链路并自建数据集验证。
+状态：accepted；日期：2026-10-25。用户授权参考开源 RAG 优化链路并自建数据集验证。
 
 沿用 MCP-only、最多四路全文查询、最终授权事务和无向量/站内模型边界。
 参考 LlamaIndex QueryFusionRetriever 的 reciprocal rank fusion：按 page/revision

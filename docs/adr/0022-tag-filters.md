@@ -1,6 +1,6 @@
 # 0022 多标签筛选
 
-状态：accepted；日期：2026-10-22；关联 Issue #51。用户确认 Web、REST、MCP 同步实现。
+状态：accepted；日期：2026-10-22。
 
 ## Context
 

@@ -30,6 +30,15 @@ for (const file of files.filter((p) => /\.ya?ml$/.test(p))) YAML.parse(read(file
 for (const file of files.filter((p) => p.endsWith('.json'))) JSON.parse(read(file));
 
 const { openapi, mcp } = buildContracts();
+const version = '0.1.0';
+for (const directory of ['', 'web/']) {
+  const pkg = JSON.parse(read(`${directory}package.json`));
+  const lock = JSON.parse(read(`${directory}package-lock.json`));
+  assert.equal(pkg.version, version, `${directory}package.json: Wikit version is locked at ${version}.`);
+  assert.equal(lock.version, version, `${directory}package-lock.json: version differs from package.json.`);
+  assert.equal(lock.packages[''].version, version, `${directory}package-lock.json: root package version differs.`);
+}
+assert.equal(openapi.info.version, version, 'REST contract must use the locked Wikit version.');
 assert.equal(read('api/openapi.json'), serialize(openapi), 'OpenAPI is stale; run npm run contracts:build.');
 assert.equal(read('api/mcp-tools.json'), serialize(mcp), 'MCP catalog is stale; run npm run contracts:build.');
 const ajv = new Ajv2020({ strict: true });

@@ -1,6 +1,6 @@
 # 0017 契约生成器与应用编译器分离
 
-状态：accepted；日期：2026-10-21；关联 Issue：#33、PR：#26。
+状态：accepted；日期：2026-10-21。
 
 Web 应用升级至 TypeScript 7.0.2；openapi-typescript 7.13.0 的 peer dependency
 仍要求 TypeScript ^5.x，且类型生成依赖其编译器 API。禁止使用 force、legacy-peer-deps

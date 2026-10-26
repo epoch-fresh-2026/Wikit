@@ -6,17 +6,17 @@ Wikit 是面向公开社区的开源、自托管 Wiki。它借鉴 Git 的提案�
 合并与版本历史；文档和媒体都是独立 Page，以标签组织。人和 Agent 通过
 REST 与 MCP 使用同一套账户权限。
 
-**当前状态：已实现账户/授权治理、不可变历史、直接创建首版与提案原子发布、三方 rebase、撤销/恢复提案和 PostgreSQL 测试；
-媒体上传、鉴权 Range 下载、本地安全 GC、页面议题与治理、中英文搜索及索引恢复已实现；官方 SDK 提供 39 个 MCP 工具，复用同一 Core。
-React WebUI 已提供 Wiki SPA、独立提案页面、独立后台、标签输入和编辑离开提示，frontend CI 已启用。
-v0.1.0 GHCR 镜像已通过完整发布 CI 及按不可变 digest 拉取后的实际验收，生产部署仍由维护者手动执行。**
-当前源码使用数字 Page ID、固定首页和 create_page 权限，是不兼容的新部署基线，尚未包含在上述旧镜像中。旧库会被拒绝且不会自动清空；回退使用旧镜像与旧备份。验证见[重设计记录](docs/redesign-validation.md)。
+**版本：0.1.0。** 当前源码已实现账户与页面权限、不可变历史、直接创建首版、提案合并与三方 rebase、
+撤销与恢复、媒体上传与鉴权下载、页面议题与治理、中英文搜索和索引恢复。
+Wiki WebUI 与 39 个 MCP 工具复用同一 Core；MCP 还提供基于全文检索、带固定版本引用的有界 RAG 上下文。
 
-账户 ID 使用数据库分配的正整数 bigint，接口以十进制字符串传输。本次为破坏性新部署基线，不迁移旧 UUID 账户数据；旧库校验和不匹配会被拒绝，不自动清空。见 [ADR 0023](docs/adr/0023-numeric-account-ids.md)。
+Page 和 Account 使用数据库分配的正整数 ID，接口以精确十进制字符串传输。
+首页固定，创建需要显式授权，后续修改通过提案发布。当前 schema 是新部署基线，
+旧 UUID 数据库会被拒绝，不自动转换或清空。部署、兼容性、备份与回退见[部署恢复](docs/operations.md)。
 
-版本、digest、运行证据与拉取权限见[发布验收记录](docs/release-readiness.md)。
-后续工作见[开发路线](docs/roadmap.md)与
-[GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues)。
+现有 `v0.1.0` 镜像属于较早的源码与 schema 基线，其不可变 digest 和实际验收见[发布记录](docs/release-readiness.md)，
+不能替代当前源码的发布验收。现行功能以[设计文档](docs/README.md)为准，
+[验证记录](docs/redesign-validation.md)说明具体受测提交与环境。生产部署仍由维护者手动执行，维护期间版本保持 `0.1.0`。
 
 ## 架构
 
@@ -25,7 +25,7 @@ Agent 通过 MCP Streamable HTTP 访问同一个 Core。
 PostgreSQL 保存权威业务状态，本地持久卷保存不可变媒体，
 Meilisearch 提供可重建的中英文检索。运行时不依赖 Git。
 
-v0.1 面向单机 Docker Compose，设计覆盖公开与受限页面、页面权限、
+0.1.0 面向单机 Docker Compose，设计覆盖公开与受限页面、页面权限、
 单页面提案、固定版本媒体引用、合并、恢复与撤销提案、页面 Issue。
 原生 Git 接口、多租户、模板、实时协作、通知、语义搜索、S3 和高可用不在首版范围。
 

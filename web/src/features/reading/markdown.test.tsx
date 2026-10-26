@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { Markdown, Media, safeURL, uploadFile } from './markdown'
+import { Markdown, Media, SnapshotView, safeURL, uploadFile } from './markdown'
 import { api } from '@/lib/api'
 import { json, pageID, revisionID } from '@/test/fixtures'
 
@@ -85,8 +85,48 @@ it('displays protected inline media without invalid paragraph nesting and releas
     'blob:http://localhost/protected-media',
   )
   expect(document.querySelector('p figure')).toBeNull()
+  expect(screen.queryByRole('link', { name: '下载原件' })).not.toBeInTheDocument()
   view.unmount()
   expect(revoke).toHaveBeenCalledWith('blob:http://localhost/protected-media')
+})
+it('keeps the original download on media pages without adding downloads to description images', async () => {
+  const OriginalURL = URL
+  vi.stubGlobal(
+    'URL',
+    class extends OriginalURL {
+      static createObjectURL() {
+        return 'blob:http://localhost/media-original'
+      }
+      static revokeObjectURL() {}
+    },
+  )
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(new Response('image', { headers: { 'Content-Type': 'image/png' } })),
+      ),
+  )
+  const contentURL = `/api/v1/pages/${pageID}/revisions/${revisionID}/content`
+  render(
+    <SnapshotView
+      contentURL={contentURL}
+      snapshot={{
+        type: 'media',
+        title: '头像原件',
+        tags: [],
+        blob_id: revisionID,
+        description: `![描述图片](${contentURL})`,
+      }}
+    />,
+  )
+  await screen.findByRole('img', { name: '头像原件' })
+  await screen.findByRole('img', { name: '描述图片' })
+  const downloads = screen.getAllByRole('link', { name: '下载原件' })
+  expect(downloads).toHaveLength(1)
+  expect(downloads[0]).toHaveAttribute('href', 'blob:http://localhost/media-original')
+  expect(downloads[0]).toHaveAttribute('download', '头像原件')
 })
 it('validates fixed media URLs, handles revoked access, and cancels an old media read', async () => {
   const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 404 }))
