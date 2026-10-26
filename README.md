@@ -7,23 +7,21 @@ diffs, merges, and immutable publication history. Documents and media are
 independent Pages organized with tags. Humans and agents share the same account
 permissions through REST and MCP.
 
-**Status: Go backend with accounts, permission governance, immutable history, atomic publication, three-way rebase and revert/restore proposals, backed by PostgreSQL
-tests. Media uploads, authorized Range downloads and safe local GC are implemented.
-Page Issues, immutable comments, proposal associations and audited moderation are implemented.
-Chinese/English search, durable indexing tasks and full index rebuilds are implemented with Meilisearch.
-The official Go SDK serves 39 authenticated MCP tools using the same Core.
-The React WebUI provides reading, editing, merge, discussion and governance flows with frontend CI.
-The v0.1.0 GHCR image has passed full release CI and acceptance after pulling its immutable digest;
-production deployment remains manual.** See the [release evidence and registry access requirements](docs/release-readiness.md),
-[implementation roadmap](docs/roadmap.md) and
-[GitHub Issues](https://github.com/epoch-fresh-2026/Wikit/issues).
+**Version: 0.1.0.** The source implements accounts and per-Page permissions, immutable history,
+direct first publication, proposal merge/rebase/revert/restore, media upload and authorized downloads,
+Page Issues and moderation, Chinese/English search, and index recovery. The Wiki WebUI and 39 MCP tools
+use the same Core; MCP also provides bounded, cited RAG context from full-text search.
 
-The Issue #35 redesign on this branch uses numeric Page IDs, a fixed home Page,
-explicit create_page grants, direct first publication, and a Wiki SPA with separate admin navigation.
-It is a fresh-deployment schema and is not included in the older image above. Existing UUID databases
-are rejected without deletion; rollback requires the matching old image and backup.
-Account IDs also use database-generated positive bigint values, serialized as decimal strings; this is a breaking fresh-deployment baseline with no UUID data migration ([ADR 0023](docs/adr/0023-numeric-account-ids.md)).
-See [redesign validation](docs/redesign-validation.md).
+Page and Account IDs are database-generated positive integers serialized as exact decimal strings.
+The home Page is fixed, page creation requires an explicit grant, and subsequent changes use proposals.
+The current schema requires a fresh deployment and rejects old UUID databases without deleting data.
+See the [operations guide](docs/operations.md) for deployment, compatibility, backup and recovery.
+
+The existing `v0.1.0` image belongs to an earlier source and schema baseline. Its immutable digest and
+verified checks are recorded in [release evidence](docs/release-readiness.md); they do not certify the
+current source. Current behavior is defined by the [design documents](docs/README.md), with
+[validation records](docs/redesign-validation.md) identifying the exact revisions tested.
+Production deployment remains manual; maintenance keeps the version fixed at `0.1.0`.
 
 ## Architecture
 
@@ -32,13 +30,13 @@ Both adapters use one Go Core. PostgreSQL owns business state, a local persisten
 volume stores immutable media, and Meilisearch provides rebuildable Chinese and
 English search. Git is not a runtime storage dependency.
 
-The v0.1 target is a single-host Docker Compose deployment. Public and restricted
+The 0.1.0 deployment baseline is a single-host Docker Compose deployment. Public and restricted
 Pages, per-Page permissions, single-Page proposals, version-pinned media references,
 merges, restore/revert proposals, and Page Issues are specified in the
 [design](docs/design.md). Native Git access, multi-tenancy, templates, collaborative
-editing, notifications, semantic search, S3, and high availability are outside v0.1.
+editing, notifications, semantic search, S3, and high availability are outside 0.1.0.
 
-## Work on the design
+## Development checks
 
 Install Node.js 24, then run:
 
@@ -48,9 +46,9 @@ npm run check
 ```
 
 These commands validate documentation, API and MCP contracts, and repository
-workflow configuration. They do not test a working wiki. Application checks become
-mandatory as implementation stages are enabled. See [development](docs/development.md)
-and the [deployment specification](docs/operations.md) for planned runtime setup.
+workflow configuration. Backend, frontend, database integration and container checks
+are also required; see [development](docs/development.md) and [testing](docs/testing.md).
+Runtime setup is described in the [operations guide](docs/operations.md).
 
 For the WebUI, run `npm ci --prefix web`, then `npm run dev --prefix web`.
 See [WebUI development and state boundaries](docs/web.md) for the backend origin configuration and checks.

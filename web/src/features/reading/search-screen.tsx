@@ -46,7 +46,24 @@ export function SearchScreen() {
               <h2>
                 <Link to={'/pages/' + hit.page_id}>{hit.title}</Link>
               </h2>
-              <p>{hit.snippet}</p>
+              {hit.passages?.length ? (
+                hit.passages.map((passage, index) => (
+                  <div key={`${passage.start_line}-${index}`}>
+                    <Link to={passage.citation_url}>
+                      {passage.section_path.length ? passage.section_path.join(' › ') : '正文'}
+                      {` · 第 ${passage.start_line}–${passage.end_line} 行 · 固定版本`}
+                    </Link>
+                    <p>
+                      {passage.text}
+                      {passage.truncated ? '…' : ''}
+                    </p>
+                  </div>
+                ))
+              ) : hit.snippet ? (
+                <p>{hit.snippet}</p>
+              ) : (
+                <p className="muted">页面匹配，暂无可定位的正文摘录。</p>
+              )}
               <TagLinks tags={hit.tags} />
             </article>
           )}

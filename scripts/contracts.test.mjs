@@ -34,6 +34,9 @@ test('search requires a query and rejects caller-provided authorization filters'
   assert(validate({ q: '知识', limit: 20 }));
   assert(!validate({ q: '知识', allowed_user_ids: [uuid] }));
   assert(!validate({ q: '知识', limit: 101 }));
+  assert(validate({q:'部署费用是多少？',mode:'rag',limit:5}));
+  assert(!validate({q:'知识',mode:'unknown'}));
+  assert(!openapi.paths['/search'].get.parameters.some((parameter)=>parameter.name==='mode'));
 });
 test('MCP has no password/token-management tool and every mapping exists', () => {
   const operationIds = new Set(Object.values(openapi.paths).flatMap((path) => Object.values(path).map((o) => o.operationId)));

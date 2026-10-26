@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve, relative } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -6,18 +6,11 @@ import YAML from 'yaml';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { buildContracts, serialize } from './build-contracts.mjs';
+import { repositoryFiles } from './repository-files.mjs';
 
 const root = process.cwd();
 const read = (path) => readFileSync(path, 'utf8');
-const ignored = new Set(['.git', 'node_modules', '.local', 'dist', 'coverage']);
-function walk(dir = '.') {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    if (ignored.has(entry.name)) return [];
-    const path = `${dir}/${entry.name}`;
-    return entry.isDirectory() ? walk(path) : [path.replace(/^\.\//, '')];
-  });
-}
-const files = walk();
+const files = repositoryFiles(root);
 let links = 0;
 for (const file of files.filter((p) => p.endsWith('.md'))) {
   const content = read(file);
@@ -37,6 +30,15 @@ for (const file of files.filter((p) => /\.ya?ml$/.test(p))) YAML.parse(read(file
 for (const file of files.filter((p) => p.endsWith('.json'))) JSON.parse(read(file));
 
 const { openapi, mcp } = buildContracts();
+const version = '0.1.0';
+for (const directory of ['', 'web/']) {
+  const pkg = JSON.parse(read(`${directory}package.json`));
+  const lock = JSON.parse(read(`${directory}package-lock.json`));
+  assert.equal(pkg.version, version, `${directory}package.json: Wikit version is locked at ${version}.`);
+  assert.equal(lock.version, version, `${directory}package-lock.json: version differs from package.json.`);
+  assert.equal(lock.packages[''].version, version, `${directory}package-lock.json: root package version differs.`);
+}
+assert.equal(openapi.info.version, version, 'REST contract must use the locked Wikit version.');
 assert.equal(read('api/openapi.json'), serialize(openapi), 'OpenAPI is stale; run npm run contracts:build.');
 assert.equal(read('api/mcp-tools.json'), serialize(mcp), 'MCP catalog is stale; run npm run contracts:build.');
 const ajv = new Ajv2020({ strict: true });

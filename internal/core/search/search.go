@@ -20,12 +20,13 @@ type Query struct {
 	Limit                int
 }
 type Hit struct {
-	PageID     string   `json:"page_id"`
-	RevisionID string   `json:"revision_id"`
-	Type       string   `json:"type"`
-	Title      string   `json:"title"`
-	Tags       []string `json:"tags"`
-	Snippet    string   `json:"snippet"`
+	PageID     string    `json:"page_id"`
+	RevisionID string    `json:"revision_id"`
+	Type       string    `json:"type"`
+	Title      string    `json:"title"`
+	Tags       []string  `json:"tags"`
+	Snippet    string    `json:"snippet"`
+	Passages   []Passage `json:"passages"`
 }
 type Result struct {
 	Items []Hit   `json:"items"`
@@ -202,15 +203,16 @@ func (s *Service) Search(ctx context.Context, c identity.Credentials, q Query) (
 				return nil
 			}
 			for _, candidate := range selected {
-				doc, err := project(byID[candidate.ID], s.text)
+				source := byID[candidate.ID]
+				evidence, err := passages(source, q.Q, s.text)
 				if err != nil {
 					return err
 				}
-				snippet := []rune(doc.Body)
-				if len(snippet) > 2000 {
-					snippet = snippet[:2000]
+				parts := []string{}
+				for _, passage := range evidence {
+					parts = append(parts, passage.Text)
 				}
-				out.Items = append(out.Items, Hit{doc.ID, doc.Revision, doc.Type, doc.Title, doc.Tags, string(snippet)})
+				out.Items = append(out.Items, Hit{source.Page.ID, candidate.Revision, source.Page.Type, source.Snapshot.Title, source.Snapshot.Tags, bounded(strings.Join(parts, "\n\n"), 2000), evidence})
 			}
 			if consumed < position || more {
 				plain, err := s.secrets.Secret()

@@ -1,7 +1,5 @@
 # Wikit
 
-当前发布规则见 [ADR 0018](docs/adr/0018-wiki-publication-redesign.md)（Issue #35）。
-
 Wikit 通过可审核的提案维护社区知识。文档与媒体共享协作语言。
 
 ## Language

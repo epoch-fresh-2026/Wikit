@@ -1,7 +1,7 @@
 import MarkdownRenderer from 'react-markdown'
 import { Link } from 'react-router'
 import remarkGfm from 'remark-gfm'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, type Schema } from '@/lib/api'
 
 const fixedContent =
@@ -20,10 +20,12 @@ export function Media({
   url,
   alt = '媒体原件',
   mime,
+  showDownload = false,
 }: {
   url: string
   alt?: string
   mime?: string
+  showDownload?: boolean
 }) {
   const [objectURL, setObjectURL] = useState(''),
     [type, setType] = useState(mime ?? ''),
@@ -67,19 +69,36 @@ export function Media({
       ) : type.startsWith('video/') ? (
         <video src={objectURL} controls aria-label={alt} />
       ) : (
-        <span>PDF 原件可通过下方链接打开。</span>
+        <span>{showDownload ? 'PDF 原件可通过下方链接打开。' : '请前往媒体页面查看原件。'}</span>
       )}
-      <span className="media-caption">
-        <a href={objectURL} download={alt}>
-          下载原件
-        </a>
-      </span>
+      {showDownload && (
+        <span className="media-caption">
+          <a href={objectURL} download={alt}>
+            下载原件
+          </a>
+        </span>
+      )}
     </span>
   )
 }
 export function Markdown({ text }: { text: string }) {
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const headings = Array.from(
+      root.current?.querySelectorAll<HTMLElement>('h1,h2,h3,h4,h5,h6') ?? [],
+    )
+    headings.forEach((heading, index) => {
+      heading.id = `section-${index}`
+      heading.tabIndex = -1
+    })
+    const target = headings.find((heading) => `#${heading.id}` === window.location.hash)
+    if (target) {
+      target.scrollIntoView({ block: 'start' })
+      target.focus({ preventScroll: true })
+    }
+  }, [text])
   return (
-    <div className="markdown">
+    <div className="markdown" ref={root}>
       <MarkdownRenderer
         skipHtml
         remarkPlugins={[remarkGfm]}
@@ -121,7 +140,7 @@ export function SnapshotView({
         <Markdown text={snapshot.markdown} />
       ) : (
         <>
-          {contentURL && <Media url={contentURL} alt={snapshot.title} />}
+          {contentURL && <Media url={contentURL} alt={snapshot.title} showDownload />}
           <Markdown text={snapshot.description} />
         </>
       )}

@@ -41,6 +41,7 @@ type arguments struct {
 	Type          string          `json:"type"`
 	State         string          `json:"state"`
 	Q             string          `json:"q"`
+	Mode          string          `json:"mode"`
 	IncludeHidden bool            `json:"include_hidden"`
 	Body          json.RawMessage `json:"body"`
 	Key           string          `json:"idempotency_key"`
@@ -254,6 +255,12 @@ func (s Services) invoke(ctx context.Context, op string, a arguments, r access.R
 	case "upload_get":
 		return s.Media.Get(ctx, c, a.UploadID)
 	case "search":
+		if a.Mode == "rag" {
+			return s.Search.Retrieve(ctx, c, search.Query{Q: a.Q, Type: a.Type, Tag: tag, TagSet: a.Tag != nil, Filter: filter, Cursor: a.Cursor, Limit: limit})
+		}
+		if a.Mode != "" && a.Mode != "lexical" {
+			return nil, fault.BadRequest
+		}
 		return s.Search.Search(ctx, c, search.Query{Q: a.Q, Type: a.Type, Tag: tag, TagSet: a.Tag != nil, Filter: filter, Cursor: a.Cursor, Limit: limit})
 	}
 	return nil, fault.NotFound

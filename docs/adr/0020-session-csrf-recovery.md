@@ -1,6 +1,6 @@
 # 0020 稳定的会话写入凭证恢复
 
-状态：accepted；日期：2026-10-22；关联 Issue：#47。补充 ADR 0008、0015。
+状态：accepted；日期：2026-10-22。补充 ADR 0008、0015。
 
 新标签页拥有 HttpOnly Cookie 却没有 sessionStorage nonce，不应要求重新登录。
 同源且严格校验 Origin 的 Cookie 专用 POST /auth/session 返回当前账户和稳定 CSRF。
