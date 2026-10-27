@@ -13,7 +13,7 @@
     "check:pr": "node scripts/check-pr.mjs"
   },
   "devDependencies": {
-    "@redocly/cli": "2.65.1",
+    "@redocly/cli": "2.71.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "openapi-typescript": "7.13.0",
